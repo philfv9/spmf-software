@@ -27,7 +27,7 @@ See the [download page](https://philippe-fournier-viger.com/spmf/index.php?link=
 ## 📚 Documentation
 
 - **Main documentation** (with examples for each algorithm):  
-  https://www.philippe-fournier-viger.com/spmf/
+  https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php
 
 - **FAQ**:  
   https://philippe-fournier-viger.com/spmf/index.php?link=FAQ.php
@@ -40,10 +40,26 @@ See the [download page](https://philippe-fournier-viger.com/spmf/index.php?link=
 
 ---
 
+## 🎓 Learn More
+
+### Videos
+- [SPMF Video Tutorials](https://www.philippe-fournier-viger.com/spmf/index.php?link=videos.php) — Presentations of different algorithms
+
+### Free Pattern Mining Course
+- [The Pattern Mining Course](https://data-mining.philippe-fournier-viger.com/COURSES/Pattern_mining/index.php) — A free online course covering pattern mining algorithms and their implementation
+
+### Blog & Community
+- [SPMF Blog](https://data-mining.philippe-fournier-viger.com/) — Articles, tutorials, and updates
+- [Additional Resources](https://www.philippe-fournier-viger.com/spmf/index.php?link=resources.php) — Books, papers, and external learning materials
+
+---
+
 ## 🤝 Contributing
 
 If you would like to contribute improvements, please contact the SPMF founder:  
 📧 **philfv AT qq.com**
+
+See the [contributors page](https://www.philippe-fournier-viger.com/spmf/index.php?link=contributors.php) for a list of people who have contributed to the project.
 
 ---
 
@@ -73,7 +89,7 @@ If you use SPMF in your research, please cite one of the following papers:
 
 > Fournier-Viger, P., Lin, C.W., Gomariz, A., Gueniche, T., Soltani, A., Deng, Z., Lam, H. T. (2016). *The SPMF Open-Source Data Mining Library Version 2.* In Proceedings of the 19th European Conference on Principles of Data Mining and Knowledge Discovery (PKDD 2016), Part III, Springer LNCS 9853, pp. 36–40.
 
-Citing SPMF helps support the project — thank you! 🙏
+For a full list of citations, see the [citations page](https://www.philippe-fournier-viger.com/spmf/index.php?link=citations.php). Citing SPMF helps support the project — thank you! 🙏
 
 ---
 
@@ -88,4 +104,4 @@ Citing SPMF helps support the project — thank you! 🙏
 - **Prof. Ji Zhang** — University of Southern Queensland, Australia
 
 A full list of contributors can be found here:  
-https://philippe-fournier-viger.com/spmf/index.php?link=contributors.php
+https://www.philippe-fournier-viger.com/spmf/index.php?link=contributors.php
