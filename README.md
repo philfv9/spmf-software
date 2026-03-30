@@ -11,8 +11,8 @@
 
 SPMF is designed for both **researchers and practitioners**, offering a simple API, a graphical user interface (GUI), and command-line tools.
 
-> **📌 Note:** This GitHub repository hosts the source code. For full documentation, tutorials, downloads, and support, please visit the official website:  
-> 👉 https://www.philippe-fournier-viger.com/spmf/
+📌 **Note:** This GitHub repository hosts the source code. For full documentation, tutorials, downloads, and support, please visit the official website:  
+👉 https://www.philippe-fournier-viger.com/spmf/
 
 **Current version:** `v2.65` (released February 18, 2026)
 
@@ -40,17 +40,13 @@ See the [download page](https://philippe-fournier-viger.com/spmf/index.php?link=
 
 ---
 
-## 🎓 Learn More
+## 🎓 Related resources
 
 ### Videos
-- [SPMF Video Tutorials](https://www.philippe-fournier-viger.com/spmf/index.php?link=videos.php) — Presentations of different algorithms
-
-### Free Pattern Mining Course
 - [The Pattern Mining Course](https://data-mining.philippe-fournier-viger.com/COURSES/Pattern_mining/index.php) — A free online course covering pattern mining algorithms and their implementation
-
-### Blog & Community
-- [SPMF Blog](https://data-mining.philippe-fournier-viger.com/) — Articles, tutorials, and updates
-- [Additional Resources](https://www.philippe-fournier-viger.com/spmf/index.php?link=resources.php) — Books, papers, and external learning materials
+- [Pattern Mining Videos](https://www.philippe-fournier-viger.com/spmf/index.php?link=videos.php)
+- [The Data Blog](https://data-mining.philippe-fournier-viger.com/) — Blog from the founder of SPMF
+- [Other Resources](https://www.philippe-fournier-viger.com/spmf/index.php?link=resources.php) — Books, wrappers for SPMF, and other resources
 
 ---
 
