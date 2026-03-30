@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>SPMF: Open-Source Data Mining Library</h1>
+  <h1>The SPMF Open-Source Pattern Mining Library</h1>
   <img src="images/spmf.png" alt="SPMF Logo" width="200">
 </div>
 
