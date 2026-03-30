@@ -55,6 +55,7 @@ SPMF can be used as a standalone software with a GUI or with the command line. M
 
 ## Related resources
 
+- The SPMF website: https://www.philippe-fournier-viger.com/spmf/
 - [The Pattern Mining Course](https://data-mining.philippe-fournier-viger.com/COURSES/Pattern_mining/index.php) — A free online course covering pattern mining algorithms and their implementation
 - [Pattern Mining Videos](https://www.philippe-fournier-viger.com/spmf/index.php?link=videos.php)
 - [The Data Blog](https://data-mining.philippe-fournier-viger.com/) — Blog from the founder of SPMF
@@ -105,11 +106,11 @@ For a full list of citations, see the [citations page](https://www.philippe-four
 
 **Project Leaders:**
 
-- **Prof. Philippe Fournier-Viger** (Founder) — Shenzhen University, Shenzhen, China
+- **Prof. Philippe Fournier-Viger** (Founder) — https://www.philippe-fournier-viger.com/
 - **Prof. Jerry Chun-Wei Lin**
 - **Prof. Wei Song** — North China University of Technology, Beijing, China
 - **Prof. Vincent S. Tseng** — National Chiao Tung University, Taiwan
-- **Prof. Ji Zhang** — University of Southern Queensland, Australia
+- **Prof. Ji Zhang** — University of Southern Queensland, Australia — https://staffprofile.unisq.edu.au/Profile/Ji-Zhang
 
 A full list of contributors can be found here:  
 https://www.philippe-fournier-viger.com/spmf/index.php?link=contributors.php
