@@ -1,6 +1,6 @@
 # SPMF: Open-Source Data Mining Library
 
-SPMF is a popular open-source data mining library written in Java. It provides implementations of more than 300 algorithms for discovering patterns in data, including:
+**SPMF** is a popular **open-source data mining software and library** written in **Java**, specialized in **pattern mining**. It provides implementations of more than 300 algorithms for discovering patterns in data, including:
 
 - Frequent itemsets
 - Association rules
@@ -17,12 +17,15 @@ This GitHub repository hosts the source code.
 For full documentation, tutorials, and downloads, always refer to:
 https://www.philippe-fournier-viger.com/spmf/
 
-# **How to use and install**
+The **current version is v2.65** and was released the ** 18th February 2026**
+
+# **How to install **
 
 See the download page on the SPMF website for how to install and use the software:
 - [[https://www.philippe-fournier-viger.com/spmf/download.php]()](https://philippe-fournier-viger.com/spmf/index.php?link=download.php)
 
-Moreover the full documentation of the software with examples for each algorithm is available here:
+# **Documentation **
+The full documentation of the software with examples for each algorithm is available here:
 - https://www.philippe-fournier-viger.com/spmf/ 
 
 # **Contributing**
