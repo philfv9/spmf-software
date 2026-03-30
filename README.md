@@ -57,7 +57,7 @@ SPMF can be used as a standalone software with a GUI or with the command line. M
 
 - [The SPMF website](https://www.philippe-fournier-viger.com/spmf/) 
 - [The Pattern Mining Course](https://data-mining.philippe-fournier-viger.com/COURSES/Pattern_mining/index.php) — A free online course covering pattern mining algorithms and their implementation
-- [Pattern Mining Videos](https://www.philippe-fournier-viger.com/spmf/index.php?link=videos.php)
+- [Pattern Mining Teaching Videos @philfv channel](https://www.youtube.com/@philfv)
 - [The Data Blog](https://data-mining.philippe-fournier-viger.com/) — Blog from the founder of SPMF
 - [Other Resources](https://www.philippe-fournier-viger.com/spmf/index.php?link=resources.php) — Books, wrappers for SPMF, and other resources
 
@@ -93,9 +93,9 @@ For full details, see the [GPLv3 license](https://www.gnu.org/licenses/gpl-3.0.e
 
 If you use SPMF in your research, please cite one of the following papers:
 
-> Fournier-Viger, P., et al. (2012). *SPMF: A Java Open-Source Pattern Mining Library.* Journal of Machine Learning Research (JMLR).
+* Fournier-Viger, P., et al. (2012). *SPMF: A Java Open-Source Pattern Mining Library.* Journal of Machine Learning Research (JMLR).
 
-> Fournier-Viger, P., Lin, C.W., Gomariz, A., Gueniche, T., Soltani, A., Deng, Z., Lam, H. T. (2016). *The SPMF Open-Source Data Mining Library Version 2.* In Proceedings of the 19th European Conference on Principles of Data Mining and Knowledge Discovery (PKDD 2016), Part III, Springer LNCS 9853, pp. 36–40.
+* Fournier-Viger, P., Lin, C.W., Gomariz, A., Gueniche, T., Soltani, A., Deng, Z., Lam, H. T. (2016). *The SPMF Open-Source Data Mining Library Version 2.* In Proceedings of the 19th European Conference on Principles of Data Mining and Knowledge Discovery (PKDD 2016), Part III, Springer LNCS 9853, pp. 36–40.
 
 For a full list of citations, see the [citations page](https://www.philippe-fournier-viger.com/spmf/index.php?link=citations.php). Citing SPMF helps support the project — thank you! 🙏
 
