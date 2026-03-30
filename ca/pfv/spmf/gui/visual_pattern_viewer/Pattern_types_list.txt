@@ -1,0 +1,636 @@
+DescriptionAlgoViewerAssociationRules
+Association rules (16)
+Visualize_association_rules
+http://www.philippe-fournier-viger.com/spmf/View_association_rules.php
+Visualize_association_rules_SELECT.png
+Visualize_association_rules_VIEW.png
+
+DescriptionAlgoViewerClosedAssociationRules
+Closed association rules
+Visualize_Closed_Association_rules
+http://www.philippe-fournier-viger.com/spmf/View_closed_association_rules.php
+
+DescriptionAlgoViewerAssociationRulesLift
+Association rules with lift (1)
+Visualize_association_rules_with_lift
+http://www.philippe-fournier-viger.com/spmf/View_association_rules_LIFT.php
+
+
+DescriptionAlgoViewerAssociationRulesLiftMultiT
+Association rules with lift and multiple support thresholds
+Visualize_association_rules_with_lift_multi_thresholds
+http://www.philippe-fournier-viger.com/spmf/View_arules_LIFTMultiThreshold.php
+
+DescriptionAlgoViewerTopKAssociationRules
+Top-k association rules
+Visualize_Top-K_Association_rules
+http://www.philippe-fournier-viger.com/spmf/View_TopK_association_rules.php
+
+DescriptionAlgoViewerTopKClassAssociationRules
+Top-k class association rules
+Visualize_Top-K_Class_Association_rules
+http://www.philippe-fournier-viger.com/spmf/View_TopK_Class_association_rules.php
+
+DescriptionAlgoViewerSporadicAssociationRules
+Sporadic association rules
+Visualize_Sporadic_Association_rules
+http://www.philippe-fournier-viger.com/spmf/Visualize_Sporadic_Association_rules.php
+
+DescriptionAlgoViewerTopKNRAssociationRules
+Top-k non-redundant association rules
+Visualize_Top-K_NonRedundant_Association_rules
+http://www.philippe-fournier-viger.com/spmf/ViewTNR_rules.php
+
+DescriptionAlgoViewerMinimalNRAssociationRules
+Minimal non-redundant association rules
+Visualize_Minimal_NonRedundant_Association_rules
+http://www.philippe-fournier-viger.com/spmf/ViewMinNRArules.php
+
+DescriptionAlgoViewerHighUtilityAssociationRules
+High-utility association rules (1)
+Visualize_High-utility_Association_rules
+http://www.philippe-fournier-viger.com/spmf/View_HighUtilityassociation_rules.php
+   
+DescriptionAlgoViewerFrequentItemsets
+Frequent itemsets (37)
+Visualize_Frequent_itemsets
+http://www.philippe-fournier-viger.com/spmf/View_frequent_itemsets.php
+   
+DescriptionAlgoViewerFrequentGeneratorItemsets
+Frequent generator itemsets
+Visualize_Frequent_generator_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Frequent_generator_itemsets.php
+   DefMe
+   
+   DescriptionAlgoViewerHighUtilityItemsets
+High-utility itemsets (63)
+Visualize_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_High_Utility_itemsets.php
+
+DescriptionAlgoViewerClosedHighUtilityItemsets
+Closed high-utility itemsets (7)
+Visualize_Closed_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Closed_High_Utility_itemsets.php
+
+DescriptionAlgoViewerCorrelatedHighUtilityItemsets
+Correlated High-utility itemsets (3)
+Visualize_Correlated_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Correlated_High_Utility_itemsets.php
+
+DescriptionAlgoViewerFrequentHighUtilityItemsets
+Frequent high-utility itemsets (3)
+Visualize_Frequent_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Frequent_High_Utility_itemsets.php
+   
+   DescriptionAlgoViewerFrequentClosedItemsets
+Frequent closed itemsets (9)
+Visualize_Frequent_closed_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Frequent_closed_itemsets.php
+
+DescriptionAlgoViewerFrequentMaximalItemsets
+Frequent maximal itemsets
+Visualize_Frequent_maximal_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Frequent_maximal_itemsets.php
+   Charm_MFI
+   
+DescriptionAlgoViewerFrequentMinimalRareItemsets
+Minimal rare itemsets
+Visualize_Minimal_rare_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Minimal_rare_itemsets.php
+     AprioriRare, MRI-CE
+
+DescriptionAlgoViewerPerfectlyRareItemsets
+Perfectly rare itemsets
+Visualize_Perfectly_rare_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Perfectly_rare_itemsets.php
+   AprioriInverse
+   
+DescriptionAlgoViewerMaximalHighUtilityItemsets
+Maximal high-utility itemsets
+Visualize_Maximal_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Maximal_High_Utility_itemsets.php
+
+DescriptionAlgoViewerMinimalHighUtilityItemsets
+Minimal high-utility itemsets
+Visualize_Minimal_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Minimal_High_Utility_itemsets.php
+
+DescriptionAlgoViewerTopKHighUtilityItemsets
+Top-k High-utility itemsets
+Visualize_Top-K_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Top-K_High_Utility_itemsets.php
+
+DescriptionAlgoViewerHighAverageUtilityItemsets
+High average-utility itemsets
+Visualize_High_Average_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_High_Average_Utility_itemsets.php
+
+DescriptionAlgoViewerHighUtilityGenerators
+High-utility generator itemsets
+Visualize_High_Utility_Generators
+http://www.philippe-fournier-viger.com/spmf/Visualize_High_Utility_Generators.php
+    HUG-Miner
+    
+DescriptionAlgoViewerGeneratorOfHighUtilityItemset
+Generators of high-utility itemsets
+Visualize_Generators_of_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_GHUIS_generators.php
+   GHUI-Miner
+
+DescriptionAlgoViewerGeneratorHighUtilityItemset
+Generator high-utility itemsets
+Visualize_Generator_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Gen_HUIs.php
+    HUCI_Miner_Generators
+
+DescriptionAlgoViewerErasableItemsets
+Erasable itemsets
+Visualize_Erasable_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Erasable_itemsets.php
+     VME
+     
+     DescriptionAlgoViewerRareCorrelatedItemsets
+Rare correlated itemsets
+Visualize_Rare_correlated_itemsets
+http://www.philippe  -fournier-viger.com/spmf/Visualize_Rare_correlated_itemsets.php
+     CORI
+
+DescriptionAlgoViewerUncertainFrequentItemsets
+Uncertain frequent itemsets
+Visualize_Uncertain_frequent_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Uncertain_frequent_itemsets.php
+     UApriori
+     
+
+DescriptionAlgoViewerSelfSufficientItemsets
+Self-Sufficient Itemsets
+Visualize_Self_sufficient_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Self_sufficient_itemsets.php
+    Opus-Miner
+
+DescriptionAlgoViewerFrequentItemsetsMultiThresh
+Frequent itemsets with multiple thresholds
+Visualize_Frequent_itemsets_with_multi_thresholds
+http://www.philippe-fournier-viger.com/spmf/View_frequent_itemsets_multi_thres.php
+   CFFPGrowth++,     MSApriori
+  
+DescriptionAlgoViewerFrequentFuzzyItemsets
+Frequent fuzzy itemsets
+Visualize_Frequent_fuzzy_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Frequent_fuzzy_itemsets.php
+    FFI-Miner   
+    
+DescriptionAlgoViewerMultiFrequentFuzzyItemsets
+Multiple Frequent fuzzy itemsets
+Visualize_Multi_frequent_fuzzy_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Multi_frequent_fuzzy_itemsets.php
+    MFFI-Miner
+    
+DescriptionAlgoViewerPeriodicFrequentItemsets
+Periodic frequent itemsets
+Visualize_Periodic_frequent_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_Periodic_frequent_itemsets.php
+ PPFM  
+
+Stable Periodic frequent itemsets
+Visualize_stable_periodic_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_stable_periodic_itemsets.php
+   SPPGrowth
+
+DescriptionAlgoViewerTopKStablePeriodicItemset
+Top-k Stable Periodic frequent itemsets
+Visualize_Top-K_Stable_periodic_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_TopKStablePeriodic.php
+
+DescriptionAlgoViewerPeriodicHighUtilityItemsets
+Periodic high-utility itemsets
+Visualize_Periodic_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_High_Periodic_Utility_itemsets.php
+
+DescriptionAlgoViewerProdPeriodicFrequentItemsets
+Productive Periodic frequent itemsets
+Visualize_Productive_periodic_frequent_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_ProdPer_frequent_itemsets.php
+    PPFP
+
+DescriptionAlgoViewerRareCorrelatedItemsetsMultiSeq
+Rare correlated itemsets common to multiple sequences
+Visualize_Rare_correlated_itemsets_MultiSequences
+http://www.philippe-fournier-viger.com/spmf/Visualize_RareCoreMultiSeq.php
+   MRCPPS
+
+DescriptionAlgoViewerPeakHighUtilityItemsets
+Peak high-utility itemsets   
+Visualize_Peak_high_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_peak.php
+   PHUI-Miner
+     
+DescriptionAlgoViewerLocalHighUtilityItemsets
+Local high-utility itemsets
+Visualize_Local_high_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_localHUIs.php 
+
+DescriptionAlgoViewerSkylineHUIs   
+Skyline High-utility itemsets   
+Visualize_Skyline_HUIs
+http://www.philippe-fournier-viger.com/spmf/Visualize_Skyline_HUIs.php
+   SFU-CE
+  SFUI-UF
+  SkyMine
+  
+DescriptionAlgoViewerSkylineFreqHUIs
+Skyline Frequent High-utility itemsets
+Visualize_Skyline_frequent_HUIs
+http://www.philippe-fournier-viger.com/spmf/Visualize_Skyline_frequent_HUIs.php
+   EMSFUI_B
+  EMSFUI_D
+  SFUPMinerUemax
+
+DescriptionAlgoViewerOnshelfHUIs
+On-shelf high-utility itemsets
+Visualize_Onshelf_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_OnshelfHUIs.php
+   FOSHU
+   TS-HOUN
+
+DescriptionAlgoViewerLocalPeriodicItemset
+Local Periodic frequent itemsets
+Visualize_Local_periodic_frequent_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_LocalPerItemsets.php
+   LPPGrowth
+   LPPM_breadth
+   LPPM_depth
+
+DescriptionAlgoViewerTrendingHUIs
+Locally trending high-utility itemsets
+Visualize_locally_trending_HUIs
+http://www.philippe-fournier-viger.com/spmf/Visualize_locally_trending_HUIs.php
+     
+DescriptionAlgoViewerCrossLevelHighUtilityItemsets
+Cross-Level High-utility itemsets
+Visualize_Crosslevel_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_CrossLevelHUIs.php
+  CLH-Miner
+
+DescriptionAlgoViewerMultiLevelHUIs
+Multi-Level High-utility itemsets
+Visualize_Multilevel_High_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_MultiLevelHUIs.php
+   MLHUI-Miner
+
+DescriptionAlgoViewerNonRedundantPeriodicItemset
+Non-redundant Periodic frequent itemsets
+Visualize_Nonredundant_Periodic_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_NonRedundantPeriodic.php
+   NPFPM
+
+DescriptionAlgoViewerQuantitativeHUIs
+Quantitative high utility itemsets
+Visualize_Quantitative_high_Utility_itemsets
+http://www.philippe-fournier-viger.com/spmf/Visualize_quantitative_huis.php
+  FHUQIMiner
+  TKQ
+  VHUQI
+
+DescriptionAlgoViewerHighUtilityItemsetsWithLength
+High-utility itemsets with length constraints
+Visualize_High_Utility_itemsets_with_length_constraint
+http://www.philippe-fournier-viger.com/spmf/Visualize_High_Utility_itemsetsFHMPLUS.php
+   FHM+ 
+
+DescriptionAlgoViewerFrequentItemsetsAndGenerator
+Frequent itemsets and generator itemsets
+Visualize_Frequent_itemsets_and_generators
+http://www.philippe-fournier-viger.com/spmf/View_frequent_itemsets_with_generators.php
+   Pascal
+
+DescriptionAlgoViewerPeriodicFrequentItemsetsMutilSeq
+Periodic frequent itemsets common to multiple sequences
+Visualize_Periodic_Frequent_itemsets_from_multiple_sequences
+http://www.philippe-fournier-viger.com/spmf/View_frequent_itemsetsMultiSEQ.php
+    MPFPS-DFS     MPFPS-BFS
+
+DescriptionAlgoViewerFrequentSequentialRules
+Frequent sequential rules
+Visualize_Sequential_rules
+http://www.philippe-fournier-viger.com/spmf/Visualize_FrequentSequential_rules.php
+
+DescriptionAlgoViewerTopKSequentialRules
+Top-k frequent sequential rules
+Visualize_Top-K_Frequent_Sequential_rules
+http://www.philippe-fournier-viger.com/spmf/Visualize_TopKSeqRules.php   
+
+DescriptionAlgoViewerTopKNRSeqRules
+Top-k frequent non-redundant sequential rules
+Visualize_Top-K_non_redundant_sequential_rules
+http://www.philippe-fournier-viger.com/spmf/Visualize_TKNRSequential_rules.php    
+    
+DescriptionAlgoViewerHUSequentialRules
+High-utility sequential rules
+Visualize_High_utility_sequential_rules
+http://www.philippe-fournier-viger.com/spmf/Visualize_HUSeqRules.php
+  HUSRM
+
+DescriptionAlgoViewerEpisodeRules
+Episode rules (8)
+Visualize_Episode_rules
+http://www.philippe-fournier-viger.com/spmf/Visualize_Episode_rules.php
+
+DescriptionAlgoViewerFrequentEpisodes
+Frequent episodes (6)
+Visualize_frequent_episodes
+http://www.philippe-fournier-viger.com/spmf/Visualize_frequent_episodes.php
+
+DescriptionAlgoViewerTopKFrequentEpisodes
+Top-k frequent episodes
+Visualize_top-k_frequent_episodes
+http://www.philippe-fournier-viger.com/spmf/Visualize_top-k_frequent_episodes.php
+
+DescriptionAlgoViewerHUEpisodes
+High-Utility episodes
+Visualize_high_utility_episodes
+http://www.philippe-fournier-viger.com/spmf/Visualize_HUepisodes.php
+   HUE-SPAN
+
+DescriptionAlgoViewerTopKHUEpisodes
+Top-k High-Utility episodes
+Visualize_top-k_high_utility_episodes
+http://www.philippe-fournier-viger.com/spmf/Visualize_top-k_high_utility_episodes.php
+   TUP_Combined
+
+DescriptionAlgoViewerFrequentEpisodeRules
+Frequent episode rules
+Visualize_Frequent_episode_rules
+http://www.philippe-fournier-viger.com/spmf/Visualize_Freq_Episode_rules.php
+   
+DescriptionAlgoViewerFreqSeqRulesStrings
+Frequent sequential rules with strings
+Visualize_Sequential_rules_with_strings
+http://www.philippe-fournier-viger.com/spmf/Visualize_FrequentSequential_rulesString.php
+    TRuleGrowth_with_strings
+
+DescriptionAlgoViewerSequentialPatterns
+Frequent sequential patterns (30)
+Visualize_frequent_sequential_patterns
+http://www.philippe-fournier-viger.com/spmf/Viewer_for_seq_patterns.php
+
+DescriptionAlgoViewerTopKSequentialPatterns
+Top-k frequent sequential patterns
+Visualize_top-k_frequent_sequential_patterns
+http://www.philippe-fournier-viger.com/spmf/Visualize_TopKFreqSeq.php
+
+DescriptionAlgoViewerClosedSequentialPatterns
+Frequent closed sequential patterns
+Visualize_closed_frequent_sequential_patterns
+http://www.philippe-fournier-viger.com/spmf/Visualize_ClosedFreqSeq.php
+
+
+DescriptionAlgoViewerMaximalSequentialPatterns
+Frequent maximal sequential patterns
+Visualize_maximal_frequent_sequential_patterns
+http://www.philippe-fournier-viger.com/spmf/Visualize_MaxFreqSeq.php
+
+DescriptionAlgoViewerGeneratorSequentialPatterns
+Frequent sequential generators
+Visualize_generator_frequent_sequential_patterns
+http://www.philippe-fournier-viger.com/spmf/Visualize_GeneratorFreqSeq.php
+
+DescriptionAlgoViewerHighUSequentialPatterns
+High-utility sequential patterns
+Visualize_high_utility_sequential_patterns
+http://www.philippe-fournier-viger.com/spmf/Viewer_HUseq_patterns.php
+
+DescriptionAlgoViewerCompressingSequentialPatterns
+Compressing sequential patterns
+Visualize_compressing_sequential_patterns
+http://www.philippe-fournier-viger.com/spmf/Visualize_CompressingSeqPat.php
+
+DescriptionAlgoViewerSequentialPatternsOCCUR
+Frequent sequential patterns with occurrences
+Visualize_frequent_sequential_patterns_with_occurrences
+http://www.philippe-fournier-viger.com/spmf/Viewer_for_seq_patternsOCCUR.php
+    OCCUR
+
+DescriptionAlgoViewerSequentialPatternsTime
+Frequent sequential patterns with timestamps
+Visualize_frequent_sequential_patterns_with_timestamps
+http://www.philippe-fournier-viger.com/spmf/Viewer_seq_patternsTime.php
+
+DescriptionAlgoViewerClosedSequentialPatternsTime
+Frequent closed sequential patterns with timestamps
+Visualize_closed_frequent_sequential_patterns_with_timestamps
+http://www.philippe-fournier-viger.com/spmf/Viewer_closedseq_patternsTime.php
+
+
+
+DescriptionAlgoViewerHighUtilProbSeqPat
+High-utility probability sequential patterns
+Visualize_high_utility_probability_sequential_patterns
+http://www.philippe-fournier-viger.com/spmf/Viewer_HUProbSeqPat.php    
+
+
+DescriptionAlgoViewerProgressiveSequentialPatterns   
+Progressive Frequent Sequential patterns 
+Visualize_progressive_frequent_sequential_patterns
+http://www.philippe-fournier-viger.com/spmf/Viewer_for_ProSeCo.php
+   
+   
+DescriptionAlgoViewerTopKSeqPatLeverage
+Top-k frequent sequential patterns with leverage
+Visualize_top-k_frequent_sequential_patterns_with_leverage
+http://www.philippe-fournier-viger.com/spmf/Visualize_TopKFreqSeqLeverage.php    
+
+DescriptionAlgoViewerOOWGSSP
+Self-adaptive one-off weak-gap strong sequential patterns
+Visualize_self_adaptive_one_off_weakgap_strong_sequential_pattern
+http://www.philippe-fournier-viger.com/spmf/Viewer_OWSPMiner.php
+     OWSPMiner
+     tcc #SUP:2
+     http://www.philippe-fournier-viger.com/spmf/OWSPMiner_string.php
+
+DescriptionAlgoViewerMAPD  
+Sequential patterns with periodic wilcard gaps
+Visualize_sequential_patterns_with_wildcard_gaps
+http://www.philippe-fournier-viger.com/spmf/Viewer_MAPD.php
+    MAPD   
+    cg #SUP: 0.6
+    https://philippe-fournier-viger.com/spmf/MAPD_string.php
+   
+                              
+===================================   FINI 40 de 81  ======================
+
+
+
+***** NEED TO FIX BUG IN THE VIEWER FOR CEPN *******
+DescriptionAlgoViewerCostEfficientSequentialPatterns
+Cost-efficient Sequential patterns
+Visualize_cost_efficient_sequential_patterns
+http://www.philippe-fournier-viger.com/spmf/Visualize_CostSeqPatterns.php
+
+
+
+   
+
+
+
+Ordered frequent sequential rules
+
+
+
+
+Frequent time interval sequential patterns
+
+
+      
+    
+Top-k frequent sequential patterns with leverage
+Top-k sequential patterns with quantile-based cohesion
+
+Frequent closed sequential patterns with timestamps
+
+Frequent sequential patterns with occurrences
+Frequent sequential patterns with timestamps
+High-utility probability sequential patterns
+Multi-dimensional frequent closed sequential patterns
+Multi-dimensional frequent closed sequential patterns with timestamps
+Multi-dimensional frequent sequential patterns
+Multi-dimensional frequent sequential patterns with timestamps 
+Progressive Frequent Sequential patterns
+Self-adaptive one-off weak-gap strong sequential patterns
+Sequential patterns with periodic wilcard gaps
+   MAPD
+
+
+
+Frequent closed and generator itemsets
+   Pascal
+   
+   
+
+   
+   
+
+Sequence Database with timestamps
+    Generate_a_sequence_database_with_timestamps
+    
+
+
+   
+
+
+
+
+Top-k frequent non-redundant sequential rules (1)
+High-utility sequential rules (1)
+Ordered frequent sequential rules (1)
+Frequent sequential rules with strings (1)
+Top-k frequent sequential rules (2) (2)
+
+
+
+
+Episodes (15)
+High-Utility episodes (4)
+Frequent episode rules (3)
+Top-k High-Utility episodes (2)
+Quantitative high utility itemsets (3)
+
+
+Skyline Frequent High-utility itemsets
+Skyline High-utility itemsets
+
+
+Indirect association rules (1)x
+
+Time series database (14)
+Transaction database (12)
+Sequential rules (11)
+
+Frequent closed sequential patterns (8)
+Simple transaction database (8)
+Sequence database (8)
+Closed itemsets (8)
+Top-k High-utility itemsets (7)
+Simple sequence database (6)
+Skyline patterns (6)
+Rare patterns (6)
+Clusters (6)
+Closed patterns (6)
+Subgraphs (4)
+Periodic high-utility itemsets (4)
+Generator patterns (4)
+Correlated patterns (4)
+Generator itemsets (4)
+Cost-efficient Sequential patterns (3)
+Frequent sequential generators (3)
+Frequent subgraphs (3)
+Frequent itemsets with multiple thresholds (3)
+Local Periodic frequent itemsets (3)
+Minimal rare itemsets (3)
+Maximal patterns (2)
+Cross-Level High-utility itemsets (2)
+Multi-dimensional frequent closed sequential patterns (2)
+Maximal itemsets (2)
+High-utility probability sequential patterns (2)
+Frequent maximal sequential patterns (2)
+Density-based clusters (2)
+Periodic frequent itemsets common to multiple sequences (2)
+On-shelf high-utility itemsets (2)
+Multi-dimensional frequent closed sequential patterns with timestamps (2)
+Frequent closed and generator itemsets (2)
+Frequent time interval sequential patterns (2)
+Perfectly rare itemsets (2)
+Sequence Database with timestamps (2)
+Top-k frequent sequential patterns (2)
+Transaction database with utility values (2)
+Closed and generator patterns (2)
+Trend patterns (2)
+Generator high-utility itemsets (2)
+Rare correlated itemsets common to multiple sequences (1)
+Productive Periodic frequent itemsets (1)
+Peak high-utility itemsets (1)
+Database of double vectors (1)
+Uncertain frequent itemsets (1)
+Non-redundant Periodic frequent itemsets (1)
+Transaction database with utility values and time (1)
+Top-k   Stable Periodic frequent itemsets (1)
+Rare correlated itemsets (1)
+Minimal itemsets (1)
+Uncertain patterns (1)
+High-utility itemsets with length constraints (1)
+High-utility generator itemsets (1)
+Multi-dimensional frequent sequential patterns with timestamps (1)
+Local high-utility itemsets (1)
+Periodic frequent itemsets (1)
+Density-based cluster ordering of points (1)
+Frequent sequential patterns with occurrences (1)
+Frequent sequential patterns with timestamps (1)
+Frequent closed sequential patterns with timestamps (1)
+Minimal high-utility itemsets (1)
+Significant Trend Sequences (1)
+Self-adaptive one-off weak-gap strong sequential patterns (1)
+Frequent fuzzy itemsets (1)
+Sequential patterns with periodic wilcard gaps (1)
+Periodic rare patterns (1)
+Top-k Frequent subgraphs (1)
+Minimal patterns (1)
+Stable Periodic frequent itemsets (1)
+Maximal high-utility itemsets (1)
+Self-Sufficient Itemsets (1)
+Text clusters (1)
+Multi-dimensional frequent sequential patterns (1)
+Cost transaction database (1)
+Hierarchical clusters (1)
+Top-k frequent sequential patterns with leverage (1)
+Compressing sequential patterns (1)
+High-utility rules (1)
+Locally trending high-utility itemsets (1)
+High-utility sequential patterns (1)
+Progressive Frequent Sequential patterns (1)
+Erasable itemsets (1)
+Attribute Evolution Rules (1)
+Generators of high-utility itemsets (1)
+Multiple Frequent fuzzy itemsets (1)
+Correlated itemsets (1)
+Multi-Level High-utility itemsets (1)
+Top-k sequential patterns with quantile-based cohesion (1)

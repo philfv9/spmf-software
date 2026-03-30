@@ -1,0 +1,53 @@
+A | #SUP: 6
+C | #SUP: 4
+G | #SUP: 3
+T | #SUP: 3
+A | A | #SUP: 3
+A | C | #SUP: 3
+A | G | #SUP: 3
+C | A | #SUP: 3
+C | C | #SUP: 3
+G | A | #SUP: 3
+G | C | #SUP: 3
+A | A | G | #SUP: 3
+A | C | A | #SUP: 3
+A | G | A | #SUP: 3
+A | G | C | #SUP: 3
+G | A | C | #SUP: 3
+G | C | C | #SUP: 3
+A | A | G | A | #SUP: 3
+A | A | G | C | #SUP: 3
+A | G | A | C | #SUP: 3
+A | G | C | C | #SUP: 3
+G | A | C | A | #SUP: 3
+A | A | G | A | C | #SUP: 3
+A | A | G | C | C | #SUP: 3
+A | G | A | C | A | #SUP: 3
+A | A | G | A | C | A | #SUP: 3
+
+1 -1 #SUP: 6
+3 -1 #SUP: 4
+7 -1 #SUP: 3
+20 -1 #SUP: 3
+1 -1 1 -1 #SUP: 3
+1 -1 3 -1 #SUP: 3
+1 -1 7 -1 #SUP: 3
+3 -1 1 -1 #SUP: 3
+3 -1 3 -1 #SUP: 3
+7 -1 1 -1 #SUP: 3
+7 -1 3 -1 #SUP: 3
+1 -1 1 -1 7 -1 #SUP: 3
+1 -1 3 -1 1 -1 #SUP: 3
+1 -1 7 -1 1 -1 #SUP: 3
+1 -1 7 -1 3 -1 #SUP: 3
+7 -1 1 -1 3 -1 #SUP: 3
+7 -1 3 -1 3 -1 #SUP: 3
+1 -1 1 -1 7 -1 1 -1 #SUP: 3
+1 -1 1 -1 7 -1 3 -1 #SUP: 3
+1 -1 7 -1 1 -1 3 -1 #SUP: 3
+1 -1 7 -1 3 -1 3 -1 #SUP: 3
+7 -1 1 -1 3 -1 1 -1 #SUP: 3
+1 -1 1 -1 7 -1 1 -1 3 -1 #SUP: 3
+1 -1 1 -1 7 -1 3 -1 3 -1 #SUP: 3
+1 -1 7 -1 1 -1 3 -1 1 -1 #SUP: 3
+1 -1 1 -1 7 -1 1 -1 3 -1 1 -1 #SUP: 3

@@ -1,0 +1,7 @@
+c #SUP:5
+g #SUP:2
+t #SUP:3
+cc #SUP:2
+cg #SUP:2
+tc #SUP:2
+tcc #SUP:2

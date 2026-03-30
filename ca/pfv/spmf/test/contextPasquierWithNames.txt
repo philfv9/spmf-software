@@ -1,0 +1,11 @@
+@CONVERTED_FROM_TEXT
+@ITEM=1=apple
+@ITEM=2=orange
+@ITEM=3=tomato
+@ITEM=4=milk
+@ITEM=5=bread
+1 3 4
+2 3 5
+1 2 3 5
+2 5
+1 2 3 5

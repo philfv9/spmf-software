@@ -1,0 +1,146 @@
+
+
+=============  SLIM 2.60 - STATS =============
+ Itemsets found: 80
+ Memory : 250.34 MB
+ Time   : 46486 ms
+ Post-acceptance pruning: ENABLED
+ Generated candidates count: 39073
+ Tested candidates count: 2758
+ Total size (using the standard code table): 687800.059
+ Total size (using the selected itemsets)  : 462598.390 (67.258 %)
+============================================
+
+=============  SLIM 2.60 - STATS =============
+ Itemsets found: 162
+ Memory : 854.01 MB
+ Time   : 49434 ms
+ Post-acceptance pruning: DISABLED
+ Generated candidates count: 323734
+ Tested candidates count: 1419
+ Total size (using the standard code table): 687800.059
+ Total size (using the selected itemsets)  : 152332.757 (22.148 %)
+============================================
+
+============================================
+=============  SLIM 2.60 - STATS =============
+ Itemsets found: 152
+ Memory : 375.65 MB
+ Time   : 49077 ms
+ Post-acceptance pruning: ENABLED
+ Generated candidates count: 333846
+ Tested candidates count: 1161
+ Total size (using the standard code table): 687800.059
+ Total size (using the selected itemsets)  : 151923.116 (22.088 %)
+============================================
+
+
+
+SLIM output on ContextPasquier99.txt
+
+1 2 3 5 #SUP: 2
+1 3 4 #SUP: 1
+2 5 #SUP: 2
+3 #SUP: 1
+
+OUTPUT  max iteration = 1
+
+2 5 #SUP: 4
+3 #SUP: 4
+1 #SUP: 3
+4 #SUP: 1
+
+OUTPUT maxiteration = 3
+
+2 5 #SUP: 4
+1 4 #SUP: 1
+3 #SUP: 4
+1 #SUP: 2
+
+
+
+http://www.philippe-fournier-viger.com/spmf/SLIM_compress.php
+
+===================================================================
+
+
+
+"http://www.philippe-fournier-viger.com/spmf/MDL_KRIMP.php";
+
+patterns40.txt
+
+1 #SUP: 3
+2 #SUP: 4
+3 #SUP: 4
+5 #SUP: 4
+1 3 #SUP: 3
+1 5 #SUP: 2
+2 3 #SUP: 3
+2 5 #SUP: 4
+2 3 5 #SUP: 3
+3 5 #SUP: 3
+
+output:
+
+2 5 #SUP: 4
+1 3 #SUP: 3
+3 #SUP: 1
+4 #SUP: 1
+
+================================================
+
+
+"Calculate_stats_for_a_graph_database"
+http://www.philippe-fournier-viger.com/spmf/a_graph_databasestats.php
+
+Algorithm is running... (10:58:27 p.m.)  
+============  GRAPH DATABASE STATS ==========
+Number of graphs : 3
+File C:\Users\Phil\Desktop\test_files\contextTKG.txt
+Number of distinct vertex labels: 2
+Number of distinct edge labels: 4
+Largest vertex label: 11
+Largest edge label: 23
+Average number of vertices per graph : 3.3333333333333335 standard deviation: 0.9428090415820634 variance: 0.8888888888888888
+Average number of edges per graph : 2.6666666666666665 standard deviation: 1.247219128924647 variance: 1.5555555555555554
+
+==========================================================
+
+
+TransactionDatabaseViwer
+Trans_Viewer.php
+Open_transaction_database_file_with_transaction_db_viewer
+MainTestTransactionViewer
+
+SequenceDatabaseViewer/
+Seq_db_db_viewer.php
+Open_sequence_database_file_with_sequence_db_viewer
+MainTestSequenceDatabaseViewer.java
+
+	public String getName() {
+		return "Generate_a_clustering_dataset";
+
+	@Override
+	public String getURLOfDocumentation() {
+		return "http://www.philippe-fournier-viger.com/spmf/clustering_data_generator.php";
+	}		parameters[2] = new DescriptionOfParameter("Distributions", "(e.g. Normal(20,30),Uniform(14,4))", Distribution[].class, false);
+		return parameters;
+	}
+
+========================================================
+EventSequenceViewer
+		return "Open_an_event_sequence_with_event_sequence_viewer";
+		return "http://www.philippe-fournier-viger.com/spmf/event_seq_view.php";
+
+============================================================
+WebpageAlgorithmDocViewer
+=======================================
+Open_text_file_with_system_text_editor
+DescriptionAlgoSystemTextEditorOpenFile
+http://www.philippe-fournier-viger.com/spmf/System_Text_Editor.php
+
+=========================================================================
+
+
+comboBoxMeasures
+buttonViewDistribution

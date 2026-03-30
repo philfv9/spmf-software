@@ -1,0 +1,7 @@
+4 2 #UTIL: 30 #SUP: 2
+4 2 5 #UTIL: 36 #SUP: 2
+4 2 5 3 #UTIL: 40 #SUP: 2
+4 2 3 #UTIL: 34 #SUP: 2
+2 5 #UTIL: 31 #SUP: 3
+2 5 3 #UTIL: 37 #SUP: 3
+1 5 3 #UTIL: 31 #SUP: 2

@@ -1,0 +1,138 @@
+<html>
+<head>
+<style>
+        /* Add some style to the body element */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        /* Add some style to the h1 element */
+        h1 {
+            color: darkblue;
+            text-align: center;
+        }
+
+        /* Add some style to the canvas element */
+        canvas {
+            border: 1px solid black;
+            margin: 10px;
+            /* Add some rounded corners */
+            border-radius: 10px;
+        }
+
+        /* Add some style to the input elements */
+        input {
+            /* Add some space around them */
+            margin: 5px;
+            /* Add some padding inside them */
+            padding: 5px;
+        }
+
+        /* Add some style to the textarea element */
+        #input {
+            width: 300px;
+            height: 100px;
+            /* Add some rounded corners */
+            border-radius: 10px;
+        }
+    .style1 {color: #0000CC}
+.style2 {font-weight: bold}
+</style>
+<title>Visualization tool for 2D points</title></head>
+<body>
+    <h1>Visualization tool for 2D points</h1>
+<p>Enter the input data in the textbox below, where each line is a data point defined by two numbers separated by a space. Numbers must be in the [0,10] interval.</p>
+    <textarea id="input">2.1 3.2
+2.1 3.4
+2.4 3.5
+2.8 3.1
+8.2 8.9
+8.9 8.1
+8.1 9.0
+9.0 8.8
+5.3 6.2
+5.6 5.5
+1 9
+2 9
+3 9
+2 5
+3 5
+5 6
+8.1 2.9</textarea>
+    
+   <p>Or generate 100 random points with &quot;Generate&quot;. Then, click &quot;Visualize&quot;. </p>
+    <button id="generate" onClick="generate()">Generate</button>
+    <button id="visualize" onClick="visualize()">Visualize</button>
+
+    <p><strong>Result</strong>:</p>
+    <canvas id="canvas" width="300" height="300"></canvas>
+
+   
+    <script>
+        // A function to generate 100 random data points in the range [0,10] and fill the textbox with them 
+        function generate() {
+            // Get the textbox element 
+            let input = document.getElementById("input");
+
+            // Clear the existing content 
+            input.value = "";
+
+            // Generate 100 random data points 
+            for (let i = 0; i < 100; i++) {
+                // Generate a random x value in [0,10] 
+                let x = Math.random() * 10;
+
+                // Generate a random y value in [0,10] 
+                let y = Math.random() * 10;
+
+                // Format the data point as a string with one decimal place 
+                let point = `${x.toFixed(1)} ${y.toFixed(1)}`;
+
+                // Append the point to the textbox with a newline character 
+                input.value += point + "\n";
+            }
+        }
+
+        // A function to visualize the input data on a canvas 
+        function visualize() {
+            // Get the input data from the textbox 
+            let input = document.getElementById("input").value.trim();
+            let lines = input.split("\n");
+            let points = [];
+            for (let line of lines) {
+                let nums = line.split(" ");
+                if (nums.length == 2) {
+                    let x = parseFloat(nums[0]);
+                    let y = parseFloat(nums[1]);
+                    if (!isNaN(x) && !isNaN(y)) {
+                        points.push([x, y]);
+                    }
+                }
+            }
+
+            // Get the canvas element and its context 
+            let canvas = document.getElementById("canvas");
+            let ctx = canvas.getContext("2d");
+
+            // Clear the canvas 
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Get the scaling factor for the chart from the slider 
+            let scale = 20.0; 
+
+            // Draw the points with a fixed color and size 
+            let color = "red";
+            let size = 2;
+            for (let i = 0; i < points.length; i++) {
+                let x = points[i][0];
+                let y = points[i][1];
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x * scale + 50, y * scale + 50, size / 2, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+    </script>
+</body>
+</html>

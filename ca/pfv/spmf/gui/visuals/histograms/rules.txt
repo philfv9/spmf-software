@@ -1,0 +1,6 @@
+apple ==> milk bread #SUP: 3 #CONF: 0.75
+tomato bread ==> orange #SUP: 3 #CONF: 1.0
+orange bread ==> tomato #SUP: 2 #CONF: 0.6
+orange tomato ==> bread #SUP: 2 #CONF: 0.75
+orange tomato ==> bread #SUP: 4 #CONF: 0.75
+orange tomato ==> bread #SUP: 5 #CONF: 0.75

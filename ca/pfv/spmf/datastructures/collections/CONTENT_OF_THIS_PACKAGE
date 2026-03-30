@@ -1,0 +1,66 @@
+This package contains mainly optimized structures for primitive types.
+The goal of these structure is to provide an alternative to some basic data structures offered by Java, and reduce the memory usage.
+
+These structures are not synchronized and only provide the basic functionnality typically required for their use in SPMF.
+
+NOTE: Most of data structures are designed to store positive numbers. That is because -1 is used a code to indicate no value or that a value is not found.
+
+Here is a list of classes available in this package:
+
+ListInt : Abstract class that defines the operations that a list of int values should offer.
+ListDouble : Abstract class that defines the operations that a list of double values should offer.
+ListFloat : Abstract class that defines the operations that a list of float  values should offer.
+ListLong : Abstract class that defines the operations that a list of long values should offer.
+ListShort : Abstract class that defines the operations that a list of short values should offer.
+ListObject : Abstract class that defines the operations that a list of Objects should offer.
+
+ArrayListInt:  An array list of int values (primitive type) that automatically resize when full
+ArrayListDouble:  An array list of double values (primitive type) that automatically resize when full
+ArrayListFloat:  An array list of double values (primitive type) that automatically resize when full
+ArrayListLong:  An array list of long values (primitive type) that automatically resize when full
+ArrayListShort:  An array list of int values (primitive type) that automatically resize when full
+ArrayListObject<Object>:  An array list of Object that automatically resize when full
+
+SetInt : Abstract class that defines the operations that a set of int values should offer.
+SetObject : Abstract class that defines the operations that a set of Object values should offer.
+
+AHashSetInt :  A hash set of int values (primitive type), implemented as a hashmap where each bucket is an array list that is automatically resized when full. The number of buckets is fixed.
+AHashSetObject<Object> :  A hash set of Objects, implemented as a hashmap where each bucket is an array list that is automatically resized when full. The number of buckets is fixed.
+
+LHashSetInt:  A HashSet structure for int, implemented as a map with a linked list for handling collisions. The number of buckets is doubled automatically when a load factor is exceeded if rehashing is enabled.
+LHashSetObject:  A HashSet structure for Objects, implemented as a map with a linked list for handling collisions.  The number of buckets is doubled automatically when a load factor is exceeded if rehashing is enabled.
+
+MapIntToInt: Abstract class that defines the operations that a map of int to int values should offer.
+MapIntToDouble: Abstract class that defines the operations that a map of int to double values should offer.
+MapIntToLong: Abstract class that defines the operations that a map of int to long values should offer.
+MapIntToShort: Abstract class that defines the operations that a map of int to short values should offer.
+MapIntToFloat: Abstract class that defines the operations that a map of int to float values should offer.
+MapIntToObject: Abstract class that defines the operations that a map of int to Object values should offer.
+
+LMapIntToInt:  A Hashmap structure for int as key and int as value, implemented  with a linked list for handling collisions.  The number of buckets is doubled automatically when a load factor is exceeded if rehashing is enabled.
+LMapIntToDouble: A Hashmap structure for int as key and double as value, implemented  with a linked list for handling collisions.  The number of buckets is doubled automatically when a load factor is exceeded if rehashing is enabled.
+LMapIntToLong : A Hashmap structure for int as key and long as value, implemented  with a linked list for handling collisions.  The number of buckets is doubled automatically when a load factor is exceeded if rehashing is enabled.
+LMapIntToShort: A Hashmap structure for int as key and short as value, implemented  with a linked list for handling collisions.  The number of buckets is doubled automatically when a load factor is exceeded if rehashing is enabled.
+LMapIntToFloat : A Hashmap structure for int as key and float as value, implemented  with a linked list for handling collisions.  The number of buckets is doubled automatically when a load factor is exceeded if rehashing is enabled.
+LMapIntToObject<Object>: A Hashmap structure for int as key and Ojbect as value, implemented  with a linked list for handling collisions.  The number of buckets is doubled automatically when a load factor is exceeded if rehashing is enabled.
+
+AMapIntToInt:  A Hashmap structure for int as key and int as value, implemented  with an array list for handling collisions  that is automatically resized when full. The number of buckets is fixed.
+AMapIntToDouble: A Hashmap structure for int as key and double as value, implemented  with an array list for handling collisions  that is automatically resized when full. The number of buckets is fixed.
+AMapIntToLong : A Hashmap structure for int as key and long as value, implemented  with an array list for handling collisions  that is automatically resized when full. The number of buckets is fixed.
+AMapIntToShort : A Hashmap structure for int as key and short as value, implemented  with an array list for handling collisions  that is automatically resized when full. The number of buckets is fixed.
+AMapIntToFloat : A Hashmap structure for int as key and float as value, implemented  with an array list for handling collisions  that is automatically resized when full. The number of buckets is fixed.
+AMapIntToObject<Object>: A Hashmap structure for int as key and Ojbect as value, implemented  with an array list for handling collisions  that is automatically resized when full. The number of buckets is fixed.
+
+ComparatorInt :  A comparator of int values
+ComparatorDouble :  A comparator of double values
+ComparatorShort :  A comparator of short values
+ComparatorFloat :  A comparator of float values
+ComparatorLong :  A comparator of long values
+ComparatorObject :  A comparator of Object values  
+
+======================= TODO ============================
+Here are some improvements that might be done in the future:
+
+- although there are already iterators, we could add some  methods that may make it easier to use like entrySet()
+- add iterators for the arraylists  (but actually, not important)
+- Some other functions could be added like removeAll, clone, AddAll....

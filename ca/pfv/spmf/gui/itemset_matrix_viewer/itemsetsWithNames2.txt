@@ -1,0 +1,9 @@
+apple #SUP: 3 #GEN: true
+orange #SUP: 4 #GEN: true
+tomato #SUP: 4 #GEN: true
+bread #SUP: 4 #GEN: true
+tomato bread #SUP: 3 #GEN: true
+orange tomato #SUP: 3 #GEN: true
+orange bread #SUP: 4 #GEN: true
+apple tomato #SUP: 3 #GEN: true
+orange tomato bread #SUP: 3 #GEN: false

@@ -1,0 +1,152 @@
+A -1 #SUP: 4
+Apple B C D -1 #SUP: 2
+A B -1 C -1 #SUP: 2
+1 2 -1 4 -1 #SUP: 2
+1 2 -1 4 -1 3 -1 #SUP: 2
+1 2 -1 6 -1 #SUP: 2
+1 -1 1 -1 #SUP: 2
+1 -1 2 -1 #SUP: 4
+1 -1 2 3 -1 #SUP: 2
+1 -1 2 3 -1 1 -1 #SUP: 2
+1 -1 2 -1 1 -1 #SUP: 2
+1 -1 2 -1 3 -1 #SUP: 2
+1 -1 3 -1 #SUP: 4
+1 -1 3 -1 1 -1 #SUP: 2
+1 2 -1 3 -1 2 -1 #SUP: 3
+1 3 -1 3 -1 3 -1 #SUP: 3
+1 -1 4 -1 #SUP: 2
+1 -1 4 -1 3 -1 #SUP: 2
+1 -1 6 -1 #SUP: 2
+2 -1 #SUP: 4
+2 3 -1 #SUP: 2
+2 3 -1 1 -1 #SUP: 2
+2 -1 1 -1 #SUP: 2
+2 -1 3 -1 #SUP: 3
+2 -1 4 -1 #SUP: 2
+2 -1 4 -1 3 -1 #SUP: 2
+2 -1 6 -1 #SUP: 2
+3 -1 #SUP: 4
+3 -1 1 -1 #SUP: 2
+3 -1 2 -1 #SUP: 3
+3 -1 3 -1 #SUP: 3
+4 -1 #SUP: 3
+4 -1 2 -1 #SUP: 2
+4 -1 3 -1 #SUP: 3
+4 -1 3 -1 2 -1 #SUP: 2
+5 -1 #SUP: 3
+5 -1 1 -1 #SUP: 2
+5 -1 1 -1 2 -1 #SUP: 2
+5 -1 1 -1 3 -1 #SUP: 2
+5 -1 1 -1 3 -1 2 -1 #SUP: 2
+5 -1 2 -1 #SUP: 2
+5 -1 2 -1 3 -1 #SUP: 2
+5 -1 3 -1 #SUP: 2
+5 -1 3 -1 2 -1 #SUP: 2
+5 -1 6 -1 #SUP: 2
+5 -1 6 -1 2 -1 #SUP: 2
+5 -1 6 -1 3 -1 #SUP: 2
+5 -1 6 -1 3 -1 2 -1 #SUP: 2
+6 -1 #SUP: 3
+6 -1 2 -1 #SUP: 2
+6 -1 2 -1 3 -1 #SUP: 2
+6 -1 3 -1 #SUP: 2
+6 -1 3 -1 2 -1 #SUP: 2
+X -1 #SUP: 3
+Y Z -1 #SUP: 2
+X Y -1 Z -1 #SUP: 2
+7 8 -1 9 -1 #SUP: 2
+7 8 -1 9 -1 10 -1 #SUP: 2
+7 -1 7 -1 #SUP: 2
+7 -1 8 -1 #SUP: 3
+7 -1 8 9 -1 #SUP: 2
+7 -1 8 9 -1 7 -1 #SUP: 2
+7 -1 8 -1 7 -1 #SUP: 2
+7 -1 8 -1 10 -1 #SUP: 2
+7 -1 10 -1 #SUP: 3
+7 -1 10 -1 7 -1 #SUP: 2
+7 8 -1 10 -1 8 -1 #SUP: 3
+7 10 -1 10 -1 10 -1 #SUP: 3
+7 -1 11 -1 #SUP: 2
+7 -1 11 -1 10 -1 #SUP: 2
+7 -1 12 -1 #SUP: 2
+8 -1 #SUP: 4
+8 9 -1 #SUP: 2
+8 9 -1 7 -1 #SUP: 2
+8 -1 7 -1 #SUP: 2
+8 -1 9 -1 #SUP: 3
+8 -1 11 -1 #SUP: 2
+8 -1 11 -1 10 -1 #SUP: 2
+8 -1 12 -1 #SUP: 2
+9 -1 #SUP: 4
+9 -1 7 -1 #SUP: 2
+9 -1 8 -1 #SUP: 3
+9 -1 9 -1 #SUP: 3
+10 -1 #SUP: 3
+10 -1 8 -1 #SUP: 2
+10 -1 9 -1 #SUP: 3
+10 -1 9 -1 8 -1 #SUP: 2
+11 -1 #SUP: 3
+11 -1 9 -1 #SUP: 2
+11 -1 10 -1 #SUP: 3
+11 -1 10 -1 9 -1 #SUP: 2
+12 -1 #SUP: 3
+12 -1 7 -1 #SUP: 2
+12 -1 7 -1 8 -1 #SUP: 2
+12 -1 7 -1 9 -1 #SUP: 2
+12 -1 7 -1 9 -1 8 -1 #SUP: 2
+12 -1 8 -1 #SUP: 2
+12 -1 8 -1 9 -1 #SUP: 2
+12 -1 9 -1 #SUP: 2
+12 -1 9 -1 8 -1 #SUP: 2
+12 -1 11 -1 #SUP: 2
+12 -1 11 -1 8 -1 #SUP: 2
+12 -1 11 -1 9 -1 #SUP: 2
+12 -1 11 -1 9 -1 8 -1 #SUP: 2
+Alpha -1 #SUP: 3
+Alpha Beta -1 #SUP: 2
+Alpha Beta -1 Gamma -1 #SUP: 2
+Alpha -1 Gamma -1 #SUP: 3
+Alpha -1 Gamma Delta -1 #SUP: 2
+Alpha -1 Gamma Delta -1 Alpha -1 #SUP: 2
+Alpha -1 Gamma -1 Alpha -1 #SUP: 2
+Alpha -1 Gamma -1 Epsilon -1 #SUP: 2
+Alpha -1 Delta -1 #SUP: 3
+Alpha -1 Delta -1 Alpha -1 #SUP: 2
+Alpha Beta -1 Delta -1 Beta -1 #SUP: 3
+Alpha Delta -1 Delta -1 Delta -1 #SUP: 3
+Alpha -1 Epsilon -1 #SUP: 2
+Alpha -1 Epsilon -1 Delta -1 #SUP: 2
+Alpha -1 Zeta -1 #SUP: 2
+Beta -1 #SUP: 4
+Beta Gamma -1 #SUP: 2
+Beta Gamma -1 Alpha -1 #SUP: 2
+Beta -1 Alpha -1 #SUP: 2
+Beta -1 Gamma -1 #SUP: 3
+Beta -1 Epsilon -1 #SUP: 2
+Beta -1 Epsilon -1 Delta -1 #SUP: 2
+Beta -1 Zeta -1 #SUP: 2
+Gamma -1 #SUP: 4
+Gamma -1 Alpha -1 #SUP: 2
+Gamma -1 Beta -1 #SUP: 3
+Gamma -1 Gamma -1 #SUP: 3
+Delta -1 #SUP: 3
+Delta -1 Beta -1 #SUP: 2
+Delta -1 Gamma -1 #SUP: 3
+Delta -1 Gamma -1 Beta -1 #SUP: 2
+Epsilon -1 #SUP: 3
+Epsilon -1 Gamma -1 #SUP: 2
+Epsilon -1 Delta -1 #SUP: 3
+Epsilon -1 Delta -1 Gamma -1 #SUP: 2
+Zeta -1 #SUP: 3
+Zeta -1 Alpha -1 #SUP: 2
+Zeta -1 Alpha -1 Beta -1 #SUP: 2
+Zeta -1 Alpha -1 Gamma -1 #SUP: 2
+Zeta -1 Alpha -1 Gamma -1 Beta -1 #SUP: 2
+Zeta -1 Beta -1 #SUP: 2
+Zeta -1 Beta -1 Gamma -1 #SUP: 2
+Zeta -1 Gamma -1 #SUP: 2
+Zeta -1 Gamma -1 Beta -1 #SUP: 2
+Zeta -1 Epsilon -1 #SUP: 2
+Zeta -1 Epsilon -1 Beta -1 #SUP: 2
+Zeta -1 Epsilon -1 Gamma -1 #SUP: 2
+Zeta -1 Epsilon -1 Gamma -1 Beta -1 #SUP: 2
