@@ -16,10 +16,8 @@ SPMF is designed for both **researchers and practitioners**, offering a simple A
 
 **Current version:** `v2.65` (released February 18, 2026)
 
-📌 **Note:** This GitHub repository hosts the source code. 
-
-For full documentation, tutorials, downloads, and support, please visit the official website:  
-👉 https://www.philippe-fournier-viger.com/spmf/
+👉 **Note:** This GitHub repository hosts the source code. For full documentation, tutorials, downloads, and support, please visit the official website:  
+https://www.philippe-fournier-viger.com/spmf/
 
 ---
 
@@ -48,7 +46,7 @@ SPMF can also be called from other languages using the command line interface or
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 <div align="center">
   <img src="images/spmf_small3.jpg" alt="SPMF GUI Screenshot" width="600">
@@ -56,7 +54,7 @@ SPMF can also be called from other languages using the command line interface or
   <em>SPMF Graphical User Interface</em>
 </div>
 
-## 🎓 Related resources
+## Related resources
 
 ### Videos
 - [The Pattern Mining Course](https://data-mining.philippe-fournier-viger.com/COURSES/Pattern_mining/index.php) — A free online course covering pattern mining algorithms and their implementation
@@ -66,7 +64,7 @@ SPMF can also be called from other languages using the command line interface or
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 If you would like to contribute improvements, please contact the SPMF founder:  
 📧 **philfv AT qq.com**
@@ -75,7 +73,7 @@ See the [contributors page](https://www.philippe-fournier-viger.com/spmf/index.p
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. The GPL license grants four freedoms:
 
@@ -93,7 +91,7 @@ For full details, see the [GPLv3 license](https://www.gnu.org/licenses/gpl-3.0.e
 
 ---
 
-## 📖 Citation
+## How to cite SPMF?
 
 If you use SPMF in your research, please cite one of the following papers:
 
@@ -105,7 +103,7 @@ For a full list of citations, see the [citations page](https://www.philippe-four
 
 ---
 
-## 👥 Authors
+##  Authors
 
 **Project Leaders:**
 
