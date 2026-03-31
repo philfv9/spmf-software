@@ -59,15 +59,15 @@ Datasets can be found on the SPMF website** (in SPMF format):  https://philippe-
 
 - [The SPMF website](https://www.philippe-fournier-viger.com/spmf/) 
 - [The Pattern Mining Course](https://data-mining.philippe-fournier-viger.com/COURSES/Pattern_mining/index.php) — A free online course covering pattern mining algorithms and their implementation
-- [Pattern Mining Teaching Videos @philfv channel](https://www.youtube.com/@philfv)
-- [The Data Blog](https://data-mining.philippe-fournier-viger.com/) — Blog from the founder of SPMF
-- [Other Resources](https://www.philippe-fournier-viger.com/spmf/index.php?link=resources.php) — Books, wrappers for SPMF, and other resources
+- [More Pattern Mining Videos on the @philfv YouTube channel](https://www.youtube.com/@philfv)
+- [The Data Blog](https://data-mining.philippe-fournier-viger.com/) — Blog from the founder of SPMF.
+- [Other Resources](https://www.philippe-fournier-viger.com/spmf/index.php?link=resources.php) — Books, tutorials, links to other projects, etc.
 
 ---
 
 ##  Contributing
 
-If you would like to contribute improvements, please contact the SPMF founder:  **philfv AT qq.com**
+If you would like to contribute improvements, please contact the SPMF founder:  **philfv AT qq.com**. If particular, if you want to contribute new algorithms not implemented in SPMF, you are welcome to contact me.
 
 See the [contributors page](https://www.philippe-fournier-viger.com/spmf/index.php?link=contributors.php) for a list of people who have contributed to the project.
 
