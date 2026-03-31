@@ -25,13 +25,10 @@ SPMF can be used as a standalone software with a GUI or with the command line. M
 
 ---
 
-## 📦 Installation
-
-See the [download page](https://philippe-fournier-viger.com/spmf/index.php?link=download.php) on the SPMF website for installation instructions and usage guidelines.
-
----
-
 ## 📚 Documentation
+
+- **Installation and quick start**:  
+  See the [download page](https://philippe-fournier-viger.com/spmf/index.php?link=download.php) on the SPMF website for installation instructions and usage guidelines.
 
 - **Main documentation** (with examples for each algorithm):  
   https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php
