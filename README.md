@@ -1,3 +1,6 @@
+[![License](https://img.shields.io/github/license/username/repo.svg)](https://github.com/username/repo/blob/main/LICENSE) [![Release](https://img.shields.io/github/v/release/username/repo.svg)](https://github.com/username/repo/releases/latest)[![Stars](https://img.shields.io/github/stars/username/repo.svg)](https://github.com/username/repo/stargazers)
+
+
 <div align="center">
   <h1>The SPMF Open-Source Pattern Mining Library</h1>
   <img src="images/spmf.png" alt="SPMF Logo" width="200">
