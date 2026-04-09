@@ -1,5 +1,6 @@
-[![License](https://img.shields.io/github/license/username/repo.svg)](https://github.com/username/repo/blob/main/LICENSE) [![Release](https://img.shields.io/github/v/release/username/repo.svg)](https://github.com/username/repo/releases/latest)[![Stars](https://img.shields.io/github/stars/username/repo.svg)](https://github.com/username/repo/stargazers)
-
+[![License](https://img.shields.io/github/license/philfv9/spmf-software.svg)](https://github.com/philfv9/spmf-software/blob/main/LICENSE) 
+[![Release](https://img.shields.io/github/v/release/philfv9/spmf-software.svg)](https://github.com/philfv9/spmf-software/releases/latest) 
+[![Stars](https://img.shields.io/github/stars/philfv9/spmf-software.svg)](https://github.com/philfv9/spmf-software/stargazers)
 
 <div align="center">
   <h1>The SPMF Open-Source Pattern Mining Library</h1>
