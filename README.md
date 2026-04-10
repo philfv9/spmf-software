@@ -53,6 +53,14 @@ SPMF can be used in several ways depending on your needs:
 Launch `spmf.jar` directly to open the built-in Swing GUI. No programming
 required — select an algorithm, set parameters, and run.
 
+<div align="center">
+  <img src="case1.png" alt="SPMF GUI use case">
+  <br>
+  <em>SPMF Graphical User Interface</em>
+</div>
+
+For example:
+
 ```bash
 java -jar spmf.jar
 ```
@@ -65,6 +73,14 @@ for installation instructions.
 ### 2 — Command Line
 
 Run any algorithm directly from the terminal without opening the GUI:
+
+<div align="center">
+  <img src="case2.png" alt="SPMF terminal use case">
+  <br>
+  <em>SPMF Graphical User Interface</em>
+</div>
+
+For example: 
 
 ```bash
 java -jar spmf.jar run Apriori input.txt output.txt 0.4
@@ -81,6 +97,12 @@ Integrate SPMF algorithms directly into your Java project by calling the
 algorithm classes programmatically. No external dependencies are required —
 just add `spmf.jar` to your classpath.
 
+<div align="center">
+  <img src="case3.png" alt="SPMF API use case">
+  <br>
+  <em>SPMF Graphical User Interface</em>
+</div>
+
 See the [documentation](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php)
 for Java API usage examples.
 
@@ -90,6 +112,12 @@ for Java API usage examples.
 
 SPMF can be called from **Python, R, C#, and more** via community-provided
 wrappers that invoke the command-line interface:
+
+<div align="center">
+  <img src="case4.png" alt="SPMF wrappers use case">
+  <br>
+  <em>SPMF Graphical User Interface</em>
+</div>
 
 👉 [SPMF Wrappers page](https://www.philippe-fournier-viger.com/spmf/index.php?link=spmfwrappers.php)
 
