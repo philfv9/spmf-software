@@ -102,18 +102,12 @@ HTTP server that wraps the SPMF library and exposes all algorithms as a
 **REST API**. This lets any language or tool submit mining jobs over HTTP and
 retrieve results without needing a local Java integration.
 
-```
-+----------------+        HTTP / JSON        +------------------+
-|   Any Client   | ----------------------->  |   SPMF-Server    |
-|  (curl, Python,| <-----------------------  |   (Java / HTTP)  |
-|   R, GUI, …)   |    results, job status    +--------+---------+
-+----------------+                                    |
-                                                      v
-                                             +------------------+
-                                             |   SPMF Library   |
-                                             |  300+ algorithms |
-                                             +------------------+
-```
+<div align="center">
+  <img src="images/spmf-server.png" alt="SPMF-Server framework">
+  <br>
+  <em>SPMF Graphical User Interface</em>
+</div>
+
 This can be useful to run SPMF on a remote machine and query it from a client or integrate it into a web application or microservice. See these projects for details: 
 | Project | Description |
 |---|---|
