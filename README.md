@@ -228,7 +228,8 @@ ca.pfv.spmf/
 
 - [The SPMF website](http://philippe-fournier-viger.com/spmf/)
 - [SPMF-Server](https://github.com/philfv9/spmf-server) — REST API server for SPMF
-- [spmf-server-pythonclient](https://github.com/philfv9/spmf-server-pythonclient) — Python CLI and GUI clients for SPMF-Server
+- [SPMF Server Python client](https://github.com/philfv9/spmf-server-pythonclient) — Python CLI and GUI clients for SPMF-Server
+- [SPMF Server Web client](https://github.com/philfv9/spmf-server-webclient). A Web client (HTML+JS+CSS) for the SPMF-Server
 - [The Pattern Mining Course](https://data-mining.philippe-fournier-viger.com/COURSES/Pattern_mining/index.php) — A free online course covering pattern mining algorithms and their implementation
 - [More Pattern Mining Videos on the @philfv YouTube channel](https://www.youtube.com/@philfv)
 - [The Data Blog](https://data-mining.philippe-fournier-viger.com/) — Blog from the founder of SPMF
