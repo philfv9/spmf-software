@@ -141,6 +141,7 @@ This can be useful to run SPMF on a remote machine and query it from a client or
 | Project | Description |
 |---|---|
 | [spmf-server](https://github.com/philfv9/spmf-server) | The SPMF-Server REST API server (Java) |
+| [spmf-server-webclient](https://github.com/philfv9/spmf-server-webclient) | Ready-to-use Web client (HTML+JS+CSS) for SPMF-Server |
 | [spmf-server-pythonclient](https://github.com/philfv9/spmf-server-pythonclient) | Ready-to-use Python CLI and GUI clients for SPMF-Server |
 
 ## Documentation
