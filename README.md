@@ -58,8 +58,6 @@ required — select an algorithm, set parameters, and run.
 
 <div align="center">
   <img src="/images/case1.png" alt="SPMF GUI use case" width="600">
-  <br>
-  <em>SPMF Graphical User Interface</em>
 </div>
 
 For example:
@@ -79,8 +77,6 @@ Run any algorithm directly from the terminal without opening the GUI:
 
 <div align="center">
   <img src="/images/case2.png" alt="SPMF terminal use case" width="600">
-  <br>
-  <em>SPMF Graphical User Interface</em>
 </div>
 
 For example: 
@@ -102,8 +98,6 @@ just add `spmf.jar` to your classpath.
 
 <div align="center">
   <img src="/images/case3.png" alt="SPMF API use case" width="600">
-  <br>
-  <em>SPMF Graphical User Interface</em>
 </div>
 
 See the [documentation](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php)
@@ -118,8 +112,6 @@ wrappers that invoke the command-line interface:
 
 <div align="center">
   <img src="/images/case4.png" alt="SPMF wrappers use case" width="600">
-  <br>
-  <em>SPMF Graphical User Interface</em>
 </div>
 
 👉 [SPMF Wrappers page](https://www.philippe-fournier-viger.com/spmf/index.php?link=spmfwrappers.php)
@@ -135,8 +127,6 @@ retrieve results without needing a local Java integration.
 
 <div align="center">
   <img src="images/spmf-server.png" alt="SPMF-Server framework" width="600">
-  <br>
-  <em>SPMF Graphical User Interface</em>
 </div>
 
 This can be useful to run SPMF on a remote machine and query it from a client or integrate it into a web application or microservice. See these projects for details: 
@@ -185,8 +175,6 @@ A general overview of the architecture of SPMF is provided below.
 
 <div align="center">
   <img src="images/spmf_architecture.png" alt="SPMF architecture"">
-  <br>
-  <em>SPMF Graphical User Interface</em>
 </div>
 
 To use SPMF, a user can choose to use the Graphical interface, Command line interface or the SPMF-server. The user interacts with any of these interfaces to run algorithms which are managed by a module called the Agorithm Manager. There are mainly three types of algorithms, which are (1) data pre-processing algorithms, (2) data mining algorithms, and (3) algorithms to either visualize data or patterns found in the data. The Algorithm Manager has the list of all available algorithms, and a description of each algorithm. The description of an algorithm indicates how many parameters it has, what are the data  types of parameters, what is the algorithm name, etc. The input and output of algorithms are generally text files. A few different formats are supported, explained in the documentation of SPMF.
