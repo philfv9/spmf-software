@@ -1,6 +1,8 @@
 [![License](https://img.shields.io/github/license/philfv9/spmf-software.svg)](https://github.com/philfv9/spmf-software/blob/main/LICENSE)
 [![Release](https://img.shields.io/github/v/release/philfv9/spmf-software.svg)](https://github.com/philfv9/spmf-software/releases/latest)
 [![Stars](https://img.shields.io/github/stars/philfv9/spmf-software.svg)](https://github.com/philfv9/spmf-software/stargazers)
+[![Made with Java](https://img.shields.io/badge/Made%20with-Java-yellow)]()
+[![SPMF](https://img.shields.io/badge/SPMF-300%2B%20Algorithms-blue)](http://www.philippe-fournier-viger.com/spmf/)
 
 <div align="center">
   <h1>The SPMF Open-Source Pattern Mining Sofware</h1>
