@@ -209,7 +209,7 @@ public class AlgoAgrawalFaster94{
 					if(lk.size() - 1 <= maxAntecedentLength){
 						// make a copy of  lk without items from  hm_P_1
 						int[] itemset_Lk_minus_hm_P_1 = ArraysAlgos.cloneItemSetMinusOneItem(lk.getItems(), item);
-	
+							
 						// Now we will calculate the support and confidence
 						// of the rule: itemset_Lk_minus_hm_P_1 ==>  hm_P_1
 						int support = calculateSupport(itemset_Lk_minus_hm_P_1); // THIS COULD BE
@@ -236,16 +236,18 @@ public class AlgoAgrawalFaster94{
 							double term2 = supportAsDouble /databaseSize;
 							double term3 = ((double)supportHm_P_1 / databaseSize);
 							lift = term1 / (term2 * term3);
-							
-							// if the lift is not enough
-							if(lift < minlift){
-								continue;
-							}
+//							
+//							// if the lift is not enough
+//							if(lift < minlift){
+//								continue;
+//							}
 						}
 						
 						// If we are here, it means that the rule respect the minconf and minlift parameters.
 						// Therefore, we output the rule.
-						saveRule(itemset_Lk_minus_hm_P_1, support, itemsetHm_P_1, supportHm_P_1, lk.getAbsoluteSupport(), conf, lift);
+						if(lift >= minlift){  // BUG FIX 2026
+							saveRule(itemset_Lk_minus_hm_P_1, support, itemsetHm_P_1, supportHm_P_1, lk.getAbsoluteSupport(), conf, lift);
+						}
 					}
 					// Then we keep the itemset  hm_P_1 to find more rules using this itemset and lk.
 					if(1 < maxConsequentLength ){
