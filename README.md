@@ -35,8 +35,8 @@ SPMF is designed for both **researchers and practitioners**, offering a simple A
 - [Ways to Use SPMF](#ways-to-use-spmf)
 - [Documentation](#documentation)
 - [Datasets](#datasets)
-- [Screenshots](#screenshots)
 - [Architecture](#architecture)
+- [Screenshots](#screenshots)
 - [Related Resources](#related-resources)
 - [Contributing](#contributing)
 - [License](#license)
@@ -155,16 +155,6 @@ Datasets in SPMF format are available on the SPMF website:
 
 ---
 
-## Screenshots
-
-<div align="center">
-  <img src="images/spmf_small3.jpg" alt="SPMF GUI Screenshot" width="600">
-  <br>
-  <em>SPMF Graphical User Interface</em>
-</div>
-
----
-
 ## Architecture
 
 A general overview of the architecture of SPMF is provided below.
@@ -209,6 +199,16 @@ ca.pfv.spmf/
 │
 └── tools/                       → Utilities (generators, converters, statistics, etc.)
 ```
+---
+
+## Screenshots
+
+<div align="center">
+  <img src="images/spmf_small3.jpg" alt="SPMF GUI Screenshot" width="600">
+  <br>
+  <em>SPMF Graphical User Interface</em>
+</div>
+
 ---
 
 ## Related Resources
