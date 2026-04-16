@@ -23,10 +23,9 @@
 
 SPMF offers a graphical user interface (GUI), a command-line interface, and a server for alternatively running data mining algorithms through REST queries from a Python or Web client. SPMF can also be integrated in Python, R and other languages through wrappers and its CLI, or used as a Java library in Java projects.  SPMF is lightweight, actively developed and has **no external dependencies**.
 
-**Current version:** `v2.65` (released February 18, 2026)
+The latest release is **SPMF version v2.65**, released on February 18, 2026.
 
-> **Full documentation, tutorials, downloads, and support:**
-> 👉 [http://philippe-fournier-viger.com/spmf/](http://philippe-fournier-viger.com/spmf/)
+The official website of SPMF with full documentation, tutorials, and other resources is: 👉 [http://philippe-fournier-viger.com/spmf/](http://philippe-fournier-viger.com/spmf/)
 
 ---
 
