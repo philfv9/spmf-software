@@ -31,7 +31,7 @@ The **official website of SPMF** with full documentation, tutorials, and other r
 
 ## Table of Contents
 
-- [Quickstart with SPMF](#ways-to-use-spmf)
+- [Quickstart](#quickstart)
 - [Documentation](#documentation)
 - [Datasets](#datasets)
 - [Architecture](#architecture)
@@ -44,7 +44,7 @@ The **official website of SPMF** with full documentation, tutorials, and other r
 
 ---
 
-## Quickstart with SPMF
+## Quickstart
 
 There are five ways to use SPMF, depending on your needs:
 
