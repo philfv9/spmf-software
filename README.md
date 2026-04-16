@@ -104,16 +104,13 @@ That's all. If you want to run another algorithm, then follow the same steps.
 
 ### 3 — Java API
 
-Integrate SPMF algorithms directly into your Java project by calling the
-algorithm classes programmatically. No external dependencies are required —
-just add `spmf.jar` to your classpath.
-
 <div align="center">
   <img src="/images/case3.png" alt="SPMF API use case" width="600">
 </div>
 
-See the [documentation](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php)
-for Java API usage examples.
+The third way to use SPMF is by integrating it into Java projects. For this, you can download `spmf.jar` and include it in the classpath of your Java project, and then call the classes from SPMF from your Java program. Or alternatively, you can download `spmf.zip` or clone the project to obtain SPMF source code. 
+To get a good grasp of how the source code of SPMF is organized, you may read the [developers guide](http://philippe-fournier-viger.com/spmf/index.php?link=developers.php).
+
 
 ---
 
