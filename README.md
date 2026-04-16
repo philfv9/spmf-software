@@ -56,42 +56,43 @@ There are five ways to use SPMF, depending on your needs:
   <img src="/images/case1.png" alt="SPMF GUI use case" width="600">
 </div>
 
-The most simple way to use SPMF is through its integrated graphical user interface.  To run SPMF, you need to have a recent version of Java installed on your computer. Then:
-1) Ddownload the files `spmf.jar` and `test_files.zip` to your computer
+The most simple way to use SPMF is through its integrated GUI.  To run the GUI:
+1) Download the files `spmf.jar` and `test_files.zip` to your computer and make sure that Java is installed on your computer.
 2) Uncompress the file `test_files.zip` on your desktop. It will create a folder containing some example data files that you can use with the algorithms.
-3) To run the SPMF software, now double-click on the file `spmf.jar`. It will launch the software. If it does not work and you are using Windows, right-click on `spmf.jar` and select "open with..." and then select "Java Platform". If this option is not there, perhaps that Java is not installed on your computer, or that the PATH environment variable does not include your Java installation. 
+3) Launch the GUI of SPMF by double-clicking on the file `spmf.jar`. If it does not work and you are using Windows, right-click on `spmf.jar` and select "open with..." and then select "Java Platform". If this option is not there, perhaps that Java is not installed on your computer, or that the PATH environment variable does not include your Java installation. 
 4) If the previous step succeeds, the graphical interface of SPMF will open. 
 
 <div align="center">
   <img src="/images/gui.png" alt="SPMF GUI" width="600">
 </div>
-5)  Then, from the user interface, you can select input files, choose an algorithm from more than 300 algorithms, sets its parameters, and run the algorithms.
-   For example, let's say that you want to run the **CM-SPAM** algorithm.
-  * In the [documentation](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php), it is the [CM-SPAM example](https://philippe-fournier-viger.com/spmf/CM-SPAM.php). To run that example: Click on the combo box beside "Choose an algorithm" to select "CM-SPAM".
-  * After that, click on the button "Choose input file". This will open a dialog to select the input file.
-  * Go to the test_files folder on your desktop and select the file "contextPrefixSpan.txt" (the file to be used is indicated in the CM-SPAM example).
-  * Now, click on the button "Choose output file" to select where the result should be saved. For example, go to the desktop and write "result.txt" and click "OK".
-  * The next step is to set the parameter minsup of the CM-SPAM algorithm. To do that, click in the text box beside "Choose minsup (%)" and enter 0.5 because it is the value used in the CM-SPAM example. There are also parameters but they are optional. Thus we do not need to use them for this example.
-  * After that, click on "Run algorithm" to run the algorithm.
-  * A new window will open showing the result.
-  * These results are the patterns discovered by CM-SPAM. These results are explained in the CM-SPAM example of the [documentation](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php).
-  * That's all. If you want to run another algorithm, then follow the same steps.
+
+5) Then, from the user interface, you can select input files, choose an algorithm from more than 300 algorithms, sets its parameters, and run the algorithms. For example, let's say that you want to run the **CM-SPAM** algorithm.   In the [documentation](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php), it is the [CM-SPAM example](https://philippe-fournier-viger.com/spmf/CM-SPAM.php). To run that example:
+   
+ - Click on the combo box beside **"Choose an algorithm"** and select **"CM-SPAM"**.  
+ - Click on **"Choose input file"** and select `contextPrefixSpan.txt` from the `test_files` folder.  
+ - Click on **"Choose output file"**, select a location (e.g., Desktop), enter `result.txt`, and click **"OK"**.
+ - Set the parameter **minsup (%)** to `0.5` (as in the example).  
+ - Other parameters are optional and can be ignored for this example.  
+ - Click on **"Run algorithm"**.  
+ - A new window will open showing the results.  
+ - The results correspond to the patterns discovered by CM-SPAM (see the [CM-SPAM example](https://philippe-fournier-viger.com/spmf/CM-SPAM.php) of the documentation for interpretation).
+That’s all. To run another algorithm, follow the same steps.
 
 ---
 
 ### 2 — Command Line
 
-Run any algorithm directly from the terminal without opening the GUI:
-
 <div align="center">
   <img src="/images/case2.png" alt="SPMF terminal use case" width="600">
 </div>
 
-For example: 
-
-```bash
-java -jar spmf.jar run Apriori input.txt output.txt 0.4
-```
+The second to use SPMF is through its command line interface (CLI) from the console.  To run the SPMF using the CLI:
+1) Download the files `spmf.jar` and `test_files.zip` to your computer and make sure that Java is installed on your computer.
+2) Uncompress the file `test_files.zip` on your desktop. It will create a folder containing some example data files that you can use with the algorithms.
+3) To run an algorithm, go to the [documentation](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php) of SPMF  find the example corresponding to the algorithm that you want to run. For example, let's say that you want to run the **PrefixSpan** algorithm. It is this [example](https://philippe-fournier-viger.com/spmf/PrefixSpan.php) in the [documentation](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php).
+5) Open the command prompt (if you are using Windows) or the terminal (if you are using Linux). Then, type the command specified in the example. For example, for PrefixSpan, the command is: `java -jar spmf.jar run PrefixSpan contextPrefixSpan.txt output.txt 50%`
+This command means to run the algorithm named "PrefixSpan" to use the input file named "contextPrefixSpan.txt" to set the output file for the results as "output.txt" to set the parameter of the algorithm (minsup) to 50 %.
+6) After executing this command, the file output.txt will be created. It will contain the result.
 
 See the [documentation](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php)
 for the full command-line syntax for each algorithm.
