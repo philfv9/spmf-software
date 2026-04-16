@@ -9,7 +9,7 @@
   <img src="images/spmf.png" alt="SPMF Logo" width="200">
 </div>
 
-**[SPMF](http://philippe-fournier-viger.com/spmf/)** is a popular **open-source data mining software and library** written in **Java**, specializing in **pattern mining**. It provides over **300 algorithms** for various tasks such as:
+**[SPMF](http://philippe-fournier-viger.com/spmf/)** is a popular and highly efficient **data mining software** written in **Java**, specialized in **pattern mining**. It provides over **300 algorithms** for various tasks such as:
 
 - Frequent itemset mining
 - Association rule mining
@@ -21,7 +21,7 @@
 - Time series analysis
 - and more
 
-SPMF is designed for both **researchers and practitioners**, offering a simple API, a graphical user interface (GUI), and command-line tools. It is lightweight with **no external dependencies**.
+SPMF offers a graphical user interface (GUI), a command-line interface, and a server for alternatively running data mining algorithms through REST queries from a Python or Web client. SPMF can also be integrated in Python, R and other languages through wrappers and its CLI, or used as a Java library in Java projects.  SPMF is lightweight with **no external dependencies**.
 
 **Current version:** `v2.65` (released February 18, 2026)
 
@@ -32,7 +32,7 @@ SPMF is designed for both **researchers and practitioners**, offering a simple A
 
 ## Table of Contents
 
-- [Five ways to Use SPMF](#ways-to-use-spmf)
+- [Quickstart with SPMF](#ways-to-use-spmf)
 - [Documentation](#documentation)
 - [Datasets](#datasets)
 - [Architecture](#architecture)
@@ -45,9 +45,9 @@ SPMF is designed for both **researchers and practitioners**, offering a simple A
 
 ---
 
-## Five ways to Use SPMF
+## Quickstart with SPMF
 
-SPMF can be used in several ways depending on your needs:
+There are five ways to use SPMF, depending on your needs:
 
 ---
 
