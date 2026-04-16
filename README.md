@@ -25,7 +25,7 @@ SPMF offers a graphical user interface (GUI), a command-line interface, and a se
 
 The latest release is **SPMF version v2.65**, released on February 18, 2026.
 
-The official website of SPMF with full documentation, tutorials, and other resources is: 👉 [http://philippe-fournier-viger.com/spmf/](http://philippe-fournier-viger.com/spmf/)
+The **official website of SPMF** with full documentation, tutorials, and other resources is:  [http://philippe-fournier-viger.com/spmf/](http://philippe-fournier-viger.com/spmf/)
 
 ---
 
