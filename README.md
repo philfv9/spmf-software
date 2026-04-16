@@ -137,23 +137,22 @@ Currently, the SPMF server can be used with the [SPMF Server Python CLI and GUI 
 
 ## Documentation
 
-- **Installation and quick start:**
-  [download page](https://philippe-fournier-viger.com/spmf/index.php?link=download.php)
-
+The main documentation of SPMF and other resources can be found on the SPMF website. 
+- **List of algorithms:**
+  [https://philippe-fournier-viger.com/spmf/index.php?link=algorithms.php](https://philippe-fournier-viger.com/spmf/index.php?link=algorithms.php)
 - **Main documentation** (with examples for each algorithm):
   [https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php)
-
+- **Release notes and download**
+  [download page](https://philippe-fournier-viger.com/spmf/index.php?link=download.php)
 - **FAQ:**
   [https://philippe-fournier-viger.com/spmf/index.php?link=FAQ.php](https://philippe-fournier-viger.com/spmf/index.php?link=FAQ.php)
 
-- **List of algorithms:**
-  [https://philippe-fournier-viger.com/spmf/index.php?link=algorithms.php](https://philippe-fournier-viger.com/spmf/index.php?link=algorithms.php)
 
 ---
 
 ## Datasets
 
-Datasets in SPMF format are available on the SPMF website:
+To run experiments with SPMF, multiple datasets are provided on the SPMF website, in SPMF format:
 [https://philippe-fournier-viger.com/spmf/index.php?link=datasets.php](https://philippe-fournier-viger.com/spmf/index.php?link=datasets.php)
 
 ---
