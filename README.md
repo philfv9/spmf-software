@@ -192,12 +192,15 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | **Frequent Sequential Patterns** | CM-SPADE, CM-SPAM, FAST, GSP, LAPIN, PrefixSpan, SPADE, SPAM |
 | **Closed Sequential Patterns** | ClaSP, CM-ClaSP, CloFAST, CloSpan, BIDE+ |
 | **Maximal Sequential Patterns** | VMSP, MaxSP |
-| **Top-k Sequential Patterns** | TKS, TSP, Skopus |
+| **Top-k Sequential Patterns (support-based)** | TKS, TSP |
+| **Top-k Sequential Patterns (leverage/significance)** | Skopus |
 | **Generator Sequential Patterns** | VGEN, FEAT, FSGP |
 | **Nonoverlapping Sequential Patterns** | NOSEP |
 | **Compressing Sequential Patterns** | GoKrimp, SeqKrimp, HMG-GA, HMG-SA |
 | **Quantile Cohesive Sequential Patterns** | QCSP |
-| **Multidimensional Sequential Patterns** | SeqDIM, Songram et al., Fournier-Viger et al. |
+| **Frequent Multidimensional Sequential Patterns** | SeqDIM |
+| **Frequent Closed Multidimensional Sequential Patterns** | Songram et al. |
+| **Multidimensional Sequential Patterns (combined features)** | Fournier-Viger et al. |
 | **High-Utility Sequential Patterns** | USPAN |
 | **High-Utility Probability Sequential Patterns** | PHUSPM, UHUSPM |
 | **Cost-Efficient Sequential Patterns** | CorCEPB, CEPB, CEPN |
@@ -209,9 +212,12 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 
 | Category | Algorithms |
 |----------|-----------|
-| **Sequential Rules** | ERMiner, RuleGrowth, CMRules, CMDeo, RuleGen |
+| **Sequential Rules** | ERMiner, RuleGrowth, CMRules, CMDeo |
+| **Sequential Rules (Zaki-based)** | RuleGen |
 | **Sequential Rules with Window Size** | TRuleGrowth |
-| **Top-k Sequential Rules** | TopSeqRules, TopSeqClassRules, TNS |
+| **Top-k Sequential Rules** | TopSeqRules |
+| **Top-k Class Sequential Rules** | TopSeqClassRules |
+| **Top-k Non-redundant Sequential Rules** | TNS |
 | **High-Utility Sequential Rules** | HUSRM |
 
 ### Sequence Prediction
@@ -236,7 +242,8 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | **Maximal Frequent Itemsets** | FPMax, Charm-MFI, CARPENTER-MAX, GENMAX |
 | **Frequent Itemsets with Multiple Min. Supports** | MSApriori, CFPGrowth++ |
 | **Generator Itemsets** | DefMe, Talky-G, Talky-G-Diffset, Pascal, Zart |
-| **Rare Itemsets** | AprioriInverse (perfectly rare), AprioriTIDInverse, AprioriRare (minimal rare), AprioriTIDRare |
+| **Perfectly Rare Itemsets** | AprioriInverse, AprioriTIDInverse |
+| **Minimal Rare Itemsets** | AprioriRare, AprioriTIDRare |
 | **Rare Correlated Itemsets** | CORI, RP-Growth |
 | **Targeted & Dynamic Queries on Itemsets** | Itemset-Tree, Memory-Efficient Itemset-Tree |
 | **Recent Frequent Itemsets in Streams** | estDec, estDec+ |
@@ -252,11 +259,16 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 
 | Category | Algorithms |
 |----------|-----------|
-| **Frequent Episodes** | EMMA, AFEM, MINEPI+, MINEPI |
+| **Frequent Episodes (head frequency)** | EMMA, AFEM, MINEPI+ |
+| **Frequent Episodes (minimal occurrences)** | MINEPI |
 | **Top-k Frequent Episodes** | TKE |
 | **Maximal Frequent Episodes** | MaxFEM |
 | **Frequent Parallel Episodes (distinct occurrences)** | EMDO |
-| **Episode Rules** | POERM, POERM-ALL, POERMH, NONEPI, EMDO-Rules, EMDOP-Rules |
+| **Partially-ordered Episode Rules (non-overlapping support)** | POERM |
+| **All Partially-ordered Episode Rules** | POERM-ALL |
+| **Partially-ordered Episode Rules (head support)** | POERMH |
+| **Episode Rules (non-overlapping frequency)** | NONEPI |
+| **Episode Rules from Parallel Episodes** | EMDO-Rules, EMDOP-Rules |
 | **Episode Rules (generated from frequent episodes)** | Generator from TKE / AFEM / EMMA / MINEPI+ output |
 | **High-Utility Episodes** | HUE-SPAN, US-SPAN |
 | **Top-k High-Utility Episodes** | TUP |
@@ -287,7 +299,8 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | **All Frequent Subgraphs** | gSpan |
 | **Top-k Frequent Subgraphs** | TKG |
 | **Frequent Closed Subgraphs** | cgSpan |
-| **Patterns in Dynamic Attributed Graphs** | TSeqMiner, AER-Miner |
+| **Sequential Patterns in Dynamic Attributed Graphs** | TSeqMiner |
+| **Association Rules in Dynamic Attributed Graphs** | AER-Miner |
 
 ### High-Utility Pattern Mining
 
@@ -295,9 +308,13 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 |----------|-----------|
 | **High-Utility Itemsets (HUI)** | EFIM, FHM, HUI-Miner, HUP-Miner, mHUIMiner, UFH, HMiner, ULB-Miner, IHUP, Two-Phase, UP-Growth, UP-Growth+, UP-Hist, d2HUP, FHIM, PUCPMiner, RMiner |
 | **HUI with Length Constraints** | FHM+ |
-| **Correlated HUI** | FCHM_bond, FCHM_allconfidence, ECHUM |
+| **Correlated HUI (bond measure)** | FCHM_bond |
+| **Correlated HUI (all-confidence measure)** | FCHM_allconfidence |
+| **Correlated HUI (other)** | ECHUM |
 | **HUI with Negative Utility** | FHN, HUINIV-Mine |
-| **Multi-level / Cross-level HUI (with taxonomy)** | CLH-Miner, FEACP, MLHUI-Miner |
+| **Multi-level HUI (with taxonomy)** | MLHUI-Miner |
+| **Cross-level HUI (with taxonomy)** | CLH-Miner |
+| **Multi-level & Cross-level HUI (combined)** | FEACP |
 | **Low-cost HUI** | LCIM |
 | **Frequent HUI** | FHMFreq |
 | **On-shelf HUI (items with time periods)** | FOSHU, TS-HOUN |
@@ -305,7 +322,8 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | **Incremental Closed HUI** | IncCHUI |
 | **Closed HUI** | EFIM-Closed, CHUI-Miner, CLS-Miner, HMiner_Closed, CHUD |
 | **Maximal HUI** | CHUI-Miner(Max) |
-| **Generator HUI** | HUG-Miner, GHUI-Miner |
+| **Generator HUI** | HUG-Miner |
+| **Generators of HUI** | GHUI-Miner |
 | **Minimal HUI** | MinFHM |
 | **Closed HUI and Generators** | HUCI_Miner |
 | **Skyline HUI** | SkyMine |
@@ -326,7 +344,8 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | **Peak High-Utility Itemsets** | PHUI-Miner |
 | **Locally Trending High-Utility Itemsets** | LTHUI-Miner |
 | **HUI with Recency Constraint** | ScentedUtilityMiner |
-| **High-Utility Association Rules** | HGB_all, HGB |
+| **High-Utility Association Rules (all + non-redundant)** | HGB_all |
+| **High-Utility Association Rules (non-redundant)** | HGB |
 
 ### Association Rule Mining
 
@@ -344,7 +363,8 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | **Top-k Non-redundant Association Rules** | TNR |
 | **Top-k Class Association Rules** | TopKClassRules |
 | **Class Association Rules** | ACAC, ACCF, ACN, ADT, CBA, CBA2, CMAR, L3, MAC |
-| **High-Utility Association Rules** | HGB, HGB_All |
+| **High-Utility Association Rules (all + non-redundant)** | HGB_all |
+| **High-Utility Association Rules (non-redundant)** | HGB |
 
 ### Stream Pattern Mining
 
