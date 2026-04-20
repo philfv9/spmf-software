@@ -310,3 +310,5 @@ Citing SPMF helps support the project — thank you! 🙏
 **Contributors:**
 A full list of all contributors can be found at:
 [https://www.philippe-fournier-viger.com/spmf/index.php?link=contributors.php](https://www.philippe-fournier-viger.com/spmf/index.php?link=contributors.php)
+
+The content of this page is copyright Philippe Fournier-Viger and contributors
