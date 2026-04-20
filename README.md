@@ -110,6 +110,26 @@ That's all. If you want to run another algorithm, then follow the same steps.
 The third way to use SPMF is by integrating it into Java projects. For this, you can download `spmf.jar` and include it in the classpath of your Java project, and then call the classes from SPMF from your Java program. Or alternatively, you can download `spmf.zip` or clone the project to obtain SPMF source code. 
 To get a good grasp of how the source code of SPMF is organized, you may read the [developers guide](http://philippe-fournier-viger.com/spmf/index.php?link=developers.php).
 
+In general, each algorithm in SPMF is organized in its own package containing the main implementation files. Some utility classes are shared across multiple algorithms and are located in common directories such as `ca/pfv/spmf/input/` and `ca/pfv/spmf/patterns/`.  To how to run one algorithm from the source code, consider the SPAM algorithm. It is implemented in the package `ca/pfv/spmf/algorithms/sequentialpatterns/spam`, which is itself a subpackage of `ca/pfv/spmf/algorithms/sequentialpatterns/`, reflecting the fact that SPAM belongs to the family of sequential pattern mining algorithms. Each algorithm follows a consistent design pattern. There is a main class whose name starts with `Algo`, and this class provides a method called `runAlgorithm()` to execute the algorithm. For example, the SPAM algorithm is implemented in the class `AlgoSPAM.java`. Its `runAlgorithm()` method expects three parameters: the path to the input file, the path to the output file, and a minimum support threshold.
+To understand how an algorithm is executed in practice, one can examine the example files located in the directory `ca/pfv/spmf/test/`. This directory contains demonstration code intended for developers. Each algorithm typically has at least one corresponding test file named `MainTestXXXX.java`, where `XXXX` is the name of the algorithm. In the case of SPAM, the relevant example is `MainTestSPAM_saveToFile.java`.
+
+Example code:
+
+```java
+// Load a sequence database
+String input = fileToPath("contextPrefixSpan.txt");
+String output = ".//output.txt";
+
+// Create an instance of the algorithm
+AlgoSPAM algo = new AlgoSPAM();
+
+// Execute the algorithm with minsup = 2 sequences (50%)
+algo.runAlgorithm(input, output, 0.5);
+algo.printStatistics();
+```
+
+In this example, the input file `contextPrefixSpan.txt` corresponds to the dataset used in the official documentation and can be found in the `ca/pfv/spmf/tests/` directory. The output file is written to `.//output.txt`, although this path can be replaced by any valid location on the user’s system. The call to `runAlgorithm()` triggers the execution of the algorithm. The value `0.5` represents the minimum support threshold, whose exact interpretation is described in the SPAM documentation. Finally, each algorithm is associated with a description class located in the package `ca/pfv/spmf/algorithmmanager/descriptions`. These classes provide metadata such as the authors of the algorithm, the expected input and output formats, the list of parameters, and instructions for execution. They play an important role in the system: the graphical user interface relies on them to dynamically populate the list of available algorithms, while the command-line interface uses them to inform users about the required parameters and usage details. For instance, the SPAM algorithm is documented by the class `DescriptionAlgoSPAM`.
+Other algorithms can be run in a similar way.
 
 ---
 
