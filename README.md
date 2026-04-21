@@ -19,7 +19,7 @@
 - Episode mining
 - Graph mining
 - Time series analysis
-- and more
+- and others
 
 SPMF offers a graphical user interface (GUI), a command-line interface (CLI), and a server for alternatively running data mining algorithms through REST queries from a Python or Web client. SPMF can also be integrated in Python, R and other languages through wrappers and its CLI, or used as a Java library in Java projects.  SPMF is lightweight, actively developed and has **no external dependencies**.
 
