@@ -57,7 +57,7 @@ There are five ways to use SPMF, depending on your needs:
 </div>
 
 The most simple way to use SPMF is through its integrated GUI.  To run the GUI:
-1) Download the files `spmf.jar` and `test_files.zip` to your computer and make sure that Java is installed on your computer.
+1) Download the files `spmf.jar` and `test_files.zip` to your computer and make sure that Java is installed on your computer.   Alternatively, if you do not want to install Java or cannot install it, an EXE version of SPMF is available for Windows on the release page, which includes the Java runtime and behaves in the same way as `spmf.jar` .
 2) Uncompress the file `test_files.zip` on your desktop. It will create a folder containing some example data files that you can use with the algorithms.
 3) Launch the GUI of SPMF by double-clicking on the file `spmf.jar`. If it does not work and you are using Windows, right-click on `spmf.jar` and select "open with..." and then select "Java Platform". If this option is not there, perhaps that Java is not installed on your computer, or that the PATH environment variable does not include your Java installation. 
 4) If the previous step succeeds, the graphical interface of SPMF will open. 
@@ -87,7 +87,7 @@ That’s all. To run another algorithm, follow the same steps.
 </div>
 
 The second to use SPMF is through its command line interface (CLI) from the console.  To run the SPMF using the CLI:
-1) Download the files `spmf.jar` and `test_files.zip` to your computer and make sure that Java is installed on your computer.
+1) Download the files `spmf.jar` and `test_files.zip` to your computer and make sure that Java is installed on your computer.    Alternatively, if you do not want to install Java or cannot install it, an EXE version of SPMF is available for Windows on the release page, which includes the Java runtime and behaves in the same way as `spmf.jar` .
 2) Uncompress the file `test_files.zip` on your desktop. It will create a folder containing some example data files that you can use with the algorithms.
 3) To run an algorithm, go to the [documentation](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php) of SPMF  find the example corresponding to the algorithm that you want to run. For example, let's say that you want to run the **PrefixSpan** algorithm. It is this [example](https://philippe-fournier-viger.com/spmf/PrefixSpan.php) in the [documentation](https://philippe-fournier-viger.com/spmf/index.php?link=documentation.php).
 5) Open the command prompt (if you are using Windows) or the terminal (if you are using Linux). Then, type the command specified in the example. For example, for PrefixSpan, the command is:
