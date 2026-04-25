@@ -83,7 +83,7 @@ That’s all. To run another algorithm, follow the same steps.
 ### 2 — Command Line
 
 <div align="center">
-  <img src="/images/case2.png" alt="SPMF terminal use case" width="600">
+  <img src="/images/case2.png" alt="SPMF command line case" width="600">
 </div>
 
 The second to use SPMF is through its command line interface (CLI) from the console.  To run the SPMF using the CLI:
