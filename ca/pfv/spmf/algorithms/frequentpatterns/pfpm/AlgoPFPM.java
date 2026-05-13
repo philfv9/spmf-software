@@ -15,6 +15,7 @@ package ca.pfv.spmf.algorithms.frequentpatterns.pfpm;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* Do not remove copyright and license information from files.
 * 
 */
 
@@ -107,7 +108,7 @@ public class AlgoPFPM {
 	int maximumLength = Integer.MAX_VALUE;
 	
 	/** the gamma parameter **/
-	protected double supportPruningThreshold = 0;
+	public double supportPruningThreshold = 0;
 	
 	/** the total execution time **/
 	public double totalExecutionTime = 0;
@@ -245,8 +246,11 @@ public class AlgoPFPM {
 			}
 	    }
 		
-		supportPruningThreshold  = (((double)databaseSize) / ((double)maxAveragePeriodicity) ) - 1d ;
+//		supportPruningThreshold  = (((double)databaseSize) / ((double)maxAveragePeriodicity) ) - 1d ;
 
+		// BUG FIX 2.66
+		supportPruningThreshold  = Math.max(1.0, (((double)databaseSize) / ((double)maxAveragePeriodicity) ) - 1d) ;
+		// END OF BUG FIX
 
 		
 		// **** PFPM ***********
@@ -651,6 +655,9 @@ public class AlgoPFPM {
 		
 		if(pxyUL.getSupport() < supportPruningThreshold){
 			return null;
+		}
+		if(pxyUL.getSupport() < supportPruningThreshold || pxyUL.getSupport() == 0){
+		    return null;
 		}
 		
 		// WE DO NOT UPDATE THE MINIMUM PERIOD
