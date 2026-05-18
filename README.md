@@ -9,7 +9,7 @@
   <img src="images/spmf.png" alt="SPMF Logo" width="200">
 </div>
 
-**[SPMF](http://philippe-fournier-viger.com/spmf/)** is a popular and highly efficient **data mining software** written in **Java**, specialized in **pattern mining**. It provides over **300 algorithms** for various tasks such as:
+**[SPMF](http://philippe-fournier-viger.com/spmf/)** is a popular and highly efficient **data mining software** written in **Java**, specialized in **pattern mining**. It provides over **300 algorithms** for various tasks for analyzing data such as:
 
 - Frequent itemset mining
 - Association rule mining
