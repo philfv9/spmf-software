@@ -648,4 +648,4 @@ Citing SPMF helps support the project — thank you! 🙏
 The full up-to-date list of people who have contributed to SPMF (code, bug reports, etc.) can be found at:
 [https://www.philippe-fournier-viger.com/spmf/index.php?link=contributors.php](https://www.philippe-fournier-viger.com/spmf/index.php?link=contributors.php)
 
-The content of this page is copyright Philippe Fournier-Viger and contributors
+The content of this page is copyright by Philippe Fournier-Viger and contributors
