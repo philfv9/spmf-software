@@ -519,7 +519,7 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 
 ## Datasets
 
-To run experiments with SPMF, multiple datasets are provided on the SPMF website, in SPMF format:
+To run experiments with SPMF, multiple public datasets are provided on the SPMF website, in SPMF format:
 [https://philippe-fournier-viger.com/spmf/index.php?link=datasets.php](https://philippe-fournier-viger.com/spmf/index.php?link=datasets.php)
 
 ---
