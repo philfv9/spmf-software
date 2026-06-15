@@ -14,44 +14,25 @@ import java.util.HashMap;
  * @author Bay Vo et al.
  */
 public class TaxonomyTree {
-	
+
+	/** map an item to its taxonomy node */
 	HashMap<Integer, TaxonomyNode> mapItemToTaxonomyNode;
-	public TaxonomyNode getRoot() {
-		return Root;
-	}
 
-	public void setRoot(TaxonomyNode root) {
-		Root = root;
-	}
-
-	public int getGI() {
-		return GI;
-	}
-
-	public void setGI(int gI) {
-		GI = gI;
-	}
-
-	public int getI() {
-		return I;
-	}
-
-	public void setI(int i) {
-		I = i;
-	}
-
-	public int getMaxLevel() {
-		return MaxLevel;
-	}
-
-	public void setMaxLevel(int maxLevel) {
-		MaxLevel = maxLevel;
-	}
-
+	/** the root node of the taxonomy tree */
 	private TaxonomyNode Root;
-	
+
+	/** number of general items */
 	private int GI;
-	
+
+	/** number of leaf items */
+	private int I;
+
+	/** maximum level in the taxonomy tree */
+	private int MaxLevel;
+
+	/**
+	 * Constructor.
+	 */
 	public TaxonomyTree() {
 		Root = new TaxonomyNode(-1);
 		mapItemToTaxonomyNode = new HashMap<Integer, TaxonomyNode>();
@@ -60,108 +41,178 @@ public class TaxonomyTree {
 		I = 0;
 		MaxLevel = 0;
 	}
-	
+
+	/**
+	 * Get the root node
+	 * @return the root node
+	 */
+	public TaxonomyNode getRoot() {
+		return Root;
+	}
+
+	/**
+	 * Set the root node
+	 * @param root the root node
+	 */
+	public void setRoot(TaxonomyNode root) {
+		Root = root;
+	}
+
+	/**
+	 * Get the number of general items
+	 * @return the number of general items
+	 */
+	public int getGI() {
+		return GI;
+	}
+
+	/**
+	 * Set the number of general items
+	 * @param gI the number of general items
+	 */
+	public void setGI(int gI) {
+		GI = gI;
+	}
+
+	/**
+	 * Get the number of leaf items
+	 * @return the number of leaf items
+	 */
+	public int getI() {
+		return I;
+	}
+
+	/**
+	 * Set the number of leaf items
+	 * @param i the number of leaf items
+	 */
+	public void setI(int i) {
+		I = i;
+	}
+
+	/**
+	 * Get the maximum level
+	 * @return the maximum level
+	 */
+	public int getMaxLevel() {
+		return MaxLevel;
+	}
+
+	/**
+	 * Set the maximum level
+	 * @param maxLevel the maximum level
+	 */
+	public void setMaxLevel(int maxLevel) {
+		MaxLevel = maxLevel;
+	}
+
+	/**
+	 * Read taxonomy data from a file path
+	 * @param Path the file path
+	 * @throws IOException if an error while reading the file
+	 */
 	public void ReadDataFromPath(String Path) throws IOException {
-		BufferedReader	reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(Path))));
+		BufferedReader reader = new BufferedReader(
+				new InputStreamReader(new FileInputStream(new File(Path))));
+
 		String line;
+
 		try {
-			while ((line = reader.readLine())!=null) {			// scanning through the text file
-				if (line.isEmpty() == true || line.charAt(0)=='#' || line.charAt(0)=='@') { 
-					continue;									// skipping comments and empty lines
-				}											
-				String	tokens[] = line.split(",");				// splitting string using ','														
-				Integer	child = Integer.parseInt(tokens[0]);	// child comes first								
-				Integer	parent = Integer.parseInt(tokens[1]);	// then its parent							
+			while ((line = reader.readLine()) != null) {
+				// skipping comments and empty lines
+				if (line.isEmpty() || line.charAt(0) == '#' || line.charAt(0) == '@') {
+					continue;
+				}
+
+				// splitting string using ','
+				String tokens[] = line.split(",");
+
+				// child comes first
+				Integer child = Integer.parseInt(tokens[0]);
+
+				// then its parent
+				Integer parent = Integer.parseInt(tokens[1]);
+
 				TaxonomyNode nodeParent = mapItemToTaxonomyNode.get(parent);
-				if (nodeParent==null) {
+				TaxonomyNode nodeChildren = mapItemToTaxonomyNode.get(child);
+
+				if (nodeParent == null) {
 					nodeParent = new TaxonomyNode(parent);
-					TaxonomyNode nodeChildren = mapItemToTaxonomyNode.get(child);
-					if (nodeChildren==null) {
-						//parent not exist - child not exist
-						nodeChildren = new TaxonomyNode(child);
-						nodeParent.addChildren(nodeChildren);
-						mapItemToTaxonomyNode.put(child, nodeChildren);
-					}
-					else {
-						//parent not exist - child  exist
-						nodeParent.addChildren(nodeChildren);
-					}
 					mapItemToTaxonomyNode.put(parent, nodeParent);
 				}
-				else {				
-					TaxonomyNode nodeChildren = mapItemToTaxonomyNode.get(child);
-					if (nodeChildren==null) {
-						//parent exist = child not exist
-						nodeChildren = new TaxonomyNode(child);
-						nodeParent.addChildren(nodeChildren);
-						mapItemToTaxonomyNode.put(child, nodeChildren);
-					}
-					else {
-						//parent exist = child not exist
-						nodeParent.addChildren(nodeChildren);
-					}
-					
+
+				if (nodeChildren == null) {
+					nodeChildren = new TaxonomyNode(child);
+					mapItemToTaxonomyNode.put(child, nodeChildren);
 				}
+
+				nodeParent.addChildren(nodeChildren);
 			}
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-		}
-		finally {
-			if(reader != null) { 
-				reader.close(); 
+		} finally {
+			if (reader != null) {
+				reader.close();
 			}
+
 			for (Integer item : mapItemToTaxonomyNode.keySet()) {
-				if (item!=-1) {
+				if (item != -1) {
 					TaxonomyNode node = mapItemToTaxonomyNode.get(item);
-					if (node.getParent()==null) {
+					if (node.getParent() == null) {
 						Root.addChildren(node);
 					}
 				}
-				
 			}
+
 			SetLevelForNode();
 		}
 	}
+
+	/**
+	 * Set the level for each node in the taxonomy tree
+	 */
 	public void SetLevelForNode() {
-		for(Integer item: mapItemToTaxonomyNode.keySet()){		
-			// create an empty Utieylity List that we will fill later.
-			
-			// add the item to the list of high TWU items
-			//add map level
+		for (Integer item : mapItemToTaxonomyNode.keySet()) {
+
 			int currentLevel = 0;
-			if(item!=-1) {
+
+			if (item != -1) {
 				currentLevel = 1;
 				TaxonomyNode parent = mapItemToTaxonomyNode.get(item).getParent();
-				while(parent.getData()!=-1) {
+
+				while (parent.getData() != -1) {
 					currentLevel++;
 					parent = parent.getParent();
 				}
 			}
-			if (mapItemToTaxonomyNode.get(item).getChildren().size()==0) {
+
+			if (mapItemToTaxonomyNode.get(item).getChildren().size() == 0) {
 				I++;
-			}
-			else {
+			} else {
 				GI++;
 			}
+
 			mapItemToTaxonomyNode.get(item).setLevel(currentLevel);
-			if (currentLevel>MaxLevel) {
-				MaxLevel=currentLevel;
+
+			if (currentLevel > MaxLevel) {
+				MaxLevel = currentLevel;
 			}
-			
 		}
-		
 	}
 
+	/**
+	 * Get the map from item to taxonomy node
+	 * @return the map from item to taxonomy node
+	 */
 	public HashMap<Integer, TaxonomyNode> getMapItemToTaxonomyNode() {
 		return mapItemToTaxonomyNode;
 	}
 
+	/**
+	 * Set the map from item to taxonomy node
+	 * @param mapItemToTaxonomyNode the map from item to taxonomy node
+	 */
 	public void setMapItemToTaxonomyNode(HashMap<Integer, TaxonomyNode> mapItemToTaxonomyNode) {
 		this.mapItemToTaxonomyNode = mapItemToTaxonomyNode;
 	}
-
-	private int I;
-	
-	private int MaxLevel;
 }

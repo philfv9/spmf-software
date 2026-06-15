@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_inverse.AlgoAprioriTIDInverse;
+import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_fast.AlgoAprioriTIDInverse_FAST;
 
 
 /**
  * Example of how to use the AprioriInverse  algorithm and save the output
- * to a file, from the source code (this is for the version of AprioriInverse based on AprioriTID).
+ * to a file, from the source code (this is for the ***FAST*** version of AprioriInverse based on AprioriTID).
  * 
  * @author Philippe Fournier-Viger (Copyright 2017)
  */
@@ -29,7 +29,7 @@ public class MainTestAprioriInverseTID_saveToFile {
 		double maxsup = 0.6;
 		
 		// Applying the APRIORI-Inverse algorithm to find sporadic itemsets
-		AlgoAprioriTIDInverse algo = new AlgoAprioriTIDInverse();
+		AlgoAprioriTIDInverse_FAST algo = new AlgoAprioriTIDInverse_FAST();
 		
         // if you set the following parameter to true, the sequence ids of the sequences where
         // each pattern appears will be shown in the result
@@ -37,7 +37,6 @@ public class MainTestAprioriInverseTID_saveToFile {
         
 		// apply the algorithm
 		algo.runAlgorithm(inputFilePath, outputFilePath, minsup, maxsup);
-		algo.getDatabaseSize();
 		algo.printStats();
 	}
 	

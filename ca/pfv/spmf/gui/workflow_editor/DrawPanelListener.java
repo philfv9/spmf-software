@@ -1,8 +1,7 @@
 package ca.pfv.spmf.gui.workflow_editor;
 
-import java.util.List;
 /*
- * Copyright (c) 2022 Philippe Fournier-Viger
+ * Copyright (c) 2024 Philippe Fournier-Viger
  *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
@@ -18,27 +17,44 @@ import java.util.List;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
- */
-/**
- * A class that represents a listener for events from the draw panel of the workflow editor
  * 
+ * Do not remove copyright and license information.
+ */
+
+import java.util.List;
+
+/**
+ * Listener interface for events fired by BranchingDrawPanel when the user interacts with the workflow graph.
+ *
  * @author Philippe Fournier-Viger
- * @see WorkflowEditorWindow
- * @see DrawPanel
  */
 interface DrawPanelListener {
 
-	/**
-	 * Method to notify the listener that a node was selected in the draw panel
-	 */
-	void notifyNodeSelected(Node node);
-	/**
-	 * Method to notify the listenerthat the number of groups (algorithms) has changed in the draw panel
-	 */
-	void notifyOfListOfGroups(List<GroupOfNodes> allgroups);
-	/**
-	 * Notify the listener that the last node of the workflow has an output.
-	 * This is important to determine if aditional nodes can be added.
-	 */
-	void notifyHasOutputNode(boolean hasOutput);
+    /**
+     * Called when the user selects or deselects a node on the draw panel.
+     *
+     * @param node the newly selected node, or null if the selection was cleared.
+     */
+    void notifyNodeSelected(Node node);
+
+    /**
+     * Called whenever the tree structure of the workflow changes.
+     *
+     * @param roots the current list of root BranchNodes; never null but may be empty.
+     */
+    void notifyOfListOfRootNodes(List<BranchNode> roots);
+
+    /**
+     * Called to inform listeners whether it is currently legal to add a new algorithm node.
+     *
+     * @param canAdd true if the Add Algorithm button should be enabled.
+     */
+    void notifyHasOutputNode(boolean canAdd);
+
+    /**
+     * Called to inform listeners whether the currently selected branch node may be removed.
+     *
+     * @param canRemove true if the Remove Selected Algorithm button should be enabled.
+     */
+    void notifyCanRemoveSelectedNode(boolean canRemove);
 }

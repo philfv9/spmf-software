@@ -18,6 +18,22 @@ import java.util.Set;
 
 import ca.pfv.spmf.tools.MemoryLogger;
 
+/* This file is copyright (c) Bay Vo
+* 
+* This file is part of the SPMF DATA MINING SOFTWARE
+* (http://www.philippe-fournier-viger.com/spmf).
+* 
+* SPMF is free software: you can redistribute it and/or modify it under the
+* terms of the GNU General Public License as published by the Free Software
+* Foundation, either version 3 of the License, or (at your option) any later
+* version.
+* 
+* SPMF is distributed in the hope that it will be useful, but WITHOUT ANY
+* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+* You should have received a copy of the GNU General Public License along with
+* SPMF. If not, see <http://www.gnu.org/licenses/>.
+*/
 /**
  * Implementation of the CLH-Miner algorithm by Bay Vo et al.<br/>
  * <br/>
@@ -35,47 +51,52 @@ import ca.pfv.spmf.tools.MemoryLogger;
  * @author Bay Vo et al.
  */
 public class AlgoCLHMiner {
+
 	/** minimum utility */
 	int minUtil;
+
 	/** the utility lists */
 	List<UtilityList> ListUls;
+
 	/** the item count */
 	int itemCount = 0;
+
 	/** the generalized item count */
 	int giCount = 0;
+
 	/** the taxonomy depth */
 	int taxDepth = 0;
 
 	/** a map of item to utility list */
 	static Map<Integer, UtilityList> mapItemToUtilityList;
-	
+
 	/** the start timestamp */
 	long startTimestamp = 0;
-	
+
 	/** A map of item to TWU */
 	Map<Integer, Double> mapItemToTWU;
-	
+
 	/** the time at which the algorithm ended */
 	long endTimestamp = 0;
-	
+
 	/** the taxonomy */
 	TaxonomyTree taxonomy;
-	
+
 	/** a buffer for an itemset */
 	private int[] itemsetBuffer = null;
-	
+
 	/** the list of revised transactions */
 	List<Pair> revisedTransaction;
-	
+
 	/** the dataset after removal */
 	List<List<Pair>> datasetAfterRemove;
-	
+
 	/** the number of patterns found */
 	int countHUI;
-	
+
 	/** the number of candidates */
 	int candidate;
-	
+
 	/** Writer to write result to the output file */
 	BufferedWriter writer;
 
@@ -89,9 +110,10 @@ public class AlgoCLHMiner {
 
 	/**
 	 * Run the algorithm
-	 * @param minUtil minimum utility threshold
-	 * @param inputPath an input file path 
-	 * @param outputPath an output file path
+	 * 
+	 * @param minUtil      minimum utility threshold
+	 * @param inputPath    an input file path
+	 * @param outputPath   an output file path
 	 * @param TaxonomyPath the path to a file containing a taxonomy
 	 * @throws IOException if error when reading or writing to file
 	 */
@@ -248,7 +270,7 @@ public class AlgoCLHMiner {
 				double CountUtilityOfEachItem = CountUtility;
 				for (int i = 0; i < revisedTransaction.size(); i++) {
 					Pair CurrentItem = revisedTransaction.get(i);
-					if (CheckParent(itemParent, CurrentItem.item)) {
+					if (checkParent(itemParent, CurrentItem.item)) {
 						CountUtilityOfEachItem -= CurrentItem.utility;
 					} else {
 						if (compareItems(itemParent, CurrentItem.item) > 0) {
@@ -290,11 +312,12 @@ public class AlgoCLHMiner {
 
 	/**
 	 * Depth first search
-	 * @param prefix the prefix of the current itemset
+	 * 
+	 * @param prefix       the prefix of the current itemset
 	 * @param prefixLength the length of the prefix
-	 * @param pUL the prefix's utility list
-	 * @param ULs the utility lists of some extensions of the prefix
-	 * @throws IOException 
+	 * @param pUL          the prefix's utility list
+	 * @param ULs          the utility lists of some extensions of the prefix
+	 * @throws IOException
 	 */
 	private void SearchTree(int[] prefix, int prefixLength, UtilityList pUL, List<UtilityList> ULs) throws IOException {
 		for (int i = 0; i < ULs.size(); i++) {
@@ -305,7 +328,7 @@ public class AlgoCLHMiner {
 				/*
 				 * for (int j = 0; j < prefixLength; j++) { System.out.print(prefix[j]+" "); }
 				 */
-				for(int j = 0; j<prefixLength; j++) {
+				for (int j = 0; j < prefixLength; j++) {
 					writer.write(prefix[j] + " ");
 				}
 				writer.write(X.item + " #UTIL: " + X.sumIutils);
@@ -314,7 +337,7 @@ public class AlgoCLHMiner {
 			List<UtilityList> exULs = new ArrayList<UtilityList>();
 			for (int j = i + 1; j < ULs.size(); j++) {
 				UtilityList Y = ULs.get(j);
-				if (!CheckParent(Y.item, X.item)) {
+				if (!checkParent(Y.item, X.item)) {
 					UtilityList exULBuild = construct(pUL, X, Y);
 					if (exULBuild.GWU > minUtil) {
 						exULs.add(exULBuild);
@@ -329,7 +352,7 @@ public class AlgoCLHMiner {
 					UtilityList ULofChild = mapItemToUtilityList.get(Child);
 					if (ULofChild != null) {
 						UtilityList exULBuild = constructTax(pUL, ULofChild);
-						X.AddChild(exULBuild);
+						X.addChild(exULBuild);
 					}
 				}
 				for (UtilityList childULs : X.getChild()) {
@@ -344,11 +367,11 @@ public class AlgoCLHMiner {
 
 	}
 
-
 	/**
 	 * Construct a tax utility list
-	 * @param P the utility list of a prefix itemset
-	 * @param Child the utility of a child 
+	 * 
+	 * @param P     the utility list of a prefix itemset
+	 * @param Child the utility of a child
 	 * @return the new utility list
 	 */
 	private UtilityList constructTax(UtilityList P, UtilityList Child) {
@@ -365,8 +388,8 @@ public class AlgoCLHMiner {
 					double remainUtility = 0;
 					for (int i = 0; i < trans.size(); i++) {
 						Integer currentItem = trans.get(i).item;
-						if (compareItems(currentItem, Child.item) > 0 && (!CheckParent(Child.item, currentItem))
-								&& (!CheckParent(Child.item, currentItem))) {
+						if (compareItems(currentItem, Child.item) > 0 && (!checkParent(Child.item, currentItem))
+								&& (!checkParent(Child.item, currentItem))) {
 							remainUtility += trans.get(i).utility;
 						}
 					}
@@ -385,7 +408,8 @@ public class AlgoCLHMiner {
 
 	/**
 	 * Construct the utility list (normal case)
-	 * @param P the utility list of a prefix P
+	 * 
+	 * @param P  the utility list of a prefix P
 	 * @param px the utility list of an extension PX of P with an item X
 	 * @param py the utility list of an extension PY of P with an item Y
 	 * @return the utility list of PXY
@@ -407,8 +431,8 @@ public class AlgoCLHMiner {
 				double remainUtility = 0;
 				for (int i = 0; i < trans.size(); i++) {
 					Integer currentItem = trans.get(i).item;
-					if (compareItems(currentItem, py.item) > 0 && (!CheckParent(px.item, currentItem))
-							&& (!CheckParent(py.item, currentItem))) {
+					if (compareItems(currentItem, py.item) > 0 && (!checkParent(px.item, currentItem))
+							&& (!checkParent(py.item, currentItem))) {
 						remainUtility += trans.get(i).utility;
 					}
 				}
@@ -424,8 +448,8 @@ public class AlgoCLHMiner {
 					double remainUtility = 0;
 					for (int i = 0; i < trans.size(); i++) {
 						Integer currentItem = trans.get(i).item;
-						if (compareItems(currentItem, py.item) > 0 && (!CheckParent(px.item, currentItem))
-								&& (!CheckParent(py.item, currentItem))) {
+						if (compareItems(currentItem, py.item) > 0 && (!checkParent(px.item, currentItem))
+								&& (!checkParent(py.item, currentItem))) {
 							remainUtility += trans.get(i).utility;
 						}
 					}
@@ -439,6 +463,13 @@ public class AlgoCLHMiner {
 		return pxyUL;
 	}
 
+	/**
+	 * Find an element in a utility list having a given transaction id
+	 * 
+	 * @param ulist the utility list
+	 * @param tid   the transaction id
+	 * @return the element if found, otherwise null
+	 */
 	private Element findElementWithTID(UtilityList ulist, int tid) {
 		List<Element> list = ulist.elements;
 
@@ -464,9 +495,11 @@ public class AlgoCLHMiner {
 
 	/**
 	 * Comparator to sort items by order
+	 * 
 	 * @param item1 the first item
 	 * @param item2 the second item
-	 * @return a value indicating the order (following the contract of the Comparator class in Java)
+	 * @return a value indicating the order (following the contract of the
+	 *         Comparator class in Java)
 	 */
 	private int compareItems(int item1, int item2) {
 		int levelOfItem1 = taxonomy.getMapItemToTaxonomyNode().get(item1).getLevel();
@@ -482,11 +515,12 @@ public class AlgoCLHMiner {
 
 	/**
 	 * Check the parent
+	 * 
 	 * @param item1 an item
 	 * @param item2 another item
 	 * @return true if item 2 is a parent of item 1. Otherwise faste
 	 */
-	private boolean CheckParent(int item1, int item2) {
+	private boolean checkParent(int item1, int item2) {
 		TaxonomyNode nodeItem1 = taxonomy.getMapItemToTaxonomyNode().get(item1);
 		TaxonomyNode nodeItem2 = taxonomy.getMapItemToTaxonomyNode().get(item2);
 		int levelOfItem1 = nodeItem1.getLevel();

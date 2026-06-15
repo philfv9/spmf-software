@@ -40,7 +40,11 @@ import ca.pfv.spmf.gui.visual_pattern_viewer.PatternsReader;
  * mappings) and displays each rule as a {@link ItemsetPanel}. Provides sorting
  * by measure or lexicographically, and the ability to export the entire view as
  * a PNG.
- * 
+ *
+ * Supports optional pagination: call {@link #setPageSize(int)} to limit the
+ * number of patterns shown per page, or pass {@code Integer.MAX_VALUE} to show
+ * all patterns at once.
+ *
  * @author Philippe Fournier-Viger
  */
 public class ItemsetsPanel extends PatternsPanel {
@@ -56,8 +60,11 @@ public class ItemsetsPanel extends PatternsPanel {
 	/** All panels, each corresponding to a pattern */
 	private final List<ItemsetPanel> allPanels = new ArrayList<>();
 
-	/** Filtered indices (optional), or null if no filter is applied */
-	private Set<Integer> visiblePanelIndices = null;
+	/**
+	 * Ordered list of indices into {@link #allPanels} that pass the current
+	 * search/filter. {@code null} means no filter is active (all panels visible).
+	 */
+	private List<Integer> visiblePanelIndices = null;
 
 	/** Precomputed min values for measures */
 	private final Map<String, Double> minValues;
@@ -107,7 +114,7 @@ public class ItemsetsPanel extends PatternsPanel {
 
 	/**
 	 * Sort the rules based on the the user's choice
-	 * 
+	 *
 	 * @param choice the choice as a String
 	 */
 	@Override
@@ -115,6 +122,8 @@ public class ItemsetsPanel extends PatternsPanel {
 		reader.sortPatterns(choice);
 		allPanels.clear();
 		buildPanels();
+		// Reset to first page after sorting so the user sees the top results
+		currentPage = 0;
 		rebuildPanels();
 	}
 
@@ -125,7 +134,7 @@ public class ItemsetsPanel extends PatternsPanel {
 
 	/**
 	 * Get the list of available measures
-	 * 
+	 *
 	 * @return a Set
 	 */
 	public Set<String> getAllMeasures() {
@@ -134,7 +143,7 @@ public class ItemsetsPanel extends PatternsPanel {
 
 	/**
 	 * Get the minimum numeric value observed for the given measure
-	 * 
+	 *
 	 * @return the minimum numeric value observed for the given measure (or null if
 	 *         none)
 	 */
@@ -144,7 +153,7 @@ public class ItemsetsPanel extends PatternsPanel {
 
 	/**
 	 * Get the maximum numeric value observed for the given measure
-	 * 
+	 *
 	 * @return the maximum numeric value observed for the given measure (or null if
 	 *         none)
 	 */
@@ -164,20 +173,61 @@ public class ItemsetsPanel extends PatternsPanel {
 	}
 
 	/**
-	 * Clears and rebuilds the layout. Visibility of panels is controlled by
-	 * filtering state; only visible panels are re-added to the layout.
+	 * Resolves the ordered list of indices that are currently visible (after
+	 * filtering). If no filter is active this is simply 0 … allPanels.size()-1.
+	 */
+	private List<Integer> resolveVisibleIndices() {
+		if (visiblePanelIndices != null) {
+			// Already filtered – return the stored ordered list
+			return visiblePanelIndices;
+		}
+		// No filter: all panels in order
+		List<Integer> all = new ArrayList<>(allPanels.size());
+		for (int i = 0; i < allPanels.size(); i++) {
+			all.add(i);
+		}
+		return all;
+	}
+
+	/**
+	 * Clears and rebuilds the layout. Respects both the current filter state and
+	 * pagination settings. Only the patterns that belong to the current page are
+	 * added to the Swing hierarchy; the rest are not rendered, keeping the UI fast
+	 * even with thousands of patterns.
 	 */
 	@Override
 	public void rebuildPanels() {
 		removeAll();
 
-		List<ItemsetPanel> panelsToDisplay = new ArrayList<>();
-		for (int i = 0; i < allPanels.size(); i++) {
-			if (visiblePanelIndices == null || visiblePanelIndices.contains(i)) {
-				panelsToDisplay.add(allPanels.get(i));
+		// Full ordered list of visible indices (may be all of them)
+		List<Integer> visible = resolveVisibleIndices();
+
+		// --- Pagination: compute the window [fromIdx, toIdx) ---
+		int totalVisible = visible.size();
+		int fromIdx; // inclusive
+		int toIdx;   // exclusive
+
+		if (pageSize == Integer.MAX_VALUE || pageSize <= 0) {
+			// Show-all mode
+			fromIdx = 0;
+			toIdx = totalVisible;
+		} else {
+			// Clamp currentPage just in case
+			int totalPages = Math.max(1, (int) Math.ceil((double) totalVisible / pageSize));
+			if (currentPage >= totalPages) {
+				currentPage = totalPages - 1;
 			}
+			fromIdx = currentPage * pageSize;
+			toIdx = Math.min(fromIdx + pageSize, totalVisible);
 		}
 
+		// Collect the panels for this page
+		List<ItemsetPanel> panelsToDisplay = new ArrayList<>();
+		for (int i = fromIdx; i < toIdx; i++) {
+			panelsToDisplay.add(allPanels.get(visible.get(i)));
+		}
+
+		// --- Build layout ---
 		if (layoutMode == LayoutMode.VERTICAL) {
 			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 			for (ItemsetPanel panel : panelsToDisplay) {
@@ -194,9 +244,11 @@ public class ItemsetsPanel extends PatternsPanel {
 				add(panel);
 			}
 			add(Box.createHorizontalGlue());
-		} else if (layoutMode == LayoutMode.GRID) {
+		} else {
+			// GRID (default)
 			int columns = 3;
-			int rows = (int) Math.ceil((double) panelsToDisplay.size() / columns);
+			int rows = panelsToDisplay.isEmpty() ? 1
+					: (int) Math.ceil((double) panelsToDisplay.size() / columns);
 			setLayout(new java.awt.GridLayout(rows, columns, GAP_BETWEEN_PATTERNS, GAP_BETWEEN_PATTERNS));
 			for (ItemsetPanel panel : panelsToDisplay) {
 				add(panel);
@@ -209,78 +261,100 @@ public class ItemsetsPanel extends PatternsPanel {
 
 	/**
 	 * Applies a text search and measure-based filtering to the list of itemsets
-	 * currently loaded in memory.
+	 * currently loaded in memory. Resets to page 0 after filtering so the user
+	 * always sees the first page of results.
 	 */
 	@Override
 	public void applySearchAndFilters(String searchString, Map<String, Double> measureThresholds,
-			Map<String, String> measureOperators) {
-		visiblePanelIndices = new HashSet<>();
-		for (int i = 0; i < allPanels.size(); i++) {
-			Itemset itemset = allPanels.get(i).getItemset();
+	        Map<String, String> measureOperators) {
 
-			// Text filter with token matching
-			if (searchString != null && !searchString.isBlank()) {
-				String patternStr = itemset.toString().toLowerCase();
-				String[] tokens = searchString.toLowerCase().split("\\s+");
-				boolean allTokensMatch = true;
-				for (String token : tokens) {
-					if (!patternStr.contains(token)) {
-						allTokensMatch = false;
-						break;
-					}
-				}
-				if (!allTokensMatch) {
-					continue;
-				}
-			}
+	    List<Integer> matched = new ArrayList<>();
 
-			// Measure filters with operator support
-			if (measureThresholds != null && !measureThresholds.isEmpty()) {
-				boolean failed = false;
-				for (Map.Entry<String, Double> entry : measureThresholds.entrySet()) {
-					String measure = entry.getKey();
-					Double threshold = entry.getValue();
-					Double value = Double.valueOf(itemset.getMeasures().get(measure));
-					String operator = "\u2265";
-					if (measureOperators != null && measureOperators.containsKey(measure)) {
-						operator = measureOperators.get(measure);
-					}
-					if ("\u2264".equals(operator)) {
-						if (value == null || value > threshold) {
-							failed = true;
-							break;
-						}
-					} else {
-						if (value == null || value < threshold) {
-							failed = true;
-							break;
-						}
-					}
-				}
-				if (failed) {
-					continue;
-				}
-			}
+	    for (int i = 0; i < allPanels.size(); i++) {
+	        Itemset itemset = allPanels.get(i).getItemset();
 
-			visiblePanelIndices.add(i);
-		}
+	        // Text filter with token matching
+	        if (searchString != null && !searchString.isBlank()) {
+	            String patternStr = itemset.toString().toLowerCase();
+	            String[] tokens = searchString.toLowerCase().split("\\s+");
+	            boolean allTokensMatch = true;
+	            for (String token : tokens) {
+	                if (!patternStr.contains(token)) {
+	                    allTokensMatch = false;
+	                    break;
+	                }
+	            }
+	            if (!allTokensMatch) {
+	                continue;
+	            }
+	        }
 
-		rebuildPanels();
+	        // Measure filters with operator support
+	        if (measureThresholds != null && !measureThresholds.isEmpty()) {
+	            boolean failed = false;
+	            for (Map.Entry<String, Double> entry : measureThresholds.entrySet()) {
+	                String measure = entry.getKey();
+	                Double threshold = entry.getValue();
+	                String rawValue = itemset.getMeasures().get(measure);
+	                if (rawValue == null) {
+	                    failed = true;
+	                    break;
+	                }
+	                double value;
+	                try {
+	                    value = Double.parseDouble(rawValue);
+	                } catch (NumberFormatException e) {
+	                    failed = true;
+	                    break;
+	                }
+	                String operator = "\u2265";
+	                if (measureOperators != null && measureOperators.containsKey(measure)) {
+	                    operator = measureOperators.get(measure);
+	                }
+	                
+	                // Apply the filter based on operator
+	                if ("\u2264".equals(operator)) {
+	                    // For ≤: exclude if value is GREATER than threshold
+	                    if (value > threshold) {
+	                        failed = true;
+	                        break;
+	                    }
+	                } else {
+	                    // For ≥: exclude if value is LESS than threshold
+	                    if (value < threshold) {
+	                        failed = true;
+	                        break;
+	                    }
+	                }
+	            }
+	            if (failed) {
+	                continue;
+	            }
+	        }
+
+	        matched.add(i);
+	    }
+
+	    visiblePanelIndices = matched;
+	    currentPage = 0;
+	    rebuildPanels();
 	}
 
 	/**
-	 * Clears any active text search or measure-based filtering.
+	 * Clears any active text search or measure-based filtering and returns to page
+	 * 0.
 	 */
 	@Override
 	public void clearSearchAndFilters() {
 		visiblePanelIndices = null;
+		currentPage = 0;
 		rebuildPanels();
 	}
 
 	/**
-	 * Get the number of visible patterns
-	 * 
-	 * @return the number of visible patterns (after filtering)
+	 * Get the number of visible patterns (after filtering, across ALL pages).
+	 *
+	 * @return the number of visible patterns
 	 */
 	@Override
 	public int getNumberOfVisiblePatterns() {
@@ -315,19 +389,19 @@ public class ItemsetsPanel extends PatternsPanel {
 	}
 
 	/**
-	 * Returns the sizes of all currently visible itemsets. The size of an itemset is
-	 * the number of items it contains.
-	 * 
+	 * Returns the sizes of all currently visible itemsets (across ALL pages, not
+	 * just the current page). The size of an itemset is the number of items it
+	 * contains.
+	 *
 	 * @return a list of integers, each representing the number of items in a
 	 *         visible itemset
 	 */
 	@Override
 	public List<Integer> getVisiblePatternSizes() {
 		List<Integer> sizes = new ArrayList<>();
-		for (int i = 0; i < allPanels.size(); i++) {
-			if (visiblePanelIndices == null || visiblePanelIndices.contains(i)) {
-				sizes.add(allPanels.get(i).getItemset().getItems().size());
-			}
+		List<Integer> visible = resolveVisibleIndices();
+		for (int idx : visible) {
+			sizes.add(allPanels.get(idx).getItemset().getItems().size());
 		}
 		return sizes;
 	}

@@ -20,6 +20,8 @@ import ca.pfv.spmf.algorithms.clustering.kmeans.AlgoKMeans;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove the copyright and license information.
 */
 /**
 * This class provides methods for evaluating a set of clusters such as the 

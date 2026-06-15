@@ -5,7 +5,8 @@ import java.io.IOException;
 import ca.pfv.spmf.algorithmmanager.AlgorithmType;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
-import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_inverse.AlgoAprioriTIDInverse;
+import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_fast.AlgoAprioriTIDInverse_FAST;
+import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_simple.AlgoAprioriTIDInverse;
 
 /**
  * This class describes the AprioriTIDInverse algorithm (TID version) parameters. 
@@ -44,9 +45,9 @@ public class DescriptionAlgoAprioriInverseTID extends DescriptionOfAlgorithm {
 		double minsup = getParamAsDouble(parameters[0]);
 		double maxsup = getParamAsDouble(parameters[1]);
 
-		AlgoAprioriTIDInverse algo = new AlgoAprioriTIDInverse();
+		AlgoAprioriTIDInverse_FAST algo = new AlgoAprioriTIDInverse_FAST();
 		
-		if (parameters.length >=2 && "".equals(parameters[2]) == false) {
+		if (parameters.length >2 && "".equals(parameters[2]) == false) {
 			algo.setShowTransactionIdentifiers(getParamAsBoolean(parameters[2]));
 		}
 		

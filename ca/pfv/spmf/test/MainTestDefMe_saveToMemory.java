@@ -6,7 +6,8 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 
-import ca.pfv.spmf.algorithms.frequentpatterns.defme.AlgoDefMe;
+import ca.pfv.spmf.algorithms.frequentpatterns.defme_fast.AlgoDefMe_FAST;
+import ca.pfv.spmf.algorithms.frequentpatterns.defme_simple.AlgoDefMe;
 import ca.pfv.spmf.input.transaction_database_list_integers.TransactionDatabase;
 import ca.pfv.spmf.patterns.itemset_array_integers_with_tids_bitset.Itemset;
 import ca.pfv.spmf.patterns.itemset_array_integers_with_tids_bitset.Itemsets;
@@ -23,21 +24,14 @@ public class MainTestDefMe_saveToMemory {
 		String input = fileToPath("contextZart.txt");  // the database
 		
 		double minsup = 0.4; // means a minsup of 2 transaction (we used a relative support)
-		
-		TransactionDatabase database = new TransactionDatabase();
-		try {
-			database.loadFile(input);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
+
 		// Applying the DefMe algorithm
-		AlgoDefMe algo = new AlgoDefMe();
+		AlgoDefMe_FAST algo = new AlgoDefMe_FAST();
 		
 		// Uncomment the following line to set the maximum pattern length (number of items per itemset)
 //		algo.setMaximumPatternLength(2);
 		
-		Itemsets generators = algo.runAlgorithm(null, database, minsup);
+		Itemsets generators = algo.runAlgorithm(input, null, minsup);
 		algo.printStats();
 		for(List<Itemset> genSizeK : generators.getLevels()) {
 			for(Itemset itemset : genSizeK) {

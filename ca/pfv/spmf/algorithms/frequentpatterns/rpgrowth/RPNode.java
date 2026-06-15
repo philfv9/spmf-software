@@ -29,7 +29,7 @@ import ca.pfv.spmf.patterns.itemset_array_integers_with_count.Itemset;
  * The original "FPNode" was created by Philippe Fournier-Viger and modified by 
  * Blake Johns and Ryan Benton
  * 
- * @see FPTree
+ * @see FPTreeWFIM
  * @see RPTree
  * @see Itemset
  * @see AlgoRPGrowth

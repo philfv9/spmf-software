@@ -34,19 +34,20 @@ public class TFTableFrequent {
 	/** This store the frequent itemsets by size
 	 At position i, there are the list of frequent itemsets
 	  of size i */
-	public final List<List<Itemset>> levels = new ArrayList<List<Itemset>>();  // itemset class� par taille
+	public final List<List<Itemset>> levels = new ArrayList<List<Itemset>>();  // itemset classé par taille
 	
 	/** This map is the mapPredSupp used by Zart to store the support of a frequent itemset
 	 <br/>
 	 key: itemset   value: support */
-	Map<Itemset, Integer> mapPredSupp = new HashMap<Itemset, Integer>();
+	final Map<Itemset, Integer> mapPredSupp = new HashMap<Itemset, Integer>();
+	
 	/**this map indicate the key value for this itemset<br/>
 	  key: itemset   value: key value */
-	Map<Itemset, Boolean> mapKey = new HashMap<Itemset, Boolean>();
+	final Map<Itemset, Boolean> mapKey = new HashMap<Itemset, Boolean>();
 	
 	/** indicate if the frequent itemsets are closed <br/>
 	  key: itemset     value: is closed or not (true/false) **/
-	Map<Itemset, Boolean> mapClosed = new HashMap<Itemset, Boolean>();
+	final Map<Itemset, Boolean> mapClosed = new HashMap<Itemset, Boolean>();
 	
 	/** indicate if the empty set is closed or not */
 	public boolean emptySetIsClosed = false;
@@ -57,13 +58,14 @@ public class TFTableFrequent {
 	 * @param itemset  the itemset
 	 */
 	void addFrequentItemset(Itemset itemset){
+		int size = itemset.size();
 		// if there is no array list until the size of this itemset
 		// then create them.
-		while(levels.size() <= itemset.size()){
+		while(levels.size() <= size){
 			levels.add(new ArrayList<Itemset>());
 		}
 		// add the itemset in the proper arraylist according to the size of the itemset
-		levels.get(itemset.size()).add(itemset);
+		levels.get(size).add(itemset);
 	}
 	
 	/**
@@ -72,14 +74,15 @@ public class TFTableFrequent {
 	 * @return  a list of itemsets
 	 */
 	public List<Itemset> getLevelForZart(int i){
+		int index = i + 1;
 		// if this level does not exist
-		if(i+1 == levels.size()){
+		if(index == levels.size()){
 			// create it
 			List<Itemset> newList = new ArrayList<Itemset>();
 			levels.add(newList);
 			return newList;
 		}
 		// return the list of itemsets (empty or not)
-		return levels.get(i+1);
+		return levels.get(index);
 	}
 }

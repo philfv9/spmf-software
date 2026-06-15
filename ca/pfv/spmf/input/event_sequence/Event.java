@@ -16,6 +16,8 @@ package ca.pfv.spmf.input.event_sequence;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove the copyright and license information.
  */
 /**
  * This class represent an event from an event sequence

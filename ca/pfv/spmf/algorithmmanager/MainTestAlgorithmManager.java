@@ -19,6 +19,8 @@ import java.util.Arrays;
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information from this file.
  */
 /**
  * This class is for testing the AlgorithmManager class.

@@ -34,7 +34,9 @@ import ca.pfv.spmf.gui.visual_pattern_viewer.PatternsReader;
  * along with SPMF. If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Class to read rules from a file in SPMF format with their measures
+ * Class to read rules from a file in SPMF format with their measures.
+ * Supports both standard rules and negative rules where the antecedent
+ * or consequent may be prefixed with "NOT".
  * @author Philippe Fournier-Viger
  */
 public class RulesReader extends PatternsReader {
@@ -48,22 +50,36 @@ public class RulesReader extends PatternsReader {
 	/** Sorting order by lexicographical order of consequents */
 	private static final String CONSEQUENT_LABEL = "Consequent (A-Z)";
 
+	/** The keyword used to denote negation in rules */
+	private static final String NOT_KEYWORD = "NOT";
+
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param filePath input file path
-	 * @throws IOException
+	 * @throws IOException if file reading fails
 	 */
 	public RulesReader(String filePath) throws IOException {
 		readFile(filePath);
 	}
 
 	/**
-	 * Reads a file containing association rules in SPMF format
+	 * Reads a file containing association rules in SPMF format.
+	 * Handles both standard rules and negative rules.
+	 * <p>
+	 * Supported line formats:
+	 * <ul>
+	 *   <li>Standard: {@code item1 item2 ==> item3 #m1:v1 ...}</li>
+	 *   <li>Negated antecedent: {@code NOT item1 ==> item3 #m1:v1 ...}</li>
+	 *   <li>Negated consequent: {@code item1 ==> NOT item3 #m1:v1 ...}</li>
+	 *   <li>Both negated: {@code NOT item1 ==> NOT item3 #m1:v1 ...}</li>
+	 * </ul>
+	 * </p>
 	 *
 	 * @param filePath input file path
 	 * @throws IOException if file I/O fails
 	 */
+	@Override
 	protected void readFileHelper(String filePath) throws IOException {
 
 		File file = new File(filePath);
@@ -97,26 +113,51 @@ public class RulesReader extends PatternsReader {
 					continue;
 				}
 
+				// Split on " ==> " to separate antecedent side from consequent+measures side
 				String[] sides = line.split(" ==> ");
 				if (sides.length < 2) {
 					continue;
 				}
-				// Read the antecedent items of the rule.
-				List<String> antecedentItems = new ArrayList<>();
-				for (String token : sides[0].split(" ")) {
-					// If the item has a name, replace it by its name
-					antecedentItems.add(itemMapping.getOrDefault(token, token));
+
+				// --- Parse the antecedent side ---
+				// Check whether the antecedent side starts with "NOT "
+				String antecedentSide = sides[0].trim();
+				boolean antecedentNegated = false;
+				if (antecedentSide.startsWith(NOT_KEYWORD + " ")) {
+					antecedentNegated = true;
+					// Remove the "NOT " prefix before splitting into items
+					antecedentSide = antecedentSide.substring(NOT_KEYWORD.length() + 1).trim();
 				}
 
-				// Split right-hand side into consequents + measures
+				// Read the antecedent items of the rule
+				List<String> antecedentItems = new ArrayList<>();
+				for (String token : antecedentSide.split(" ")) {
+					if (!token.isEmpty()) {
+						// If the item has a name mapping, replace it by its name
+						antecedentItems.add(itemMapping.getOrDefault(token, token));
+					}
+				}
+
+				// --- Parse the consequent side + measures ---
+				// Split right-hand side into consequents + measures on " #"
 				String[] rhs = sides[1].split(" #");
 
+				// The first token of the RHS is the consequent side (possibly with NOT)
+				String consequentSide = rhs[0].trim();
+				boolean consequentNegated = false;
+				if (consequentSide.startsWith(NOT_KEYWORD + " ")) {
+					consequentNegated = true;
+					// Remove the "NOT " prefix before splitting into items
+					consequentSide = consequentSide.substring(NOT_KEYWORD.length() + 1).trim();
+				}
+
+				// Read the consequent items of the rule
 				List<String> consequentItems = new ArrayList<>();
-				
-				// Read the consequent items of the rule.
-				for (String token : rhs[0].split(" ")) {
-					// If the item has a name, replace it by its name
-					consequentItems.add(itemMapping.getOrDefault(token, token));
+				for (String token : consequentSide.split(" ")) {
+					if (!token.isEmpty()) {
+						// If the item has a name mapping, replace it by its name
+						consequentItems.add(itemMapping.getOrDefault(token, token));
+					}
 				}
 
 				// Parse measures with their corresponding values
@@ -131,10 +172,10 @@ public class RulesReader extends PatternsReader {
 						availableMeasures.add(name);
 					}
 				}
-				// Add the rule to the set of rules
-				getPatterns().add(new Rule(antecedentItems, consequentItems,
-						measures));
 
+				// Add the rule to the set of rules, including negation flags
+				getPatterns().add(new Rule(antecedentItems, antecedentNegated,
+						consequentItems, consequentNegated, measures));
 			}
 		}
 
@@ -151,7 +192,7 @@ public class RulesReader extends PatternsReader {
 
 	/**
 	 * Get the list of rules
-	 * 
+	 *
 	 * @return the rules
 	 */
 	protected List<Rule> getPatterns() {
@@ -161,34 +202,35 @@ public class RulesReader extends PatternsReader {
 	/**
 	 * Sorts rules numerically by the given measure, then rebuilds the display.
 	 *
-	 * @param measure key of the measure to sort by
-	 * @param ascen   ding true for ascending order; false for descending
+	 * @param measure   key of the measure to sort by
+	 * @param ascending true for ascending order; false for descending
 	 */
-    protected void sortPatternsByMeasure(String measure, boolean ascending) {
-        // Sort rules
-        rules.sort((r1, r2) -> {
-            String s1 = r1.getMeasures().get(measure);
-            String s2 = r2.getMeasures().get(measure);
-            if (s1 == null) s1 = "";
-            if (s2 == null) s2 = "";
-            // Try numeric comparison first
-            try {
-                double v1 = Double.parseDouble(s1);
-                double v2 = Double.parseDouble(s2);
-                return ascending ? Double.compare(v1, v2) : Double.compare(v2, v1);
-            } catch (NumberFormatException e) {
-                // Fallback to lexicographical comparison for non-numeric values
-                int cmp = s1.compareTo(s2);
-                return ascending ? cmp : -cmp;
-            }
-        });
-    }
+	protected void sortPatternsByMeasure(String measure, boolean ascending) {
+		// Sort rules
+		rules.sort((r1, r2) -> {
+			String s1 = r1.getMeasures().get(measure);
+			String s2 = r2.getMeasures().get(measure);
+			if (s1 == null) s1 = "";
+			if (s2 == null) s2 = "";
+			// Try numeric comparison first
+			try {
+				double v1 = Double.parseDouble(s1);
+				double v2 = Double.parseDouble(s2);
+				return ascending ? Double.compare(v1, v2) : Double.compare(v2, v1);
+			} catch (NumberFormatException e) {
+				// Fallback to lexicographical comparison for non-numeric values
+				int cmp = s1.compareTo(s2);
+				return ascending ? cmp : -cmp;
+			}
+		});
+	}
 
 	/**
 	 * Sort the rules based on a sorting order selected by the user
-	 * 
+	 *
 	 * @param sortingOrder the sorting order selected by the user
 	 */
+	@Override
 	public void sortPatterns(String sortingOrder) {
 		// If ascending sort
 		if (sortingOrder.endsWith("(asc)")) {
@@ -206,50 +248,53 @@ public class RulesReader extends PatternsReader {
 			rules.sort(Comparator.comparing(r -> String.join(" ", r.getConsequent())));
 		}
 	}
-	
-    /**
-     * Iterates over all itemsets and, for each measure in 'availableMeasures',
-     * parses its value as a double (if possible) and updates min/max maps.
-     */
-    protected void computeMinMaxForMeasures(Set<String> availableMeasures) {
-        // 1) Initialize min/max maps
-        for (String measure : availableMeasures) {
-            minMeasureValuesAdjusted.put(measure, Double.POSITIVE_INFINITY);
-            maxMeasureValuesAdjusted.put(measure, Double.NEGATIVE_INFINITY);
-        }
-        // 2) Scan through all itemsets
-        for (Rule rule : rules) {
-            Map<String, String> measuresMap = rule.getMeasures();
-            for (String measure : availableMeasures) {
-                String valueStr = measuresMap.get(measure);
-                if (valueStr == null) {
-                    continue; // no value for this measure in that itemset
-                }
-                try {
-                    double v = Double.parseDouble(valueStr);
-                    // update min
-                    double currentMin = minMeasureValuesAdjusted.get(measure);
-                    if (v < currentMin) {
-                        minMeasureValuesAdjusted.put(measure, v);
-                    }
-                    // update max
-                    double currentMax = maxMeasureValuesAdjusted.get(measure);
-                    if (v > currentMax) {
-                        maxMeasureValuesAdjusted.put(measure, v);
-                    }
-                } catch (NumberFormatException ex) {
-                    // skip non‐numeric values
-                }
-            }
-        }
-        // 3) Replace +∞/−∞ by null if never updated
-        for (String measure : availableMeasures) {
-            if (minMeasureValuesAdjusted.get(measure).isInfinite()) {
-                minMeasureValuesAdjusted.put(measure, null);
-            }
-            if (maxMeasureValuesAdjusted.get(measure).isInfinite()) {
-                maxMeasureValuesAdjusted.put(measure, null);
-            }
-        }
-    }
+
+	/**
+	 * Iterates over all rules and, for each measure in 'availableMeasures',
+	 * parses its value as a double (if possible) and updates min/max maps.
+	 *
+	 * @param availableMeasures the set of measure names to compute min/max for
+	 */
+	@Override
+	protected void computeMinMaxForMeasures(Set<String> availableMeasures) {
+		// 1) Initialize min/max maps
+		for (String measure : availableMeasures) {
+			minMeasureValuesAdjusted.put(measure, Double.POSITIVE_INFINITY);
+			maxMeasureValuesAdjusted.put(measure, Double.NEGATIVE_INFINITY);
+		}
+		// 2) Scan through all rules
+		for (Rule rule : rules) {
+			Map<String, String> measuresMap = rule.getMeasures();
+			for (String measure : availableMeasures) {
+				String valueStr = measuresMap.get(measure);
+				if (valueStr == null) {
+					continue; // no value for this measure in that rule
+				}
+				try {
+					double v = Double.parseDouble(valueStr);
+					// update min
+					double currentMin = minMeasureValuesAdjusted.get(measure);
+					if (v < currentMin) {
+						minMeasureValuesAdjusted.put(measure, v);
+					}
+					// update max
+					double currentMax = maxMeasureValuesAdjusted.get(measure);
+					if (v > currentMax) {
+						maxMeasureValuesAdjusted.put(measure, v);
+					}
+				} catch (NumberFormatException ex) {
+					// skip non-numeric values
+				}
+			}
+		}
+		// 3) Replace +∞/−∞ by null if never updated
+		for (String measure : availableMeasures) {
+			if (minMeasureValuesAdjusted.get(measure).isInfinite()) {
+				minMeasureValuesAdjusted.put(measure, null);
+			}
+			if (maxMeasureValuesAdjusted.get(measure).isInfinite()) {
+				maxMeasureValuesAdjusted.put(measure, null);
+			}
+		}
+	}
 }

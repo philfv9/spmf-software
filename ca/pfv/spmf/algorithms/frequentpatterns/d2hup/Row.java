@@ -17,49 +17,49 @@ package ca.pfv.spmf.algorithms.frequentpatterns.d2hup;
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 import java.util.ArrayList;
 import java.util.List;
 
 import ca.pfv.spmf.algorithms.frequentpatterns.hmine.AlgoHMine;
 
 /**
- * This class represents a row of the table in the CAUL structure.
- * A row represent an item and contains (1) its support, (2) the utility of
- * the current prefix ending with this item, (3) the local twu (ubitem) and
- * (4) the remaining utility (UbPFE).  Note that UbPFE is defined slightly differently
- * than in the paper. In the implementation, UbPFE excludes the utility of the item
- * represented by the row, while in the paper it includes the utility of the item.
- * This is not a problem since the utility of the item is added elsewhere in the 
- * d2hup algorithm instead.
+ * This class represents a row in the CAUL structure table.
+ * Each row stores information about an item including its support, utility,
+ * local TWU, remaining utility (UbPFE), and pointers to transaction items.
  *
  * @see AlgoHMine
  * @author Philippe Fournier-Viger
  */
 class Row {
-	/** the item **/
+	
+	/** The item */
 	int item;  
-	/** its support **/
+	
+	/** Item support */
 	int support; 
-	/** its utility **/
+	
+	/** Item utility */
 	int utility; 
-	/** local twu (ubitem) **/
+	
+	/** Local TWU (ubitem) */
 	int ltwu;
-	/** the sum of the utility and remaining utility(UbPFE) **/
+	
+	/** Remaining utility (UbPFE) */
 	int rutil = 0; 
-	/** the list of pointers to items in transactions */
+	
+	/** List of pointers to items in transactions */
 	List<Pointer> pointers = new ArrayList<Pointer>();
 
 	/**
-	 * Constructor.
-	 * @param item the item that is used for this utility list
+	 * Constructor
+	 * @param item the item for this row
 	 */
 	public Row(int item){
 		this.item = item;
 	}
 	
 	/**
-	 * Get a string representation of this cell.
+	 * Get string representation of this row
 	 * @return a string representation
 	 */
 	public String toString() {
@@ -67,5 +67,4 @@ class Row {
 				+ " ubItem:" + ltwu + " ubPFE:" + rutil + " pointers: " + pointers;
 		return temp;
 	}
-	
 }

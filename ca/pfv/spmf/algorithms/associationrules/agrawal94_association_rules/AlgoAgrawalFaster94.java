@@ -29,157 +29,166 @@ import ca.pfv.spmf.patterns.itemset_array_integers_with_count.Itemset;
 import ca.pfv.spmf.patterns.itemset_array_integers_with_count.Itemsets;
 
 /**
- * This is an implementation of the "faster algorithm" for generating association rules,
- * described in Agrawal &
- * al. 1994, IBM Research Report RJ9839, June 1994.
- * <br/><br/>
+ * This is an implementation of the "faster algorithm" for generating
+ * association rules, described in Agrawal & al. 1994, IBM Research Report
+ * RJ9839, June 1994. <br/>
+ * <br/>
  * 
- * This implementation saves the result to a file
- * or can alternatively keep it into memory if no output 
- * path is provided by the user when the runAlgorithm()
+ * This implementation saves the result to a file or can alternatively keep it
+ * into memory if no output path is provided by the user when the runAlgorithm()
  * method is called.
  * 
- *  @see   AssocRule
- *  @see   AssocRules
- *  @author Philippe Fournier-Viger
+ * @see AssocRule
+ * @see AssocRules
+ * @author Philippe Fournier-Viger
  **/
-public class AlgoAgrawalFaster94{
-	
+public class AlgoAgrawalFaster94 {
+
 	// the frequent itemsets that will be used to generate the rules
 	protected Itemsets patterns;
-	 
+
 	// variable used to store the result if the user choose to save
 	// the result in memory rather than to an output file
 	protected AssocRules rules;
-	
+
 	// object to write the output file if the user wish to write to a file
 	protected BufferedWriter writer = null;
-	
+
 	/** last execution start time **/
-	protected long startTimestamp = 0; 
-	
+	protected long startTimestamp = 0;
+
 	/** last execution end time */
-	protected long endTimeStamp = 0;   
-	
+	protected long endTimeStamp = 0;
+
 	/** number of rules generated */
-	protected int ruleCount = 0;  
-	
+	protected int ruleCount = 0;
+
 	/** number of transactions in database */
-	protected int databaseSize = 0; 
-	
+	protected int databaseSize = 0;
+
 	/** maximum consequent length */
 	private int maxConsequentLength = Integer.MAX_VALUE;
-	
+
 	/** maximum antecedent length */
 	private int maxAntecedentLength = Integer.MAX_VALUE;
-	
+
 	// parameters
 	protected double minconf;
 	protected double minlift;
 	protected boolean usingLift = true;
-	
-	 /** Reusable string builder */
-    private StringBuilder ruleBuffer;
-	
+
+	/** Reusable string builder */
+	private StringBuilder ruleBuffer;
+
 	/** Itemset comparator */
-	private static final Comparator<Itemset> ITEMSET_COMPARATOR = (o1, o2) -> 
-	    ArraysAlgos.comparatorItemsetSameSize.compare(o1.getItems(), o2.getItems());
-	
+	private static final Comparator<Itemset> ITEMSET_COMPARATOR = (o1, o2) -> ArraysAlgos.comparatorItemsetSameSize
+			.compare(o1.getItems(), o2.getItems());
+
 	/**
 	 * Default constructor
 	 */
-	public AlgoAgrawalFaster94(){
-		
+	public AlgoAgrawalFaster94() {
+
 	}
 
 	/**
 	 * Run the algorithm
-	 * @param patterns  a set of frequent itemsets
-	 * @param output an output file path for writing the result or null if the user want this method to return the result
-	 * @param databaseSize  the number of transactions in the database
-	 * @param minconf  the minconf threshold
-	 * @return  the set of association rules if the user wished to save them into memory
+	 * 
+	 * @param patterns     a set of frequent itemsets
+	 * @param output       an output file path for writing the result or null if the
+	 *                     user want this method to return the result
+	 * @param databaseSize the number of transactions in the database
+	 * @param minconf      the minconf threshold
+	 * @return the set of association rules if the user wished to save them into
+	 *         memory
 	 * @throws IOException exception if error writing to the output file
 	 */
-	public AssocRules runAlgorithm(Itemsets patterns, String output, int databaseSize, double minconf) throws IOException {
+	public AssocRules runAlgorithm(Itemsets patterns, String output, int databaseSize, double minconf)
+			throws IOException {
 		// save the parameters
 		this.minconf = minconf;
 		this.minlift = 0;
 		usingLift = false;
-		
+
 		// start the algorithm
 		return runAlgorithm(patterns, output, databaseSize);
 	}
 
 	/**
 	 * Run the algorithm
-	 * @param patterns  a set of frequent itemsets
-	 * @param output an output file path for writing the result or null if the user want this method to return the result
-	 * @param databaseSize  the number of transactions in the database
-	 * @param minconf  the minconf threshold
-	 * @param minlift  the minlift threshold
-	 * @return  the set of association rules if the user wished to save them into memory
+	 * 
+	 * @param patterns     a set of frequent itemsets
+	 * @param output       an output file path for writing the result or null if the
+	 *                     user want this method to return the result
+	 * @param databaseSize the number of transactions in the database
+	 * @param minconf      the minconf threshold
+	 * @param minlift      the minlift threshold
+	 * @return the set of association rules if the user wished to save them into
+	 *         memory
 	 * @throws IOException exception if error writing to the output file
 	 */
-	public AssocRules runAlgorithm(Itemsets patterns, String output, int databaseSize, double minconf,
-			double minlift) throws IOException {
+	public AssocRules runAlgorithm(Itemsets patterns, String output, int databaseSize, double minconf, double minlift)
+			throws IOException {
 		// save the parameters
 		this.minconf = minconf;
 		this.minlift = minlift;
 		usingLift = true;
-		
+
 		// start the algorithm
 		return runAlgorithm(patterns, output, databaseSize);
 	}
 
 	/**
 	 * Run the algorithm for generating association rules from a set of itemsets.
-	 * @param patterns the set of itemsets
-	 * @param output the output file path. If null the result is saved in memory and returned by the method.
-	 * @param databaseSize  the number of transactions in the original database
+	 * 
+	 * @param patterns     the set of itemsets
+	 * @param output       the output file path. If null the result is saved in
+	 *                     memory and returned by the method.
+	 * @param databaseSize the number of transactions in the original database
 	 * @return the set of rules found if the user chose to save the result to memory
 	 * @throws IOException exception if error while writting to file
 	 */
-	private AssocRules runAlgorithm(Itemsets patterns, String output, int databaseSize)
-			throws IOException {
-		
-		if(maxAntecedentLength < 1 || maxConsequentLength < 1){
+	private AssocRules runAlgorithm(Itemsets patterns, String output, int databaseSize) throws IOException {
+
+		if (maxAntecedentLength < 1 || maxConsequentLength < 1) {
 			throw new IllegalArgumentException("The maximum length must be at least 1.");
 		}
-		
+
 		// if the user wants to keep the result into memory
-		if(output == null){
+		if (output == null) {
 			writer = null;
-			rules =  new AssocRules("ASSOCIATION RULES");
-	    }else{ 
-	    	// if the user wants to save the result to a file
-	    	rules = null;
-			writer = new BufferedWriter(new FileWriter(output)); 
+			rules = new AssocRules("ASSOCIATION RULES");
+		} else {
+			// if the user wants to save the result to a file
+			rules = null;
+			writer = new BufferedWriter(new FileWriter(output));
 		}
-		
-		 // Initialize reusable buffer
-        ruleBuffer = new StringBuilder(256);
+
+		// Initialize reusable buffer
+		ruleBuffer = new StringBuilder(256);
 
 		this.databaseSize = databaseSize;
-		
+
 		// record the time when the algorithm starts
 		startTimestamp = System.currentTimeMillis();
 		// initialize variable to count the number of rules found
 		ruleCount = 0;
 		// save itemsets in a member variable
 		this.patterns = patterns;
-		
+
 		// SORTING
 		// First, we sort all itemsets having the same size by lexical order
-		// We do this for optimization purposes. If the itemsets are sorted, it allows to
+		// We do this for optimization purposes. If the itemsets are sorted, it allows
+		// to
 		// perform two optimizations:
 		// 1) When we need to calculate the support of an itemset (in the method
-		// "calculateSupport()") we can use a binary search instead of browsing the whole list.
+		// "calculateSupport()") we can use a binary search instead of browsing the
+		// whole list.
 		// 2) When combining itemsets to generate candidate, we can use the
-		//    lexical order to avoid comparisons (in the method "generateCandidates()").
-		
+		// lexical order to avoid comparisons (in the method "generateCandidates()").
+
 		// For itemsets of the same size
-		for(List<Itemset> itemsetsSameSize : patterns.getLevels()){
+		for (List<Itemset> itemsetsSameSize : patterns.getLevels()) {
 //			// Sort by lexicographical order using a Comparator
 //			Collections.sort(itemsetsSameSize, new Comparator<Itemset>() {
 //				@Override
@@ -192,49 +201,50 @@ public class AlgoAgrawalFaster94{
 			Collections.sort(itemsetsSameSize, ITEMSET_COMPARATOR);
 		}
 		// END OF SORTING
-		
+
 		// Now we will generate the rules.
-		
+
 		// For each frequent itemset of size >=2 that we will name "lk"
 		for (int k = 2; k < patterns.getLevels().size(); k++) {
 			for (Itemset lk : patterns.getLevels().get(k)) {
-				
+
 				// create a variable H1 for recursion
 				List<int[]> H1_for_recursion = new ArrayList<int[]>();
-				
+
 				// For each itemset "itemsetSize1" of size 1 that is member of lk
-				for(int item : lk.getItems()) {
-					int itemsetHm_P_1[] = new int[] {item};
-	
-					if(lk.size() - 1 <= maxAntecedentLength){
-						// make a copy of  lk without items from  hm_P_1
+				for (int item : lk.getItems()) {
+					int itemsetHm_P_1[] = new int[] { item };
+
+					if (lk.size() - 1 <= maxAntecedentLength) {
+						// make a copy of lk without items from hm_P_1
 						int[] itemset_Lk_minus_hm_P_1 = ArraysAlgos.cloneItemSetMinusOneItem(lk.getItems(), item);
-							
+
 						// Now we will calculate the support and confidence
-						// of the rule: itemset_Lk_minus_hm_P_1 ==>  hm_P_1
+						// of the rule: itemset_Lk_minus_hm_P_1 ==> hm_P_1
 						int support = calculateSupport(itemset_Lk_minus_hm_P_1); // THIS COULD BE
-																	// OPTIMIZED ?
+						// OPTIMIZED ?
 						double supportAsDouble = (double) support;
-						
-						// calculate the confidence of the rule : itemset_Lk_minus_hm_P_1 ==>  hm_P_1
+
+						// calculate the confidence of the rule : itemset_Lk_minus_hm_P_1 ==> hm_P_1
 						double conf = lk.getAbsoluteSupport() / supportAsDouble;
-	
+
 						// if the confidence is lower than minconf
-						if(conf < minconf || Double.isInfinite(conf)){
+						if (conf < minconf || Double.isInfinite(conf)) {
 							continue;
 						}
-						
+
 						double lift = 0;
 						int supportHm_P_1 = 0;
 						// if the user is using the minlift threshold, we will need
-						// to also calculate the lift of the rule:  itemset_Lk_minus_hm_P_1 ==>  hm_P_1
-						if(usingLift){
+						// to also calculate the lift of the rule: itemset_Lk_minus_hm_P_1 ==> hm_P_1
+						if (usingLift) {
 							// if we want to calculate the lift, we need the support of hm_P_1
-							supportHm_P_1 = calculateSupport(itemsetHm_P_1);  // if we want to calculate the lift, we need to add this.
+							supportHm_P_1 = calculateSupport(itemsetHm_P_1); // if we want to calculate the lift, we
+																				// need to add this.
 							// calculate the lift
-							double term1 = ((double)lk.getAbsoluteSupport()) /databaseSize;
-							double term2 = supportAsDouble /databaseSize;
-							double term3 = ((double)supportHm_P_1 / databaseSize);
+							double term1 = ((double) lk.getAbsoluteSupport()) / databaseSize;
+							double term2 = supportAsDouble / databaseSize;
+							double term3 = ((double) supportHm_P_1 / databaseSize);
 							lift = term1 / (term2 * term3);
 //							
 //							// if the lift is not enough
@@ -242,123 +252,132 @@ public class AlgoAgrawalFaster94{
 //								continue;
 //							}
 						}
-						
-						// If we are here, it means that the rule respect the minconf and minlift parameters.
+
+						// If we are here, it means that the rule respect the minconf and minlift
+						// parameters.
 						// Therefore, we output the rule.
-						if(lift >= minlift){  // BUG FIX 2026
-							saveRule(itemset_Lk_minus_hm_P_1, support, itemsetHm_P_1, supportHm_P_1, lk.getAbsoluteSupport(), conf, lift);
+						if (lift >= minlift) { // BUG FIX 2026
+							saveRule(itemset_Lk_minus_hm_P_1, support, itemsetHm_P_1, supportHm_P_1,
+									lk.getAbsoluteSupport(), conf, lift);
 						}
 					}
-					// Then we keep the itemset  hm_P_1 to find more rules using this itemset and lk.
-					if(1 < maxConsequentLength ){
+					// Then we keep the itemset hm_P_1 to find more rules using this itemset and lk.
+					if (1 < maxConsequentLength) {
 						H1_for_recursion.add(itemsetHm_P_1);
 					}
 					// ================ END OF WHAT I HAVE ADDED
 				}
-				// Finally, we make a recursive call to continue explores rules that can be made with "lk"
+				// Finally, we make a recursive call to continue explores rules that can be made
+				// with "lk"
 				apGenrules(k, 1, lk, H1_for_recursion);
 			}
-			
+
 		}
 
 		// close the file if we saved the result to a file
-		if(writer != null){
+		if (writer != null) {
 			writer.close();
 		}
-		
+
 		ruleBuffer = null;
 		// record the end time of the algorithm execution
 		endTimeStamp = System.currentTimeMillis();
-		
-		// Return the rules found if the user chose to save the result to memory rather than a file.
+
+		// Return the rules found if the user chose to save the result to memory rather
+		// than a file.
 		// Otherwise, null will be returned
 		return rules;
 	}
 
 	/**
-	 * The ApGenRules as described in p.14 of the paper by Agrawal.
-	 * (see the Agrawal paper for more details).
-	 * @param k the size of the first itemset used to generate rules
-	 * @param m the recursive depth of the call to this method (first time 1, then 2...)
+	 * The ApGenRules as described in p.14 of the paper by Agrawal. (see the Agrawal
+	 * paper for more details).
+	 * 
+	 * @param k  the size of the first itemset used to generate rules
+	 * @param m  the recursive depth of the call to this method (first time 1, then
+	 *           2...)
 	 * @param lk the itemset that is used to generate rules
 	 * @param Hm a set of itemsets that can be used with lk to generate rules
 	 * @throws IOException exception if error while writing output file
 	 */
-	private void apGenrules(int k, int m, Itemset lk, List<int[]> Hm)
-			throws IOException {
+	private void apGenrules(int k, int m, Itemset lk, List<int[]> Hm) throws IOException {
 //		if(m + 1  > maxConsequentLength){
 //			return;
 //		}
-		
-		// if the itemset "lk" that is used to generate rules is larger than the size of itemsets in "Hm"
+
+		// if the itemset "lk" that is used to generate rules is larger than the size of
+		// itemsets in "Hm"
 		if (k > m + 1) {
 			// Create a list that we will be used to store itemsets for the recursive call
 			List<int[]> Hm_plus_1_for_recursion = new ArrayList<int[]>();
-			
+
 			// generate candidates using Hm
 			List<int[]> Hm_plus_1 = generateCandidateSizeK(Hm);
-			
+
 			// for each such candidates
 			for (int[] hm_P_1 : Hm_plus_1) {
-				
-				if(lk.size() - hm_P_1.length <= maxAntecedentLength){
+
+				if (lk.size() - hm_P_1.length <= maxAntecedentLength) {
 					// We subtract the candidate from the itemset "lk"
-					int[] itemset_Lk_minus_hm_P_1 =  ArraysAlgos.cloneItemSetMinusAnItemset(lk.getItems(), hm_P_1);
-	
-					// We will now calculate the support of the rule  Lk/(hm_P_1) ==> hm_P_1
+					int[] itemset_Lk_minus_hm_P_1 = ArraysAlgos.cloneItemSetMinusAnItemset(lk.getItems(), hm_P_1);
+
+					// We will now calculate the support of the rule Lk/(hm_P_1) ==> hm_P_1
 					// we need it to calculate the confidence
-					int support = calculateSupport(itemset_Lk_minus_hm_P_1); 
-					
-					double supportAsDouble = (double)support;
-					
+					int support = calculateSupport(itemset_Lk_minus_hm_P_1);
+
+					double supportAsDouble = (double) support;
+
 					// calculate the confidence of the rule Lk/(hm_P_1) ==> hm_P_1
 					double conf = lk.getAbsoluteSupport() / supportAsDouble;
-	
+
 					// if the confidence is not enough than we don't need to consider
-					// the rule  Lk/(hm_P_1) ==> hm_P_1 anymore so we continue 
-					if(conf < minconf || Double.isInfinite(conf)){
+					// the rule Lk/(hm_P_1) ==> hm_P_1 anymore so we continue
+					if (conf < minconf || Double.isInfinite(conf)) {
 						continue;
 					}
-					
+
 					double lift = 0;
 					int supportHm_P_1 = 0;
-					// if the user is using the minlift threshold, then we will need to calculate the lift of the
+					// if the user is using the minlift threshold, then we will need to calculate
+					// the lift of the
 					// rule as well and check if the lift is higher or equal to minlift.
-					if(usingLift){
+					if (usingLift) {
 						// if we want to calculate the lift, we need the support of Hm+1
-						supportHm_P_1 = calculateSupport(hm_P_1);  
-						// calculate the lift of the rule:  Lk/(hm_P_1) ==> hm_P_1
-						double term1 = ((double)lk.getAbsoluteSupport()) /databaseSize;
-						double term2 = (supportAsDouble) /databaseSize;
-						
-						 lift = term1 / (term2 * ((double)supportHm_P_1 / databaseSize));
-	
+						supportHm_P_1 = calculateSupport(hm_P_1);
+						// calculate the lift of the rule: Lk/(hm_P_1) ==> hm_P_1
+						double term1 = ((double) lk.getAbsoluteSupport()) / databaseSize;
+						double term2 = (supportAsDouble) / databaseSize;
+
+						lift = term1 / (term2 * ((double) supportHm_P_1 / databaseSize));
+
 						// if the lift is not enough
-						if(lift < minlift){
+						if (lift < minlift) {
 							continue;
 						}
 					}
-					
+
 					// The rule has passed the confidence and lift threshold requirements,
 					// so we can output it
-					saveRule(itemset_Lk_minus_hm_P_1, support, hm_P_1, supportHm_P_1, lk.getAbsoluteSupport(), conf, lift);
+					saveRule(itemset_Lk_minus_hm_P_1, support, hm_P_1, supportHm_P_1, lk.getAbsoluteSupport(), conf,
+							lift);
 				}
-				// if k == m+1, then we cannot explore further rules using Lk since Lk will be too small.
-				if(k != m+1 && m + hm_P_1.length <= maxConsequentLength) {
+				// if k == m+1, then we cannot explore further rules using Lk since Lk will be
+				// too small.
+				if (k != m + 1 && m + hm_P_1.length <= maxConsequentLength) {
 					Hm_plus_1_for_recursion.add(hm_P_1);
 				}
 			}
 			// recursive call to apGenRules to find more rules using "lk"
 			apGenrules(k, m + 1, lk, Hm_plus_1_for_recursion);
 		}
-		
+
 	}
-	
+
 	/**
-	 * Calculate the support of an itemset by looking at the frequent patterns
-	 * of the same size.
-	 * Because patterns are sorted by lexical order, we use a binary search.
-	 * This is MUCH MORE efficient than just browsing the full list of patterns.
+	 * Calculate the support of an itemset by looking at the frequent patterns of
+	 * the same size. Because patterns are sorted by lexical order, we use a binary
+	 * search. This is MUCH MORE efficient than just browsing the full list of
+	 * patterns.
 	 * 
 	 * @param itemset the itemset.
 	 * @return the support of the itemset
@@ -368,42 +387,43 @@ public class AlgoAgrawalFaster94{
 		List<Itemset> patternsSameSize = patterns.getLevels().get(itemset.length);
 //		
 		// We perform a binary search to find the position of itemset in this list
-        int first = 0;
-        int last = patternsSameSize.size() - 1;
-       
-        while( first <= last )
-        {
-        	int middle = ( first + last ) >>1 ; // >>1 means to divide by 2
-        	int[] itemsetMiddle = patternsSameSize.get(middle).getItems();
+		int first = 0;
+		int last = patternsSameSize.size() - 1;
 
-        	int comparison = ArraysAlgos.comparatorItemsetSameSize.compare(itemset, itemsetMiddle);
-            if(comparison  > 0 ){
-            	first = middle + 1;  //  the itemset compared is larger than the subset according to the lexical order
-            }
-            else if(comparison  < 0 ){
-            	last = middle - 1; //  the itemset compared is smaller than the subset  is smaller according to the lexical order
-            }
-            else{
-            	// we have found the itemset, so we return its support.
-            	return patternsSameSize.get(middle).getAbsoluteSupport();
-            }
-        }
-        // The following line will not happen because in the context of this algorithm, we will
-        // always search for itemsets that are frequent and thus will be in the list of patterns.
-        // We just put the following line to avoid compilation error and detect if the error if this
-        // case was ever to happen.
-        return 0;
+		while (first <= last) {
+			int middle = (first + last) >> 1; // >>1 means to divide by 2
+			int[] itemsetMiddle = patternsSameSize.get(middle).getItems();
+
+			int comparison = ArraysAlgos.comparatorItemsetSameSize.compare(itemset, itemsetMiddle);
+			if (comparison > 0) {
+				first = middle + 1; // the itemset compared is larger than the subset according to the lexical order
+			} else if (comparison < 0) {
+				last = middle - 1; // the itemset compared is smaller than the subset is smaller according to the
+									// lexical order
+			} else {
+				// we have found the itemset, so we return its support.
+				return patternsSameSize.get(middle).getAbsoluteSupport();
+			}
+		}
+		// The following line will not happen because in the context of this algorithm,
+		// we will
+		// always search for itemsets that are frequent and thus will be in the list of
+		// patterns.
+		// We just put the following line to avoid compilation error and detect if the
+		// error if this
+		// case was ever to happen.
+		return 0;
 //        throw new RuntimeException("INVALID SUPPORT - THIS SHOULD NOT HAPPEN BECAUSE ALL ITEMSETS HAVE TO BE FREQUENT");
 	}
 
 	/**
-	 * Generating candidate itemsets of size k from frequent itemsets of size
-	 * k-1. This is called "apriori-gen" in the paper by agrawal. This method is
-	 * also used by the Apriori algorithm for generating candidates.
-	 * Note that this method is very optimized. It assumed that the list of
-	 * itemsets received as parameter are lexically ordered.
+	 * Generating candidate itemsets of size k from frequent itemsets of size k-1.
+	 * This is called "apriori-gen" in the paper by agrawal. This method is also
+	 * used by the Apriori algorithm for generating candidates. Note that this
+	 * method is very optimized. It assumed that the list of itemsets received as
+	 * parameter are lexically ordered.
 	 * 
-	 * @param levelK_1  a set of itemsets of size k-1
+	 * @param levelK_1 a set of itemsets of size k-1
 	 * @return a set of candidates
 	 */
 	protected List<int[]> generateCandidateSizeK(List<int[]> levelK_1) {
@@ -441,18 +461,18 @@ public class AlgoAgrawalFaster94{
 				}
 
 				// Create a new candidate by combining itemset1 and itemset2
-				int lastItem1 =  itemset1[itemset1.length -1];
-				int lastItem2 =  itemset2[itemset2.length -1];
+				int lastItem1 = itemset1[itemset1.length - 1];
+				int lastItem2 = itemset2[itemset2.length - 1];
 				int newItemset[];
-				if(lastItem1 < lastItem2) {
+				if (lastItem1 < lastItem2) {
 					// Create a new candidate by combining itemset1 and itemset2
-					newItemset = new int[itemset1.length+1];
+					newItemset = new int[itemset1.length + 1];
 					System.arraycopy(itemset1, 0, newItemset, 0, itemset1.length);
 					newItemset[itemset1.length] = lastItem2;
 					candidates.add(newItemset);
-				}else {
+				} else {
 					// Create a new candidate by combining itemset1 and itemset2
-					newItemset  = new int[itemset1.length+1];
+					newItemset = new int[itemset1.length + 1];
 					System.arraycopy(itemset2, 0, newItemset, 0, itemset2.length);
 					newItemset[itemset2.length] = lastItem1;
 					candidates.add(newItemset);
@@ -461,10 +481,8 @@ public class AlgoAgrawalFaster94{
 			}
 		}
 		// return the set of candidates
-		return candidates; 
+		return candidates;
 	}
-
-
 
 	/**
 	 * Print statistics about the algorithm execution to System.out.
@@ -475,28 +493,29 @@ public class AlgoAgrawalFaster94{
 		System.out.println(" Total time ~ " + (endTimeStamp - startTimestamp) + " ms");
 		System.out.println("===================================================");
 	}
-	
+
 	/**
-	 * Save a rule to the output file or in memory depending
-	 * if the user has provided an output file path or not
-	 * @param itemset1  left itemset of the rule
+	 * Save a rule to the output file or in memory depending if the user has
+	 * provided an output file path or not
+	 * 
+	 * @param itemset1        left itemset of the rule
 	 * @param supportItemset1 the support of itemset1 if known
-	 * @param itemset2  right itemset of the rule
+	 * @param itemset2        right itemset of the rule
 	 * @param supportItemset2 the support of itemset2 if known
 	 * @param absoluteSupport support of the rule
-	 * @param conf confidence of the rule
-	 * @param lift lift of the rule
+	 * @param conf            confidence of the rule
+	 * @param lift            lift of the rule
 	 * @throws IOException exception if error writing the output file
 	 */
 	protected void saveRule(int[] itemset1, int supportItemset1, int[] itemset2, int supportItemset2,
 			int absoluteSupport, double conf, double lift) throws IOException {
 		ruleCount++;
-		
+
 		// if the result should be saved to a file
-		if(writer != null){
+		if (writer != null) {
 			// Clear and reuse buffer
-            ruleBuffer.setLength(0);
-			
+			ruleBuffer.setLength(0);
+
 			// write itemset 1
 			for (int i = 0; i < itemset1.length; i++) {
 				ruleBuffer.append(itemset1[i]);
@@ -521,29 +540,31 @@ public class AlgoAgrawalFaster94{
 			ruleBuffer.append(" #CONF: ");
 			// write confidence
 			ruleBuffer.append(conf);
-			if(usingLift){
+			if (usingLift) {
 				ruleBuffer.append(" #LIFT: ");
 				ruleBuffer.append(lift);
 			}
-			
+
 			writer.write(ruleBuffer.toString());
 			writer.newLine();
-		}// otherwise the result is kept into memory
-		else{
+		} // otherwise the result is kept into memory
+		else {
 			rules.addRule(new AssocRule(itemset1, itemset2, supportItemset1, absoluteSupport, conf, lift));
 		}
 	}
-	
-	/** 
+
+	/**
 	 * Set the maximum antecedent length
+	 * 
 	 * @param length the maximum length
 	 */
 	public void setMaxAntecedentLength(int maxAntecedentLength) {
 		this.maxAntecedentLength = maxAntecedentLength;
 	}
-	
-	/** 
+
+	/**
 	 * Set the maximum consequent length
+	 * 
 	 * @param length the maximum length
 	 */
 	public void setMaxConsequentLength(int maxConsequentLength) {

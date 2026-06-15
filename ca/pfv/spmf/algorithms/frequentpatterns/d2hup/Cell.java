@@ -21,28 +21,29 @@ import ca.pfv.spmf.algorithms.frequentpatterns.hmine.AlgoHMine;
 
 /**
  * This class represents an item and its utility in a transaction.
- * It is used for storing items from transaction in the CAUL structure.
+ * It is used in the CAUL structure for storing transaction items.
  *
  * @see AlgoHMine
  * @author Philippe Fournier-Viger
  */
 class Cell {
-	/** an item occurene in a transaction */
+	
+	/** Item */
 	int item; 
-	/* the corresponding profit */
+	
+	/** Item utility */
 	int utility;
 
 	/**
 	 * Constructor
 	 */
 	public Cell() {
-		
 	}
 	
 	/**
-	 * Constructor.
-	 * @param item the item that is used for this cell
-	 * @param utility the item utility 
+	 * Constructor
+	 * @param item the item
+	 * @param utility the item utility
 	 */
 	public Cell(int item, int utility){
 		this.item = item;
@@ -50,12 +51,10 @@ class Cell {
 	}
 	
 	/**
-	 * Get a string representation of this cell.
+	 * Get string representation
 	 * @return a string representation
 	 */
 	public String toString() {
 		return "(" + item + "," + utility + ")";
 	}
-	
-
 }

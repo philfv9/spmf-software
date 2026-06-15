@@ -18,6 +18,8 @@ package ca.pfv.spmf.gui.visual_pattern_viewer;
  *
  * You should have received a copy of the GNU General Public License
  * along with SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information
  */
 /**
  * This is the different layout for displaying patterns in the visual pattern

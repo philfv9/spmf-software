@@ -73,6 +73,7 @@ public class FilterSelectionWindow extends JDialog {
 	Vector<Class> columnClasses = null;
 
 	/** List of current filters **/
+	@SuppressWarnings("rawtypes")
 	PatternTableRowFilters rowfilters;
 
 	/** The list of available filters for showing in the combo box */
@@ -99,7 +100,8 @@ public class FilterSelectionWindow extends JDialog {
 	 * @param patternVisualizer the pattern vizualization window that has created
 	 *                          that filter selection window
 	 */
-	public FilterSelectionWindow(Vector<String> columnNames, @SuppressWarnings("rawtypes") Vector<Class> columnClasses,
+	@SuppressWarnings("rawtypes")
+	public FilterSelectionWindow(Vector<String> columnNames, Vector<Class> columnClasses,
 			PatternTableRowFilters rowFilters, PatternVizualizer patternVisualizer) {
 		super(patternVisualizer);
 
@@ -242,6 +244,7 @@ public class FilterSelectionWindow extends JDialog {
 	 * This method is called whe the user click on the button "Add filter...". It
 	 * adds the filter to the list of filter, and then close the window.
 	 */
+	@SuppressWarnings("unchecked")
 	private void addFilter() {
 		// Get the class corresponding to the chosen filter
 		@SuppressWarnings("rawtypes")

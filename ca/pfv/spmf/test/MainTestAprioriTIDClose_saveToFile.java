@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTIDClose.AlgoAprioriTIDClose;
+import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_simple.AlgoAprioriTIDClose;
 import ca.pfv.spmf.input.transaction_database_list_integers.TransactionDatabase;
 
 

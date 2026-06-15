@@ -4,11 +4,12 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_rare.AlgoAprioriTIDrare;
+import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_fast.AlgoAprioriTIDrare_FAST;
+import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_simple.AlgoAprioriTIDrare;
 
 
 /**
- * Example of how to use APRIORI-RARE (TID version) and save the output to a file,
+ * Example of how to use APRIORI-RARE (fast TID version) and save the output to a file,
  * from the source code. This version keeps the transaction identifiers of patterns in memory and
  * is based on AprioriTID instead of Apriori.
  * @author Philippe Fournier-Viger (Copyright 2017)
@@ -24,7 +25,7 @@ public class MainTestAprioriRareTID_saveToFile {
 		double minsup = 0.6;
 		
 		// Applying the APRIORI-Inverse algorithm to find sporadic itemsets
-		AlgoAprioriTIDrare algo = new AlgoAprioriTIDrare();
+		AlgoAprioriTIDrare_FAST algo = new AlgoAprioriTIDrare_FAST();
 		
         // if you set the following parameter to true, the sequence ids of the sequences where
         // each pattern appears will be shown in the result

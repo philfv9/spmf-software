@@ -18,16 +18,21 @@ package ca.pfv.spmf.gui.visual_pattern_viewer;
  *
  * You should have received a copy of the GNU General Public License
  * along with SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information
  */
 /**
- * The main types of patterns supported by the Visual Pattern Viewer
- * @author Philippe Fournier-viger
+ * The main types of patterns supported by the Visual Pattern Viewer.
+ *
+ * @author Philippe Fournier-Viger
  */
-public enum PatternType{
+public enum PatternType {
     ASSOCIATION_RULES,
     STRING_SEQUENTIAL_PATTERNS,
     STRING_SEQUENTIAL_PATTERNS_NO_GAP,
     SEQUENTIAL_PATTERNS,
     ITEMSETS,
-    UNCERTAIN_ITEMSETS;
+    UNCERTAIN_ITEMSETS,
+    /** Subgraph patterns in SPMF / gSpan format. */
+    SUBGRAPHS;
 }

@@ -35,7 +35,7 @@ import ca.pfv.spmf.tools.MemoryLogger;
 public class Main {
 
 	// variable for the current version of SPMF
-	public final static String SPMF_VERSION = "2.65";
+	public final static String SPMF_VERSION = "2.66";
 
 	/**
 	 * Method to launch the software. If there are command line arguments, it means

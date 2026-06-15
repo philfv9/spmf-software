@@ -138,7 +138,7 @@ public class CommandProcessor {
 					throw new IllegalArgumentException(System.lineSeparator() + System.lineSeparator() + " The "
 							+ ordinal + " parameter of this algorithm '" + parameterI.name
 							+ "' is mandatory. Please provide a value of type: "
-							+ parameterI.parameterType.getSimpleName() + ".");
+							+ parameterI.getParameterType().getSimpleName() + ".");
 				}
 				break;
 			} else {
@@ -153,7 +153,7 @@ public class CommandProcessor {
 						throw new IllegalArgumentException(System.lineSeparator() + System.lineSeparator() + " The "
 								+ ordinal + " parameter of this algorithm '" + parameterI.name
 								+ "' is mandatory. Please provide a value of type: "
-								+ parameterI.parameterType.getSimpleName() + ".");
+								+ parameterI.getParameterType().getSimpleName() + ".");
 					}
 				} else {
 					// Check if the parameter is of the correct type
@@ -165,7 +165,7 @@ public class CommandProcessor {
 						throw new IllegalArgumentException(System.lineSeparator() + System.lineSeparator() + " The "
 								+ ordinal + " parameter value of this algorithm '" + parameterI.name
 								+ "' is of an incorrect type. The provided value is '" + parameters[i]
-								+ "' but it should be of type: " + parameterI.parameterType.getSimpleName() + ".");
+								+ "' but it should be of type: " + parameterI.getParameterType().getSimpleName() + ".");
 					}
 				}
 			}

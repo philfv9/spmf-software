@@ -11,7 +11,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +44,8 @@ import javax.swing.event.ChangeListener;
  *
  * You should have received a copy of the GNU General Public License
  * along with SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information
  */
 /**
  * A dialog window that displays a histogram showing the distribution of values

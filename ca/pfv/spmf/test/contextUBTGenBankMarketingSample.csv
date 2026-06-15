@@ -1,0 +1,13 @@
+age,job,marital,education,default,housing,loan,contact,month,day_of_week,duration,campaign,pdays,previous,poutcome,emp.var.rate,cons.price.idx,cons.conf.idx,euribor3m,nr.employed,y
+30,admin.,married,tertiary,no,yes,no,cellular,may,mon,120,1,999,0,nonexistent,1.1,93.994,-36.4,4.857,5195,no
+45,technician,single,secondary,no,yes,no,telephone,jun,tue,210,2,999,0,nonexistent,1.4,94.465,-41.8,4.962,5228,yes
+38,services,divorced,tertiary,no,no,yes,cellular,jul,wed,180,1,999,0,nonexistent,-0.1,93.200,-42.0,4.021,5017,no
+50,management,married,tertiary,no,yes,no,cellular,aug,thu,300,3,999,1,failure,1.1,93.994,-36.4,4.857,5195,yes
+28,admin.,single,secondary,no,no,no,telephone,may,fri,90,1,999,0,nonexistent,1.4,94.465,-41.8,4.962,5228,no
+35,technician,married,tertiary,no,yes,yes,cellular,jun,mon,150,2,999,0,nonexistent,-0.1,93.200,-42.0,4.021,5017,yes
+42,blue-collar,married,primary,no,yes,no,cellular,jul,tue,200,2,999,0,nonexistent,1.1,93.994,-36.4,4.857,5195,no
+29,entrepreneur,single,tertiary,no,no,yes,telephone,aug,wed,110,1,999,0,nonexistent,1.4,94.465,-41.8,4.962,5228,yes
+31,technician,married,secondary,no,yes,no,cellular,may,thu,160,2,999,1,failure,-0.1,93.200,-42.0,4.021,5017,no
+48,management,divorced,tertiary,no,yes,yes,cellular,jun,fri,240,3,999,2,success,1.1,93.994,-36.4,4.857,5195,yes
+36,services,single,secondary,no,no,no,telephone,jul,mon,130,1,999,0,nonexistent,1.4,94.465,-41.8,4.962,5228,no
+52,retired,married,primary,no,yes,no,cellular,aug,tue,280,2,999,1,failure,-0.1,93.200,-42.0,4.021,5017,yes

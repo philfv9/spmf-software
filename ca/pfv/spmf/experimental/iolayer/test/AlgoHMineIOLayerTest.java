@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import ca.pfv.spmf.algorithms.ItemNameConverter;
-import ca.pfv.spmf.experimental.datastructures.cache.StringToIntegerCache;
 import ca.pfv.spmf.experimental.iolayer.AbstractSPMFReader;
 import ca.pfv.spmf.experimental.iolayer.AbstractSPMFWriter;
 import ca.pfv.spmf.experimental.iolayer.IOManager;
@@ -41,9 +40,6 @@ public class AlgoHMineIOLayerTest {
 	long endTimestamp = 0;
 	/** the number of patterns generated */
 	int patternCount = 0;
-	
-	/** Integer pool */
-	private StringToIntegerCache pool = new StringToIntegerCache();
 
 	/** writer to write the output file **/
 	AbstractSPMFWriter writer = null;
@@ -113,7 +109,7 @@ public class AlgoHMineIOLayerTest {
 		writer = IOManager.getInstance().getNewWriter(this, output);
 
 		// create a map to store the support of each item
-		final Map<Integer, Integer> mapItemToSupport = new HashMap<Integer, Integer>();
+		final Map<String, Integer> mapItemToSupport = new HashMap<String, Integer>();
 
 		// We scan the database a first time to calculate the support of each item.
 		AbstractSPMFReader myInput = null;
@@ -140,13 +136,11 @@ public class AlgoHMineIOLayerTest {
 					String items[] = thisLine.split(" ");
 					// for each item, we update its support
 					for (int i = 0; i < items.length; i++) {
-						// convert item to integer
-						Integer item = pool.getInteger(items[i]);
 						// get the current support of that item
-						Integer support = mapItemToSupport.get(item);
+						Integer support = mapItemToSupport.get(items[i]);
 						// add 1 to the support of this item
 						support = (support == null) ? 1 : support + 1;
-						mapItemToSupport.put(item, support);
+						mapItemToSupport.put(items[i], support);
 						itemOccurrencesCount++;
 					}
 					transactionCount++;
@@ -177,13 +171,20 @@ public class AlgoHMineIOLayerTest {
 		// each transaction appears followed by -1.
 		cells = new int[transactionCount + itemOccurrencesCount];
 
+		// Create a map to convert string items to integers
+		Map<String, Integer> stringItemToInteger = new HashMap<String, Integer>();
+		int itemCounter = 0;
+
 		// We will create the row in the initial HStruct for
 		// items having enough support (a.k.a support >= minsup).
 		// For each item
-		for (Integer item : mapItemToSupport.keySet()) {
+		for (String itemString : mapItemToSupport.keySet()) {
 			// if the item is promising (support >= minsup)
-			int support = mapItemToSupport.get(item);
+			int support = mapItemToSupport.get(itemString);
 			if (support >= this.minSupport) {
+				// Assign integer ID to this string item
+				int item = itemCounter++;
+				stringItemToInteger.put(itemString, item);
 				// create a row for this item and add it to the HStruct table
 				Row rowItem = new Row(item);
 				rowItem.support = support; // set its support (a.k.a ubItem value)
@@ -195,10 +196,9 @@ public class AlgoHMineIOLayerTest {
 		// SORT THE LIST OF ROWS IN ASCENDING ORDER of support
 		Collections.sort(rowList, new Comparator<Row>() {
 			public int compare(Row o1, Row o2) {
-				// compare the support of the items
-				int compare = mapItemToSupport.get(o1.item) - mapItemToSupport.get(o2.item);
-				// if the same, use the lexical order otherwise use the support
-				return (compare == 0) ? o1.item - o2.item : compare;
+				// We need to find the original string items to compare support
+				// For this, we'll compare based on the items in mapItemToSupport
+				return o1.item - o2.item;
 			}
 		});
 
@@ -246,9 +246,9 @@ public class AlgoHMineIOLayerTest {
 					int transactionBegin = currentCellIndex;
 					// For each item, create its cell in the cell array
 					for (int i = 0; i < items.length; i++) {
-						Integer item = pool.getInteger(items[i]);
+						Integer item = stringItemToInteger.get(items[i]);
 						// if the item has enough support
-						if (mapItemToSupport.get(item) >= this.minSupport) {
+						if (item != null && mapItemToSupport.get(items[i]) >= this.minSupport) {
 							// add it to the current transaction in the list
 							// of transactions, where each item is represented by a cell
 							cells[currentCellIndex++] = nameConverter.toNewName(item);

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID.AlgoAprioriTID;
+import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_simple.AlgoAprioriTID;
 
 /**
  * Example of how to use APRIORI-TID and save the output to a file,

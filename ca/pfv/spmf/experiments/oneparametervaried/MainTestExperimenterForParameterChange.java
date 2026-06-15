@@ -25,7 +25,7 @@ public class MainTestExperimenterForParameterChange {
 		// Here we must give a path to the spmf.jar file on your computer
 		//  If you did not download spmf.jar, you need to download it
 		// from the download page on the SPMF website
-		experimenter.setSPMFJarFilePath("C:\\\\Users\\\\philippe\\\\Desktop\\\\spmf.jar");
+		experimenter.setSPMFJarFilePath("C:\\\\Users\\\\Phil\\\\Desktop\\\\spmf.jar");
 		
 		// We indicate that if an algorithm run out of time, 
 		// the result should be indicated using the "-" string

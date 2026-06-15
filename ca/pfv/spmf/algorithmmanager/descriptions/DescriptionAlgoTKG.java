@@ -103,7 +103,7 @@ public class DescriptionAlgoTKG extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getOutputFileTypes() {
-		return new String[]{"Patterns", "Subgraphs", "Top-k Frequent subgraphs"};
+		return new String[]{"Patterns", "Subgraphs", "Frequent subgraphs"};
 	}
 	
 	@Override

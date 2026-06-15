@@ -1,0 +1,13 @@
+inputFile=contextUBTGenPimaIndianDiabetesSample.csv
+outputFile=pima_processed.csv
+prefix=pima
+header=true
+delimiter=,
+targetColIndex=8
+skipColsIndices=
+numericIntColsIndices=0,1,2,3,4,7
+numericFloatColsIndices=5,6
+catColsIndices=
+B=5
+writeTransformParameters=false
+missingValueImputation=false

@@ -21,6 +21,8 @@ import java.util.List;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove the copyright and license information.
  */
 /**
  * A tool to read a file in ARFF format. This class is very basic and just read the information in the simplest way

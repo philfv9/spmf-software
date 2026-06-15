@@ -1,10 +1,5 @@
 package ca.pfv.spmf.gui.parameterselectionpanel;
 
-import javax.swing.table.AbstractTableModel;
-
-import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
-import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
-
 /*
  * Copyright (c) 2022 Philippe Fournier-Viger
  *
@@ -23,165 +18,250 @@ import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
  */
+
+import javax.swing.table.AbstractTableModel;
+
+import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
+import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
+
 /**
  * This is a custom table model used by the ParameterSelectionPanel of SPMF
- * 
+ *
  * @see ParameterSelectionPanel
- * 
+ *
  * @author Philippe Fournier-Viger, 2024.
  */
 @SuppressWarnings("serial")
 public class ParameterSelectionTableModel extends AbstractTableModel {
 
-	/** Names of columns */
-	private String[] columnNames = { "Parameter", "Value", "Example" };
+    // -----------------------------------------------------------------------
+    // Constants
+    // -----------------------------------------------------------------------
 
-	/** The parameter values entered by the user */
-	private String[] data;
+    /** Index of the "Parameter" column */
+    private static final int COL_PARAMETER = 0;
 
-	/** The descriptions of the parameters */
-	private DescriptionOfParameter[] parameters;
+    /** Index of the "Value" column */
+    private static final int COL_VALUE = 1;
 
-	/**
-	 * Constructor
-	 * 
-	 * @param descriptionOfAlgorithm the description of an algorithm
-	 */
-	public ParameterSelectionTableModel(DescriptionOfAlgorithm descriptionOfAlgorithm) {
-		if (descriptionOfAlgorithm != null) {
-			parameters = descriptionOfAlgorithm.getParametersDescription();
-		} else {
-			parameters = new DescriptionOfParameter[] {};
-		}
-		data = new String[parameters.length];
-	}
+    /** Index of the "Example" column */
+    private static final int COL_EXAMPLE = 2;
 
-	@Override
-	/**
-	 * Get the number of rows in the table
-	 * 
-	 * @return number of rows
-	 */
-	public int getRowCount() {
-		if (parameters == null) {
-			return 0;
-		}
-		return parameters.length;
-	}
+    /** Suffix appended to the parameter name when the parameter is optional */
+    private static final String OPTIONAL_SUFFIX = " (optional)";
 
-	@Override
-	/**
-	 * Get the number of columns
-	 * 
-	 * @return the number of columns
-	 */
-	public int getColumnCount() {
-		return columnNames.length;
-	}
+    // -----------------------------------------------------------------------
+    // Instance fields
+    // -----------------------------------------------------------------------
 
-	@Override
-	/**
-	 * Get the name of a column
-	 * 
-	 * @param column the column index
-	 * @return the name
-	 */
-	public String getColumnName(int column) {
-		return columnNames[column];
-	}
+    /** Names of columns */
+    private final String[] columnNames = { "Parameter", "Value", "Example" };
 
-	@Override
-	/**
-	 * Get the value in a cell
-	 * 
-	 * @param rowIndex    the row index
-	 * @param columnIndex the column index
-	 */
-	public Object getValueAt(int rowIndex, int columnIndex) {
-		DescriptionOfParameter parameter = parameters[rowIndex];
-		if (columnIndex == 0) {
-			return parameter.name + (parameter.isOptional() ? " (optional)" : "");
-		} else if (columnIndex == 2) {
-			return parameter.example;
-		}
-		return data[rowIndex];
-	}
+    /** The parameter values entered by the user */
+    private String[] data;
 
-	@Override
-	/**
-	 * Check if a cell is editable
-	 * 
-	 * @param rowIndex    the row index
-	 * @param columnIndex the column index
-	 * @return true if editable. Otherwise false.
-	 */
-	public boolean isCellEditable(int rowIndex, int columnIndex) {
-		return columnIndex == 1; // Only the "Value" column is editable
-	}
+    /** The descriptions of the parameters */
+    private DescriptionOfParameter[] parameters;
 
-	@Override
-	/**
-	 * Set the value in a cell
-	 * 
-	 * @param rowIndex    the row index
-	 * @param columnIndex the column index
-	 * @param aValue      the value
-	 */
-	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-		data[rowIndex] = (String) aValue;
-		fireTableCellUpdated(rowIndex, columnIndex);
-	}
+    // -----------------------------------------------------------------------
+    // Constructor
+    // -----------------------------------------------------------------------
 
-	/**
-	 * Set the data to display in the table
-	 * 
-	 * @param parameters the list of descriptions of parameters to be displayed
-	 */
-	public void setData(DescriptionOfParameter[] parameters) {
-		// Try to copy the previous data:
-		String[] previousdata = data;
-		data = new String[parameters.length];
+    /**
+     * Constructor
+     *
+     * @param descriptionOfAlgorithm the description of an algorithm
+     */
+    public ParameterSelectionTableModel(DescriptionOfAlgorithm descriptionOfAlgorithm) {
+        if (descriptionOfAlgorithm != null) {
+            parameters = descriptionOfAlgorithm.getParametersDescription();
+        } else {
+            // No algorithm selected – start with an empty parameter list
+            parameters = new DescriptionOfParameter[0];
+        }
+        // Allocate value storage; entries are null until the user types something
+        data = new String[parameters.length];
+    }
 
-		for (int i = 0; i < data.length && i < previousdata.length; i++) {
-			data[i] = previousdata[i];
-		}
+    // -----------------------------------------------------------------------
+    // AbstractTableModel overrides
+    // -----------------------------------------------------------------------
 
-		this.parameters = parameters;
-		fireTableDataChanged(); // Notify table of data change
-	}
+    /**
+     * Get the number of rows in the table
+     *
+     * @return number of rows
+     */
+    @Override
+    public int getRowCount() {
+        if (parameters == null) {
+            return 0;
+        }
+        return parameters.length;
+    }
 
-	/**
-	 * Set the parameter values using an array of values
-	 */
-	public void setParameterValues(String[] parameterValues) {
-		if (parameterValues == null) {
-			return;
-		}
-		for (int i = 0; i < data.length && i < parameterValues.length; i++) {
-			data[i] = parameterValues[i];
-		}
-	}
+    /**
+     * Get the number of columns
+     *
+     * @return the number of columns
+     */
+    @Override
+    public int getColumnCount() {
+        return columnNames.length;
+    }
 
-	/**
-	 * Get the array of parameter values entered by the user
-	 * 
-	 * @return an array of String values
-	 */
-	public String[] getParameterValues() {
-		// We make a copy and remove the null values for optional parameters
-		int numberOfNonOptionalParameters = 0;
-		for (int i = 0; i < parameters.length; i++) {
-			DescriptionOfParameter param = parameters[i];
-			boolean toRemove = param.isOptional() == true && (data[i] == null || "".equals(data[i]));
-			if (toRemove == false) {
-				numberOfNonOptionalParameters++;
-			}
-		}
+    /**
+     * Get the name of a column
+     *
+     * @param column the column index
+     * @return the name
+     */
+    @Override
+    public String getColumnName(int column) {
+        return columnNames[column];
+    }
 
-		String[] trimmedData = new String[numberOfNonOptionalParameters];
-		System.arraycopy(data, 0, trimmedData, 0, numberOfNonOptionalParameters);
+    /**
+     * Get the value in a cell
+     *
+     * @param rowIndex    the row index
+     * @param columnIndex the column index
+     * @return the cell value as an Object
+     */
+    @Override
+    public Object getValueAt(int rowIndex, int columnIndex) {
+        DescriptionOfParameter parameter = parameters[rowIndex];
 
-		return trimmedData;
-	}
+        if (columnIndex == COL_PARAMETER) {
+            // Append "(optional)" suffix so the user knows the field is not mandatory
+            return parameter.name + (parameter.isOptional() ? OPTIONAL_SUFFIX : "");
+        } else if (columnIndex == COL_EXAMPLE) {
+            return parameter.example;
+        }
 
+        // COL_VALUE – return whatever the user has typed (may be null)
+        return data[rowIndex];
+    }
+
+    /**
+     * Check if a cell is editable
+     *
+     * @param rowIndex    the row index
+     * @param columnIndex the column index
+     * @return true if editable. Otherwise false.
+     */
+    @Override
+    public boolean isCellEditable(int rowIndex, int columnIndex) {
+        // Only the "Value" column is editable
+        return columnIndex == COL_VALUE;
+    }
+
+    /**
+     * Set the value in a cell
+     *
+     * @param aValue      the value
+     * @param rowIndex    the row index
+     * @param columnIndex the column index
+     */
+    @Override
+    public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+        // Guard: only accept edits in the value column
+        if (columnIndex != COL_VALUE) {
+            return;
+        }
+        data[rowIndex] = (String) aValue;
+        fireTableCellUpdated(rowIndex, columnIndex);
+    }
+
+    // -----------------------------------------------------------------------
+    // Public API
+    // -----------------------------------------------------------------------
+
+    /**
+     * Set the data to display in the table.
+     * Previously entered values are preserved when the new parameter list is
+     * at least as long as the old one.
+     *
+     * @param parameters the list of descriptions of parameters to be displayed
+     */
+    public void setData(DescriptionOfParameter[] parameters) {
+        // Guard against a null argument
+        if (parameters == null) {
+            parameters = new DescriptionOfParameter[0];
+        }
+
+        // Try to copy the previous data so the user does not lose typed values
+        String[] previousData = data;
+        data = new String[parameters.length];
+
+        for (int i = 0; i < data.length && i < previousData.length; i++) {
+            data[i] = previousData[i];
+        }
+
+        this.parameters = parameters;
+        fireTableDataChanged(); // Notify the table that the data has changed
+    }
+
+    /**
+     * Pre-populate the Value column with an array of values. Used by the
+     * run-history re-run feature to restore previously recorded parameter
+     * values. Silently ignores null or empty arrays. Extra entries beyond
+     * the current row count are ignored.
+     *
+     * @param parameterValues the values to set; must not be null
+     */
+    public void setParameterValues(String[] parameterValues) {
+        if (parameterValues == null || parameterValues.length == 0) {
+            return;
+        }
+        for (int i = 0; i < data.length && i < parameterValues.length; i++) {
+            data[i] = parameterValues[i];
+        }
+        // Notify the view so it repaints with the new values
+        fireTableDataChanged();
+    }
+
+    /**
+     * Get the array of parameter values entered by the user. Optional
+     * parameters that have been left blank are excluded from the returned
+     * array so that the caller receives only meaningful values that should be
+     * passed to the algorithm.
+     *
+     * <p><b>Important:</b> This method compacts the array by removing empty
+     * optional parameters, which means the length of the returned array may be
+     * less than {@link #getRowCount()}. When re-running a history entry the
+     * controller must NOT call this method to determine how many values to
+     * restore — it should call {@link #getRowCount()} instead, which always
+     * returns the full count of parameter rows.</p>
+     *
+     * @return an array of String values (never null)
+     */
+    public String[] getParameterValues() {
+        // Count how many parameters should be included in the result
+        int numberOfNonOptionalParameters = 0;
+        for (int i = 0; i < parameters.length; i++) {
+            DescriptionOfParameter param = parameters[i];
+            // Skip optional parameters that were left empty
+            boolean toRemove = param.isOptional() 
+                    && (data[i] == null || data[i].isEmpty());
+            if (!toRemove) {
+                numberOfNonOptionalParameters++;
+            }
+        }
+
+        // Copy only the relevant entries into the trimmed result array
+        String[] trimmedData = new String[numberOfNonOptionalParameters];
+        int j = 0;
+        for (int i = 0; i < parameters.length; i++) {
+            DescriptionOfParameter param = parameters[i];
+            boolean toRemove = param.isOptional() 
+                    && (data[i] == null || data[i].isEmpty());
+            if (!toRemove) {
+                trimmedData[j] = data[i];
+                j++;
+            }
+        }
+
+        return trimmedData;
+    }
 }

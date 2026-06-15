@@ -30,6 +30,8 @@ import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  */
 /**
  * A class that represents a node that is an input file, which will be drawn on the DrawPanel of the workflow editor
@@ -38,7 +40,7 @@ import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
  * @author Philippe Fournier-Viger
  * @see WorkflowEditorWindow
  */
-class NodeFileInput extends Node {
+public class NodeFileInput extends Node {
 	
 	/** The input file name */
 	public String inputFile = null; 

@@ -14,6 +14,7 @@
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
 * 
+* Do not remove the copyright and license information from this file.
 */
 package ca.pfv.spmf.algorithms.frequentpatterns.fhuqiminer.tkq;
 
@@ -115,6 +116,11 @@ public class AlgoTKQ {
 	/** if true, display debug information */
 	private final boolean DEBUG_MODE = true;
 
+	// ** BUG FIX 2026 **//
+	/** Set to track 2-itemsets already inserted (to avoid CUD/miner duplicates) */
+	private java.util.Set<String> inserted2Itemsets = new java.util.HashSet<String>();
+	// ** END OF BUG FIX 2026 **//
+
 	/**
 	 * Constructor
 	 */
@@ -188,7 +194,8 @@ public class AlgoTKQ {
 	 * @param utility the utility of the itemset
 	 */
 	private void insert(Qitem[] prefix, int length, Qitem item, long utility) {
-		Qitemset temp =  new Qitemset(prefix, length, item, utility);
+		
+		Qitemset temp = new Qitemset(prefix, length, item, utility);
 		kPatterns.add(temp);
 
 		// if the size becomes larger than k
@@ -220,8 +227,19 @@ public class AlgoTKQ {
 	 * @param utility the utility
 	 */
 	private void insert(Qitem[] prefix, int length, Qitem item1, Qitem item2, long utility) {
-		Qitemset temp =  new Qitemset(prefix, length, item1, item2, utility);
-		System.out.println("ADDHERE1" + temp);
+		
+		// BUG FIX 2026
+		 // For 2-itemsets (no prefix), check if already inserted by CUD
+	    if (length == 0) {
+	        String key = item1.toString() + "_" + item2.toString();
+	        if (!inserted2Itemsets.add(key)) {
+	            // Already existed in the set → duplicate, skip insertion
+	            return;
+	        }
+	    }
+	    // END OF BUG FIX 2026
+		
+		Qitemset temp = new Qitemset(prefix, length, item1, item2, utility);
 		kPatterns.add(temp);
 
 		// if the size becomes larger than k
@@ -279,8 +297,13 @@ public class AlgoTKQ {
 	 * @param utility the utility
 	 */
 	private void insertCUD(Qitem item1, Qitem item2, long utility) {
+		
+		// BUG FIX 2026: Record this 2-itemset so miner() won't re-insert it
+		String key = item1.toString() + "_" + item2.toString();
+		inserted2Itemsets.add(key);	
+		// END OF BUG FIX 2026
+
 		Qitemset temp = new Qitemset(item1, item2, utility);
-		System.out.println("ADDHERE3" + temp);
 		kPatterns.add(temp);
 		if (kPatterns.size() > k) {
 
@@ -420,7 +443,7 @@ public class AlgoTKQ {
 			System.out.println("===============================================");
 			System.out.println(" minutil is " + minUtil);
 		}
-		raisingThresholdRIU(realUtility, k);  ////////////////////////////////////   RIU  ////////
+		raisingThresholdRIU(realUtility, k); //////////////////////////////////// RIU ////////
 		if (DEBUG_MODE) {
 			System.out.println("after RIU minUtil is " + minUtil);
 		}
@@ -509,6 +532,7 @@ public class AlgoTKQ {
 				}
 			}
 		}
+		br_inputDatabase.close();
 		MemoryLogger.getInstance().checkMemory();
 
 		// 6. Apply Raising Threshold CUD
@@ -516,7 +540,7 @@ public class AlgoTKQ {
 			System.out.println("===================================================");
 			System.out.println(" before CUD kpattertns is ... minutil is " + minUtil);
 		}
-		raisingThresholdCUDOptimize2();   /////////////////////////////////////////// CUD
+		raisingThresholdCUDOptimize2(); /////////////////////////////////////////// CUD
 		if (DEBUG_MODE) {
 			System.out.println("after CUD minUtil is " + minUtil);
 		}

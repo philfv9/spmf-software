@@ -6,7 +6,7 @@ import ca.pfv.spmf.algorithmmanager.AlgorithmType;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
 import ca.pfv.spmf.experiments.oneparametervaried.ExperimenterForParameterChange;
-import ca.pfv.spmf.gui.experiments.ExperimenterWindow;
+import ca.pfv.spmf.gui.experiments.ExperimenterOneParamVariedWindow;
 
 /**
  * This class describes the algorithm to compare algorithms when
@@ -41,7 +41,7 @@ public class DescriptionAlgoExperimentOneParameterVaried extends DescriptionOfAl
 	@Override
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
 
-		ExperimenterWindow experimenter = new ExperimenterWindow();
+		ExperimenterOneParamVariedWindow experimenter = new ExperimenterOneParamVariedWindow();
 		experimenter.setVisible(true);
 		experimenter.setTitle("Run an experiment to test the performance of algorithm(s) when a parameter is varied");
 	}

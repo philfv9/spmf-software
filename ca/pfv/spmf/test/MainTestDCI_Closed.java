@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.frequentpatterns.dci_closed.AlgoDCI_Closed;
+import ca.pfv.spmf.algorithms.frequentpatterns.dci_closed_simple.AlgoDCI_Closed;
 
 /**
  * Example of how to use DCI_Closed algorithm from the source code.
@@ -16,7 +16,7 @@ public class MainTestDCI_Closed {
 		
 		String input = fileToPath("contextPasquier99.txt");
 		String output = ".//output.txt";
-		int minsup = 2;  // means 2 transactions (we used a relative support)
+		int minsup = 2;  // means minsup = 40%, that is 2 transactions (we used a relative support)
 		
 		// Applying the  algorithm
 		AlgoDCI_Closed algorithm = new AlgoDCI_Closed();

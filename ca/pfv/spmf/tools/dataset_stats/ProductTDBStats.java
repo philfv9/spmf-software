@@ -21,6 +21,8 @@ import ca.pfv.spmf.input.product_transaction_database.ProductTransactionDatabase
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove the copyright and license information.
 */
 /**
  * This class read a product transaction database and calculates statistics

@@ -37,10 +37,11 @@ public class TCTableCandidate {
 	
 	/** This map is the mapPredSupp used by Zart to store the support of a candidate
 	<br/> key: itemset   value: support */
-	Map<Itemset, Integer> mapPredSupp = new HashMap<Itemset, Integer>();
+	final Map<Itemset, Integer> mapPredSupp = new HashMap<Itemset, Integer>();
+	
 	/** this map indicate the key value for this itemset
 	<br/> key: itemset   value: key value */
-	Map<Itemset, Boolean> mapKey = new HashMap<Itemset, Boolean>();
+	final Map<Itemset, Boolean> mapKey = new HashMap<Itemset, Boolean>();
 	
 	/**
 	 * This map checks if there is an itemset of size i with its key value to true
@@ -48,10 +49,11 @@ public class TCTableCandidate {
 	 * @return true if yes, otherwise false
 	 */
 	boolean thereisARowKeyValueIsTrue(int i) {
+		List<Itemset> itemsetsAtLevel = levels.get(i);
 		// for each itemset of size i
-		for(Itemset c : levels.get(i)){
+		for(Itemset c : itemsetsAtLevel){
 			// if key set to true, then return yes
-			if(mapKey.get(c) == true){
+			if(Boolean.TRUE.equals(mapKey.get(c))){
 				return true;
 			}
 		}

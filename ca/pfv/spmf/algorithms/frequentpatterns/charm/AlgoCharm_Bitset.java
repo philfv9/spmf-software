@@ -93,9 +93,6 @@ public class AlgoCharm_Bitset {
 	  the idea is to always reuse the same buffer to reduce memory usage. */
 	final int BUFFERS_SIZE = 2000;
 	
-	/** size of the buffer*/
-	private int[] itemsetBuffer = null;
-	
 	/** if true, transaction identifiers of each pattern will be shown*/
 	boolean showTransactionIdentifiers = false;
 

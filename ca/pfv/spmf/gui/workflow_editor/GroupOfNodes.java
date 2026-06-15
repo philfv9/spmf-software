@@ -1,4 +1,5 @@
 package ca.pfv.spmf.gui.workflow_editor;
+
 /*
  * Copyright (c) 2022 Philippe Fournier-Viger
  *
@@ -16,6 +17,8 @@ package ca.pfv.spmf.gui.workflow_editor;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  */
 /**
  * A class that represents a group of nodes which can be  an input file, an algorithm, and its output file
@@ -23,7 +26,7 @@ package ca.pfv.spmf.gui.workflow_editor;
  * @author Philippe Fournier-Viger
  * @see WorkflowEditorWindow
  */
-class GroupOfNodes {
+public class GroupOfNodes {
 	
 	/** The node that is the input file */
 	public NodeFileInput nodeInput = null;
@@ -38,7 +41,7 @@ class GroupOfNodes {
 	boolean showOutput = false;
 	
 	/** boolean that indicates if the input node should be visible */
-	boolean showInput = false;
+	public boolean showInput = false;
 
 	/**
 	 * Constructor

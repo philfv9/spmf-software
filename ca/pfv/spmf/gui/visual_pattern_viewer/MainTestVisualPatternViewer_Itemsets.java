@@ -24,6 +24,8 @@ import java.net.URLDecoder;
  *
  * You should have received a copy of the GNU General Public License
  * along with SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information
  */
 
 /**
@@ -34,7 +36,7 @@ import java.net.URLDecoder;
 public class MainTestVisualPatternViewer_Itemsets {
 	public static void main(String[] args) throws IOException {
 		// The input file path to the file
-		String inputPath = fileToPath("patterns40.txt");
+		String inputPath = fileToPath("weighted_WTI.txt");
 		
 		// Create the tool for viewing rules.
         VisualPatternViewer viewer = new VisualPatternViewer(true, inputPath, PatternType.ITEMSETS);

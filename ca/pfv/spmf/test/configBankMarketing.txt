@@ -1,0 +1,13 @@
+inputFile=contextUBTGenBankMarketingSample.csv
+outputFile=bank_processed.csv
+prefix=bank
+header=true
+delimiter=,
+targetColIndex=20
+skipColsIndices=7,8,9,10,14
+numericIntColsIndices=0
+numericFloatColsIndices=11,12,13,15,16,17,18,19
+catColsIndices=1,2,3,4,5,6
+B=5
+writeTransformParameters=false
+missingValueImputation=true

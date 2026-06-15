@@ -16,9 +16,15 @@ package ca.pfv.spmf.gui.viewers.graphviewer.graphlayout;
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * SPMF. If not, see http://www.gnu.org/licenses/.
+ * 
+ * Do not remove license and copyright information.
  */
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.stream.IntStream;
 
 import ca.pfv.spmf.gui.viewers.graphviewer.GraphViewerPanel;
@@ -77,8 +83,6 @@ public class GraphLayoutFruchtermanReingold extends AbstractGraphLayout {
 
 		// Loop for the number of iterations
 		for (int i = 0; i < ITERATION_COUNT; i++) {
-
-			long start = System.currentTimeMillis();
 
 			// ===== Calculate the repulsion =====
 			// For each node v
@@ -143,12 +147,6 @@ public class GraphLayoutFruchtermanReingold extends AbstractGraphLayout {
 
 			// Reduce the temperature as the layout approaches a better configuration
 			state.temperature -= state.temperatureDecreaseByIteration;
-
-			long end = System.currentTimeMillis();
-
-			long elapsed = end - start;
-
-//			System.out.println("iteration " + i +" time " + elapsed + " ms");
 		}
 
 		// We finished computing the layout

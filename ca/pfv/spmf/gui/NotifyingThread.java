@@ -37,6 +37,21 @@ public abstract class NotifyingThread extends Thread {
 	/** The listeners **/
 	private final Set<ThreadCompleteListener> listeners = new CopyOnWriteArraySet<ThreadCompleteListener>();
 
+    /** to see if cancelled */
+    private volatile boolean cancelled = false;
+    
+    /**
+     * Cancel the operation 
+     */
+    public void cancel() {
+        cancelled = true;
+        interrupt(); // Also interrupt in case the thread is blocked
+    }
+    
+    /** Verify if cancelled */
+    public boolean isCancelled() {
+        return cancelled || isInterrupted();
+    }
 	/**
 	 * Method to add a listener for the completion of this thread
 	 * 

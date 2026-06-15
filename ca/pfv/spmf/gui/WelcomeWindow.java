@@ -148,11 +148,23 @@ public class WelcomeWindow extends JFrame {
         headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
         headerPanel.setBorder(new EmptyBorder(10, 0, 15, 0));
         
-        // Logo
+     // Logo
         try {
             ImageIcon logoIcon = new ImageIcon(WelcomeWindow.class.getResource("spmf.png"));
             labelLogo = new JLabel(logoIcon);
             labelLogo.setAlignmentX(Component.CENTER_ALIGNMENT);
+            labelLogo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            labelLogo.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent evt) {
+                    try {
+                        AboutWindow about = new AboutWindow(WelcomeWindow.this);
+                        about.setVisible(true);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
             headerPanel.add(labelLogo);
         } catch (Exception e) {
             // If logo not found, show text
@@ -160,6 +172,18 @@ public class WelcomeWindow extends JFrame {
             textLogo.setFont(new Font("SansSerif", Font.BOLD, 48));
             textLogo.setForeground(PRIMARY_COLOR);
             textLogo.setAlignmentX(Component.CENTER_ALIGNMENT);
+            textLogo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            textLogo.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent evt) {
+                    try {
+                        AboutWindow about = new AboutWindow(WelcomeWindow.this);
+                        about.setVisible(true);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
             headerPanel.add(textLogo);
         }
         

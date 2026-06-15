@@ -42,12 +42,13 @@ public class UncertainTransactionDatabase {
 	private final Set<ItemUApriori> allItems = new HashSet<ItemUApriori>();
 	// this is the list of transactions in the database
 	private final List<ItemsetUApriori> transactions = new ArrayList<ItemsetUApriori>();
-	
+
 	/** The maximum item id */
 	private int maxItem = 0;
-	
+
 	/**
 	 * Load a transaction database from a file.
+	 * 
 	 * @param path the path of the file
 	 * @throws IOException exception if error while reading the file.
 	 */
@@ -59,14 +60,13 @@ public class UncertainTransactionDatabase {
 			myInput = new BufferedReader(new InputStreamReader(fin));
 			// for each transaction (line) in the input file
 			while ((thisLine = myInput.readLine()) != null) {
-				// if the line is  a comment, is  empty or is a
+				// if the line is a comment, is empty or is a
 				// kind of metadata
-				if (thisLine.isEmpty() == true ||
-						thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%'
-								|| thisLine.charAt(0) == '@') {
+				if (thisLine.isEmpty() == true || thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%'
+						|| thisLine.charAt(0) == '@') {
 					continue;
 				}
-				
+
 				// process the transaction
 				processTransactions(thisLine.split(" "));
 			}
@@ -83,7 +83,7 @@ public class UncertainTransactionDatabase {
 
 	private void processTransactions(String itemsString[]) {
 		// We assume that there is no empty line
-		
+
 		// create a new itemset oject representing the transaction
 		ItemsetUApriori transaction = new ItemsetUApriori();
 		// for each item
@@ -92,11 +92,10 @@ public class UncertainTransactionDatabase {
 			int indexOfLeftParanthesis = itemString.indexOf('(');
 			int indexOfRightParanthesis = itemString.indexOf(')');
 			// get the item ID
-			int itemID = Integer.parseInt(itemString.substring(0,
-					indexOfLeftParanthesis));
+			int itemID = Integer.parseInt(itemString.substring(0, indexOfLeftParanthesis));
 			// get the existential probability
-			double value = Double.parseDouble(itemString.substring(
-					indexOfLeftParanthesis + 1, indexOfRightParanthesis));
+			double value = Double
+					.parseDouble(itemString.substring(indexOfLeftParanthesis + 1, indexOfRightParanthesis));
 
 			// create an item
 			ItemUApriori item = new ItemUApriori(itemID, value);
@@ -104,8 +103,8 @@ public class UncertainTransactionDatabase {
 			transaction.addItem(item);
 			// add it to the set of all items
 			allItems.add(item);
-			
-			if(itemID > maxItem) {
+
+			if (itemID > maxItem) {
 				maxItem = itemID;
 			}
 		}
@@ -115,6 +114,7 @@ public class UncertainTransactionDatabase {
 
 	/**
 	 * Get the maximum item ID
+	 * 
 	 * @return the max item ID
 	 * @return
 	 */
@@ -126,8 +126,7 @@ public class UncertainTransactionDatabase {
 	 * Print this database to System.out.
 	 */
 	public void printDatabase() {
-		System.out
-				.println("===================  UNCERTAIN DATABASE ===================");
+		System.out.println("===================  UNCERTAIN DATABASE ===================");
 		int count = 0;
 		// for each transaction
 		for (ItemsetUApriori itemset : transactions) {
@@ -141,6 +140,7 @@ public class UncertainTransactionDatabase {
 
 	/**
 	 * Get the number of transactions.
+	 * 
 	 * @return a int
 	 */
 	public int size() {
@@ -149,6 +149,7 @@ public class UncertainTransactionDatabase {
 
 	/**
 	 * Get the list of transactions.
+	 * 
 	 * @return the list of Transactions.
 	 */
 	public List<ItemsetUApriori> getTransactions() {
@@ -157,10 +158,32 @@ public class UncertainTransactionDatabase {
 
 	/**
 	 * Get the set of items in this database.
+	 * 
 	 * @return a Set of Integers
 	 */
 	public Set<ItemUApriori> getAllItems() {
 		return allItems;
 	}
 
+	/**
+	 * Set the list of transactions (used for testing purposes).
+	 * 
+	 * @param transactions the list of transactions to set
+	 */
+	public void setTransactions(List<ItemsetUApriori> transactions) {
+		this.transactions.clear();
+		this.allItems.clear();
+		this.maxItem = 0;
+
+		for (ItemsetUApriori transaction : transactions) {
+			this.transactions.add(transaction);
+			for (ItemUApriori item : transaction.getItems()) {
+				this.allItems.add(item);
+				if (item.getId() > this.maxItem) {
+					this.maxItem = item.getId();
+				}
+			}
+		}
+
+	}
 }

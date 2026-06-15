@@ -28,736 +28,815 @@ import javax.swing.JTextField;
 import ca.pfv.spmf.algorithmmanager.AlgorithmManager;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
-import ca.pfv.spmf.experiments.oneparametervaried.ExperimenterForParameterChange;
+import ca.pfv.spmf.experiments.scalability.ExperimenterForScalability;
 import ca.pfv.spmf.gui.NotifyingThread;
 import ca.pfv.spmf.gui.ThreadCompleteListener;
 import ca.pfv.spmf.gui.preferences.PreferencesManager;
 import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
 
-/**
- * This class is a window that can be used to launch an experiment to compare
- * the performance of one or more algorithm when a parameter value is varied.
- * 
- * @author Philippe Fournier-Viger, 2022
- * @see ExperimenterForParameterChange
+/*
+ * This file is copyright (c) 2022 Philippe Fournier-Viger
  *
+ * This file is part of the SPMF DATA MINING SOFTWARE
+ * (http://www.philippe-fournier-viger.com/spmf).
+ *
+ * SPMF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * SPMF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License along with
+ * SPMF. If not, see <http://www.gnu.org/licenses/>.
  */
-public class ExperimenterScalabilityWindow extends JFrame implements ThreadCompleteListener, UncaughtExceptionHandler {
-	/** serial UID */
-	private static final long serialVersionUID = 2151286070078740128L;
-
-	/** text field used to put the algorithm(s) parameters */
-	private JTextField textFieldParameters;
-
-	/** text field to specify the timeount */
-	private JTextField textFieldTimeLimit;
-
-	/** text field to specify the values for the varied parameter */
-	private JTextField textFieldValues;
-
-	/** text field to provide a list of algorithms */
-	private JTextField textFieldAlgorithms;
-
-	/** text area to show the results */
-	private JTextArea textAreaResult;
-
-	/**
-	 * A thread that is used to run the experiment so that the GUI will not freeze
-	 */
-	private static NotifyingThread currentRunningAlgorithmThread = null;
-
-	/** The button to run the experiments */
-	private JButton buttonRun;
-
-	/** The input file */
-	private String inputFile = "";
-
-	/** The output directory */
-	private String outputDirectory = "";
-
-	/** Path to SPMF.jar */
-	private String pathToSPMFJar = null;
-
-	/** The text field to choose the input file */
-	private JTextField textFieldInputFile;
-
-	/** The text field to choose the output directory */
-	private JTextField textFieldOutputDirectory;
-
-	/** The text field to provide a path to a jar file */
-	private JTextField textFieldJARPath;
-
-	/** Combo box for the list of algorithms */
-	private JComboBox<String> comboBoxAlgorithms;
-
-	/** Button to add an algorithm */
-	JButton buttonAddAlgorithm;
-	
-	/** Checkbox for counting the number of lines in the output */
-	JCheckBox checkboxCountLines;
-	
-	/** Checkbox to indicate if PGFPlot figures should be generated */
-	JCheckBox checkboxPGFPlots;
-
-	/** The text field to specify a timeout in milliseconds */
-	private int timeoutMilliseconds;
-	
-	/** Help button */
-	JButton buttonHelp;
-
-	/**
-	 * A main method to directly launch this tool.
-	 * 
-	 * @param arg arguments (should be empty)
-	 * @throws IOException if some error occurs
-	 */
-	public static void main(String[] arg) throws IOException {
-		
-		System.out.println("replace%".replaceAll("[%]", "\\%"));
-
-		// Create the window
-		ExperimenterScalabilityWindow experimenter = new ExperimenterScalabilityWindow();
-		// Make it visible
-		experimenter.setVisible(true);
-		experimenter.setDefaultCloseOperation(EXIT_ON_CLOSE);
-	}
-
-	/**
-	 * Constructor
-	 */
-	public ExperimenterScalabilityWindow() {
-		setTitle("Run an experiment (dataset size is varied)");
-		// size of the window
-		setBounds(100, 100, 825, 801);
-		setResizable(false);
-		getContentPane().setLayout(null);
-
-		JLabel lblNewLabel = new JLabel("Step 2: Select an input file:");
-		lblNewLabel.setBounds(10, 123, 193, 14);
-		getContentPane().add(lblNewLabel);
-
-		textFieldParameters = new JTextField();
-		textFieldParameters.setBounds(34, 233, 757, 20);
-		getContentPane().add(textFieldParameters);
-		textFieldParameters.setColumns(10);
-
-		JLabel lblNewLabel_1 = new JLabel(
-				"Step 1: Select algorithm(s) to be compared (Note: must have the same parameters):");
-		lblNewLabel_1.setBounds(10, 15, 570, 14);
-		getContentPane().add(lblNewLabel_1);
-
-		JLabel lblNewLabel_2 = new JLabel(
-				"Step 5: Provide a list of percentages of dataset size to be used (separated by a space):");
-		lblNewLabel_2.setBounds(10, 278, 781, 14);
-		getContentPane().add(lblNewLabel_2);
-
-		JLabel lblNewLabel_3 = new JLabel("Time limit for each run (s): ");
-		lblNewLabel_3.setBounds(34, 375, 169, 14);
-		getContentPane().add(lblNewLabel_3);
-
-		textFieldTimeLimit = new JTextField();
-		textFieldTimeLimit.setBounds(213, 372, 496, 20);
-		getContentPane().add(textFieldTimeLimit);
-		textFieldTimeLimit.setColumns(10);
-
-		textFieldValues = new JTextField();
-		textFieldValues.setText("20% 40% 60% 80% 100%");
-		textFieldValues.setBounds(34, 299, 757, 20);
-		getContentPane().add(textFieldValues);
-		textFieldValues.setColumns(10);
-
-		buttonRun = new JButton("Run the experiment");
-		buttonRun.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				runExperiment();
-			}
-		});
-		buttonRun.setBounds(270, 475, 230, 23);
-		getContentPane().add(buttonRun);
-
-		textFieldAlgorithms = new JTextField();
-		textFieldAlgorithms.setBounds(34, 73, 757, 20);
-		getContentPane().add(textFieldAlgorithms);
-		textFieldAlgorithms.setColumns(10);
-
-		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(34, 509, 757, 242);
-		getContentPane().add(scrollPane);
-
-		textAreaResult = new JTextArea();
-		textAreaResult.setText(" ");
-		textAreaResult.setEditable(false);
-		scrollPane.setViewportView(textAreaResult);
-
-		JLabel lblNewLabel_5 = new JLabel("Results:");
-		lblNewLabel_5.setBounds(10, 484, 414, 14);
-		getContentPane().add(lblNewLabel_5);
-
-		textFieldInputFile = new JTextField();
-		textFieldInputFile.setEditable(false);
-		textFieldInputFile.setBounds(213, 120, 496, 20);
-		getContentPane().add(textFieldInputFile);
-		textFieldInputFile.setColumns(10);
-
-		JButton buttonInputFile = new JButton("...");
-		buttonInputFile.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				askUserToChooseInputFile();
-			}
-		});
-		buttonInputFile.setBounds(719, 119, 72, 23);
-		getContentPane().add(buttonInputFile);
-
-		JLabel lblNewLabel_6 = new JLabel(
-				"Step 4: Provide the algorithm(s) parameter values:");
-		lblNewLabel_6.setBounds(10, 208, 781, 14);
-		getContentPane().add(lblNewLabel_6);
-
-		textFieldOutputDirectory = new JTextField();
-		textFieldOutputDirectory.setEditable(false);
-		textFieldOutputDirectory.setBounds(213, 160, 496, 20);
-		getContentPane().add(textFieldOutputDirectory);
-		textFieldOutputDirectory.setColumns(10);
-
-		JLabel lblNewLabel_7 = new JLabel("Step 3: Select output directory:");
-		lblNewLabel_7.setBounds(10, 166, 193, 14);
-		getContentPane().add(lblNewLabel_7);
-
-		JButton btnNewButton = new JButton("...");
-		btnNewButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				askUserToChooseOutputDirectory();
-			}
-		});
-		btnNewButton.setBounds(719, 161, 72, 23);
-		getContentPane().add(btnNewButton);
-
-		JLabel lblNewLabel_8 = new JLabel("Options:");
-		lblNewLabel_8.setBounds(10, 350, 781, 14);
-		getContentPane().add(lblNewLabel_8);
-
-		JLabel lblNewLabel_9 = new JLabel("Path to SPMF.jar (optional):");
-		lblNewLabel_9.setBounds(34, 399, 169, 14);
-		getContentPane().add(lblNewLabel_9);
-
-		textFieldJARPath = new JTextField();
-		pathToSPMFJar = PreferencesManager.getInstance().getSPMFJarFilePath();
-		textFieldJARPath.setText(pathToSPMFJar);
-		textFieldJARPath.setEditable(false);
-		textFieldJARPath.setBounds(213, 396, 496, 20);
-		getContentPane().add(textFieldJARPath);
-		textFieldJARPath.setColumns(10);
-
-		JButton buttonSPMFJar = new JButton("...");
-		buttonSPMFJar.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				askUserToChooseSPMFJarPath();
-			}
-		});
-		buttonSPMFJar.setBounds(719, 395, 72, 23);
-		getContentPane().add(buttonSPMFJar);
-
-		comboBoxAlgorithms = new JComboBox<String>(new Vector<String>());
-		comboBoxAlgorithms.setBounds(34, 40, 283, 22);
-		// Combo box to store the list of algorithms.
-		comboBoxAlgorithms.setMaximumRowCount(20);
-
-		// ************************************************************************
-		// ********* Use the algorithm manager to populate the list of algorithms
-		// ******* //
-		comboBoxAlgorithms.addItem("");
-
-		AlgorithmManager manager = null;
-		try {
-			manager = AlgorithmManager.getInstance();
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
-
-		List<String> algorithmList = manager.getListOfAlgorithmsAsString(false, false, false, true, false);
-		for (String algorithmOrCategoryName : algorithmList) {
-			comboBoxAlgorithms.addItem(algorithmOrCategoryName);
-		}
-
-		// ************************************************************************
-		// ************************************************************************
-
-		// What to do when the user choose an algorithm :
-		comboBoxAlgorithms.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent evt) {
-				// We need to update the user interface:
-				try {
-					updateUserInterfaceAfterAlgorithmSelection(evt.getItem().toString(),
-							evt.getStateChange() == ItemEvent.SELECTED);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-
-		});
-
-		getContentPane().add(comboBoxAlgorithms);
-
-		buttonAddAlgorithm = new JButton("Add algorithm");
-		buttonAddAlgorithm.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try {
-					addAnAlgorithm();
-				} catch (Exception e1) {
-					JOptionPane.showMessageDialog(null,
-							"An error occurred ERROR MESSAGE = " + e.toString(), "Error",
-							JOptionPane.ERROR_MESSAGE);
-				}
-			}
-		});
-		buttonAddAlgorithm.setBounds(327, 40, 176, 23);
-		buttonAddAlgorithm.setEnabled(false);
-		getContentPane().add(buttonAddAlgorithm);
-		
-		checkboxCountLines = new JCheckBox("Compare the number of lines in the output of each algorithm");
-		checkboxCountLines.setBounds(34, 420, 578, 23);
-		getContentPane().add(checkboxCountLines);
-		
-		buttonHelp = new JButton("");
-		buttonHelp.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try {
-					java.awt.Desktop.getDesktop().browse(java.net.URI.create("https://www.philippe-fournier-viger.com/spmf/ExperimenterPerformance_Scalability.php"));
-				} catch (java.io.IOException exception) {
-					System.out.println(exception.getMessage());
-				}
-			}
-		});
-		buttonHelp.setIcon(new ImageIcon(ExperimenterScalabilityWindow.class.getResource("/ca/pfv/spmf/gui/Help24.gif")));
-		buttonHelp.setBounds(761, 11, 38, 34);
-		getContentPane().add(buttonHelp);
-		
-		checkboxPGFPlots = new JCheckBox("Save results as Latex PGFPlots figures");
-		checkboxPGFPlots.setBounds(34, 446, 466, 23);
-		getContentPane().add(checkboxPGFPlots);
-	}
-
-	/**
-	 * When the user clicks on the "Add algorithm" button
-	 * @throws Exception if error occurs
-	 */
-	protected void addAnAlgorithm() throws Exception{
-		// Get the current list of algorithms
-		String algorithms = textFieldAlgorithms.getText();
-		
-		// Get the selected algorithm
-		String newAlgorithm = (String) comboBoxAlgorithms.getSelectedItem();
-		
-		
-		if(algorithms == null || "".equals(algorithms)) {
-			textFieldAlgorithms.setText(newAlgorithm);
-		}else {
-
-			// Check if the new algorithm is already in the list
-			String[] algorithmNames = algorithms.split(" ");
-			boolean alreadyThere = false;
-			for(String algorithm : algorithmNames) {
-				if(algorithm.equals(newAlgorithm)) {
-					alreadyThere = true;
-				}
-			}
-			
-			// WE WILL CHECK IF THE TWO ALGORITHMS HAVE THE SAME MANDATORY PARAMETERS
-			// Get the first algorithm from the  list
-			DescriptionOfAlgorithm descriptionOfAlgorithm = AlgorithmManager.getInstance().getDescriptionOfAlgorithm(algorithmNames[0]);
-			DescriptionOfParameter[] description = descriptionOfAlgorithm.getParametersDescription();
-			// Get the description of the new algorithm
-			DescriptionOfAlgorithm newDescriptionOfAlgorithm = AlgorithmManager.getInstance().getDescriptionOfAlgorithm(newAlgorithm);
-			DescriptionOfParameter[] newDescription = newDescriptionOfAlgorithm.getParametersDescription();
-			
-			boolean sameMandatoryParameters = true;
-			
-			if(descriptionOfAlgorithm.getNumberOfMandatoryParameters() != newDescriptionOfAlgorithm.getNumberOfMandatoryParameters()) {
-				sameMandatoryParameters = false;
-			}else {
-				for(int i = 0; i<description.length; i++) {
-					DescriptionOfParameter parameter = description[i];
-					
-					if(parameter.isOptional == false) {
-						if(i < newDescription.length) {
-							DescriptionOfParameter newParameter = newDescription[i];
-							if(parameter.parameterType != newParameter.parameterType || !parameter.name.equals(newParameter.name)) {
-								sameMandatoryParameters = false;
-							}
-						}else {
-								sameMandatoryParameters = false;
-						}
-					}
-				}
-			}
-			
-			if(sameMandatoryParameters == false) {
-				JOptionPane.showMessageDialog(null,
-						"This algorithm (" + newAlgorithm + ") does not have the same mandatory parameters has other algorithms in this list (e.g. " + algorithmNames[0] + "). Hence, it cannot be added.", "Error",
-						JOptionPane.ERROR_MESSAGE);
-			}
-						
-					
-			// If the algorithm is not already in the list, we dont need to add it again
-			if(alreadyThere == false && sameMandatoryParameters == true) {
-				textFieldAlgorithms.setText(algorithms + " " + newAlgorithm);
-			}
-		}
-
-	}
-
-	/**
-	 * Inner class used to forward the console output to the result text area
-	 * 
-	 * @author Philippe Fournier-Viger
-	 *
-	 */
-	static class TextAreaOutputStream extends OutputStream {
-
-		/** the JTextArea */
-		JTextArea textArea;
-
-		/**
-		 * Constructor
-		 * 
-		 * @param textArea a JTextArea
-		 */
-		public TextAreaOutputStream(JTextArea textArea) {
-			this.textArea = textArea;
-		}
-
-		@Override
-		public void flush() {
-			textArea.repaint();
-		}
-
-		public void write(int b) {
-			textArea.append(new String(new byte[] { (byte) b }));
-		}
-	}
-
-	/**
-	 * Run an experiment (when the user clicks the "Run experiment" button
-	 **/
-	protected void runExperiment() {
-		// Deactivate the run button
-		buttonRun.setEnabled(false);
-		textAreaResult.setText("");
-
-		try {
-			// Create the tool to run an experiment
-			ExperimenterForParameterChange experimenter = new ExperimenterForParameterChange();
-
-			// If the user has specified a path to the spmf.jar file, we need to set it so
-			// that
-			// we will use it to run the algorithms.
-			if (pathToSPMFJar != null) {
-				System.out.println(pathToSPMFJar);
-				experimenter.setSPMFJarFilePath(pathToSPMFJar);
-			}
-
-			// Get the list of algorithm names
-			String spaceSeparatedAlgorithmNames = textFieldAlgorithms.getText();
-			// If the list is empty, throw an error
-			if (spaceSeparatedAlgorithmNames == null || "".equals(spaceSeparatedAlgorithmNames)) {
-				throw new Exception("You must enter some algorithm names.");
-			}
-			String algorithmNames[] = spaceSeparatedAlgorithmNames.split(" ");
-
-			// If input file is null, throw an error
-			if ("".equals(inputFile)) {
-				throw new Exception("You must select an input file.");
-			}
-
-			// If output directory is null, throw an error
-			if ("".equals(outputDirectory)) {
-				throw new Exception("You must select an output diretory.");
-			}
-
-			// Get the list of parameter values
-			String spaceSeparatedParameters = textFieldParameters.getText();
-			// If the list is empty, throw an error
-			if (spaceSeparatedParameters == null || "".equals(spaceSeparatedParameters)) {
-				throw new Exception("You must provide a list of parameters.");
-			}
-			String parameters[] = spaceSeparatedParameters.split(" ");
-			
-			// Which parameter is varied?
-			int positionParameter = -1;
-			for(int i = 0; i < parameters.length; i++) {
-				if("##".equals(parameters[i])) {
-					positionParameter = i;
-				}
-			}
-			if (positionParameter == -1) {
-				throw new Exception("The parameter to be varied should be identified with the code ## ");
-			}
-//			// Get the name of the varied parameter
-//			String variedParameterName = AlgorithmManager.getInstance().getDescriptionOfAlgorithm(algorithmNames[0]).getParametersDescription()[positionParameter].name;
-//			
-
-			// Find the values to be varied
-			String spaceSeparatedVaryingValues = textFieldValues.getText();
-			// If the list is empty, throw an error
-			if (spaceSeparatedVaryingValues == null || "".equals(spaceSeparatedVaryingValues)) {
-				throw new Exception("You must provide a list of values for the parameter that is varied.");
-			}
-			String varyingValues[] = spaceSeparatedVaryingValues.split(" ");
-
-			// Get the time-out value specified by the user
-			timeoutMilliseconds = Integer.MAX_VALUE;
-			String timeoutAsString = textFieldTimeLimit.getText();
-			// If there is a timeout value
-			if ("".equals(timeoutAsString) == false) {
-				// Check if it is a number
-				try {
-					timeoutMilliseconds = Integer.parseInt(timeoutAsString) * 1000;
-				} catch (NumberFormatException f) {
-					// If it is not a number, then throw an error
-					throw new Exception(
-							" Timeout must be an integer number representing a maximum duration in milliseconds.");
-				}
-			}
-
-			// Redirect the console output to the JTextArea in this window so that the user
-			// can see it
-			System.setOut(new PrintStream(new TextAreaOutputStream(textAreaResult)));
-			
-			// Should we compare the output size of algorithms?
-			boolean compareOutputSize = checkboxCountLines.isSelected();
-			
-			// Should PGFPLOTS FIGURES be generated?
-			boolean generatePGFPLOTFigures = checkboxPGFPlots.isSelected();
-
-			// Create a thread to run the experiment using a separated thread.
-			// This is important so that the GUI will not be frozen during the experiment.
-			currentRunningAlgorithmThread = new NotifyingThread() {
-				@Override
-				public boolean doRun() throws Exception {
-					// Run the experiment
-					experimenter.runAnAlgorithmAndVaryParameter(algorithmNames, parameters, varyingValues, inputFile,
-							outputDirectory, timeoutMilliseconds, compareOutputSize, false, generatePGFPLOTFigures,"parameter");
-					return true;
-				}
-			};
-			// The main thread will listen for the completion of the algorithm
-			currentRunningAlgorithmThread.addListener(this);
-			// The main thread will also listen for exception generated by the
-			// algorithm.
-			currentRunningAlgorithmThread.setUncaughtExceptionHandler(this);
-			// Run the thread
-			currentRunningAlgorithmThread.start();
-
-		} catch (Exception e) {
-			// If there is any error, it will be displayed to the user using a dialog
-			JOptionPane.showMessageDialog(null,
-					"An error occured while trying to run the experiment. ERROR MESSAGE = " + e.toString(), "Error",
-					JOptionPane.ERROR_MESSAGE);
-			buttonRun.setEnabled(true);
-		}
-
-	}
-
-	/**
-	 * This method ask the user to choose the input file. This method is called when
-	 * the user click on the button to choose the input file of the S P M F
-	 * interface.
-	 */
-	private void askUserToChooseInputFile() {
-		try {
-			// WHEN THE USER CLICK TO CHOOSE THE INPUT FILE
-
-			File path;
-			// Get the last path used by the user, if there is one
-			String previousPath = PreferencesManager.getInstance().getInputFilePath();
-			// If there is no previous path (first time user),
-			// show the files in the "examples" package of
-			// the spmf distribution.
-			if (previousPath == null) {
-				URL main = MainTestApriori_simple_saveToFile.class.getResource("MainTestApriori_saveToFile.class");
-				if (!"file".equalsIgnoreCase(main.getProtocol())) {
-					path = null;
-				} else {
-					path = new File(main.getPath());
-				}
-			} else {
-				// Otherwise, use the last path used by the user.
-				path = new File(previousPath);
-			}
-
-			// ASK THE USER TO CHOOSE A FILE
-			final JFileChooser fc;
-			if (path != null) {
-				fc = new JFileChooser(path.getAbsolutePath());
-			} else {
-				fc = new JFileChooser();
-			}
-			int returnVal = fc.showSaveDialog(ExperimenterScalabilityWindow.this);
-
-			// If the user chose a file
-			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				File file = fc.getSelectedFile();
-				textFieldInputFile.setText(file.getName());
-				inputFile = file.getPath(); // save the file path
-				// save the path of this folder for next time.
-				if (fc.getSelectedFile() != null) {
-					PreferencesManager.getInstance().setInputFilePath(fc.getSelectedFile().getParent());
-				}
-			}
-
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null,
-					"An error occured while opening the input file dialog. ERROR MESSAGE = " + e.toString(), "Error",
-					JOptionPane.ERROR_MESSAGE);
-		}
-	}
-
-	/**
-	 * This method ask the user to choose a path to SPMF.jar
-	 */
-	protected void askUserToChooseSPMFJarPath() {
-		// pathToSPMFJar
-		try {
-			// WHEN THE USER CLICK TO CHOOSE THE OUTPUT FILE
-
-			File path;
-			// Get the last path used by the user, if there is one
-			String previousPath = PreferencesManager.getInstance().getSPMFJarFilePath();
-			// If there is no previous path (first time user),
-			// show the files in the "examples" package of
-			// the spmf distribution.
-			if (previousPath == null) {
-				URL main = MainTestApriori_simple_saveToFile.class.getResource("MainTestApriori_saveToFile.class");
-				if (!"file".equalsIgnoreCase(main.getProtocol())) {
-					path = null;
-				} else {
-					path = new File(main.getPath());
-				}
-			} else {
-				// Otherwise, use the last path used by the user.
-				path = new File(previousPath);
-			}
-
-			// ASK THE USER TO CHOOSE A FILE
-			final JFileChooser fc;
-			if (path != null) {
-				fc = new JFileChooser(path.getAbsolutePath());
-			} else {
-				fc = new JFileChooser();
-			}
-			int returnVal = fc.showSaveDialog(ExperimenterScalabilityWindow.this);
-
-			// If the user chose a file
-			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				File file = fc.getSelectedFile();
-				textFieldJARPath.setText(file.getPath());
-				pathToSPMFJar = file.getPath(); // save the file path
-				// save the path of this folder for next time.
-				if (fc.getSelectedFile() != null) {
-					PreferencesManager.getInstance().setSPMFJarFilePath(fc.getSelectedFile().getPath());
-				}
-			}
-
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null,
-					"An error occured while opening the SPMF.jar file path dialog. ERROR MESSAGE = " + e.toString(),
-					"Error", JOptionPane.ERROR_MESSAGE);
-		}
-
-	}
-
-	/**
-	 * This method ask the user to choose the output directory. This method is
-	 * called when the user click on the button to choose the output directory.
-	 */
-	private void askUserToChooseOutputDirectory() {
-		try {
-			// WHEN THE USER CLICK TO CHOOSE THE OUTPUT DIRECTORY
-
-			File path;
-			// Get the last path used by the user, if there is one
-			String previousPath = PreferencesManager.getInstance().getExperimentDirectoryPath();
-			// If there is no previous path (first time user),
-			// show the files in the "examples" package of
-			// the spmf distribution.
-			if (previousPath == null) {
-				URL main = MainTestApriori_simple_saveToFile.class.getResource("MainTestApriori_saveToFile.class");
-				if (!"file".equalsIgnoreCase(main.getProtocol())) {
-					path = null;
-				} else {
-					path = new File(main.getPath());
-				}
-			} else {
-				// Otherwise, use the last path used by the user.
-				path = new File(previousPath);
-			}
-
-			// ASK THE USER TO CHOOSE A FILE
-			final JFileChooser fc = new JFileChooser();
-			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-			fc.setAcceptAllFileFilterUsed(false);
-			if (path != null) {
-				fc.setCurrentDirectory(new File(path.getAbsolutePath()));
-			}
-			int returnVal = fc.showSaveDialog(ExperimenterScalabilityWindow.this);
-
-			// If the user chose a file
-			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				File file = fc.getSelectedFile();
-				textFieldOutputDirectory.setText(file.getName());
-				outputDirectory = file.getAbsolutePath(); // save the file path
-//				System.out.println(outputDirectory);
-				// save the path of this folder for next time.
-				if (fc.getSelectedFile() != null) {
-					PreferencesManager.getInstance().setExperimentDirectoryPath(fc.getSelectedFile().getAbsolutePath());
-				}
-			}
-
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null,
-					"An error occured while opening the output file dialog. ERROR MESSAGE = " + e.toString(), "Error",
-					JOptionPane.ERROR_MESSAGE);
-		}
-	}
-
-	@Override
-	public void uncaughtException(Thread t, Throwable e) {
-		// Activate the run button again
-		buttonRun.setEnabled(true);
-	}
-
-	@Override
-	public void notifyOfThreadComplete(Thread thread, boolean succeed) {
-		// Activate the run button again
-		buttonRun.setEnabled(true);
-	}
-
-	/**
-	 * Method is called when the user selects something in the combo box
-	 * 
-	 * @param algorithmName the algorithm name.
-	 * @throws Exception
-	 * @boolean isSelected indicate if the algorithm has been selected or unselected
-	 */
-	protected void updateUserInterfaceAfterAlgorithmSelection(String algorithmName, boolean isSelected) throws Exception {
-		// COMBOBOX ITEM SELECTION - ITEM STATE CHANGED
-		if (isSelected) {
-
-			// ************************************************************************
-			// ********* Prepare the user interface for this algorithm ******* //
-
-			AlgorithmManager manager = AlgorithmManager.getInstance();
-			DescriptionOfAlgorithm algorithm = manager.getDescriptionOfAlgorithm(algorithmName);
-			if (algorithm != null) {
-				buttonAddAlgorithm.setEnabled(true);
-
-			} else {
-				buttonAddAlgorithm.setEnabled(false);
-			}
-
-		} else {
-			buttonAddAlgorithm.setEnabled(false);
-		}
-	}
+
+/**
+ * Window for running scalability experiments.
+ *
+ * <p>The user selects:
+ * <ol>
+ *   <li>One or more algorithms (must share the same parameters)</li>
+ *   <li>A single input dataset file</li>
+ *   <li>An output directory</li>
+ *   <li>Fixed algorithm parameters (no "##")</li>
+ *   <li>A list of integer percentages, e.g. "20 40 60 80 100"</li>
+ * </ol>
+ *
+ * <p>{@link ExperimenterForScalability} will generate subset files
+ * (first N% of data lines) and run each algorithm on each subset,
+ * then write a result table and optionally a LaTeX figure file.
+ *
+ * @author Philippe Fournier-Viger, 2022
+ * @see ExperimenterForScalability
+ */
+public class ExperimenterScalabilityWindow extends JFrame
+        implements ThreadCompleteListener, UncaughtExceptionHandler {
+
+    // ----------------------------------------------------------------
+    // Serial UID
+    // ----------------------------------------------------------------
+    private static final long serialVersionUID = 2151286070078740128L;
+
+    // ----------------------------------------------------------------
+    // UI components
+    // ----------------------------------------------------------------
+
+    /** Fixed algorithm parameters (space-separated, no "##") */
+    private JTextField textFieldParameters;
+
+    /** Time limit per run in seconds */
+    private JTextField textFieldTimeLimit;
+
+    /**
+     * Space-separated integer percentages, e.g. "20 40 60 80 100".
+     * The "%" suffix is accepted but stripped before parsing.
+     */
+    private JTextField textFieldValues;
+
+    /**
+     * Space-separated list of algorithm names selected by the user.
+     * Populated by clicking "Add algorithm".
+     */
+    private JTextField textFieldAlgorithms;
+
+    /** Scrollable text area that shows console output and results */
+    private JTextArea textAreaResult;
+
+    /**
+     * Background thread used to run the experiment so the EDT stays
+     * responsive.
+     */
+    private static NotifyingThread currentRunningAlgorithmThread = null;
+
+    /** Triggers the experiment */
+    private JButton buttonRun;
+
+    /** Absolute path of the single input dataset file */
+    private String inputFile = "";
+
+    /** Absolute path of the output directory */
+    private String outputDirectory = "";
+
+    /** Absolute path to spmf.jar (may be null → use system default) */
+    private String pathToSPMFJar = null;
+
+    /** Shows the short name of the selected input file */
+    private JTextField textFieldInputFile;
+
+    /** Shows the short name of the selected output directory */
+    private JTextField textFieldOutputDirectory;
+
+    /** Shows / lets the user edit the path to spmf.jar */
+    private JTextField textFieldJARPath;
+
+    /** Algorithm drop-down populated from AlgorithmManager */
+    private JComboBox<String> comboBoxAlgorithms;
+
+    /** Adds the selected algorithm to the algorithm list */
+    JButton buttonAddAlgorithm;
+
+    /** Option: count non-empty lines in each output file */
+    JCheckBox checkboxCountLines;
+
+    /** Option: generate a compilable LaTeX / PGFPlots file */
+    JCheckBox checkboxPGFPlots;
+
+    /** Timeout converted to milliseconds (default: no limit) */
+    private int timeoutMilliseconds;
+
+    /** Opens the SPMF documentation page for this tool */
+    JButton buttonHelp;
+
+    // ----------------------------------------------------------------
+    // Entry point (for standalone testing)
+    // ----------------------------------------------------------------
+
+    /**
+     * Launches the window directly (useful during development).
+     *
+     * @param arg ignored
+     * @throws IOException never thrown; signature kept for consistency
+     */
+    public static void main(String[] arg) throws IOException {
+        ExperimenterScalabilityWindow w =
+                new ExperimenterScalabilityWindow();
+        w.setVisible(true);
+        w.setDefaultCloseOperation(EXIT_ON_CLOSE);
+    }
+
+    // ----------------------------------------------------------------
+    // Constructor
+    // ----------------------------------------------------------------
+
+    /** Builds the window and wires up all event listeners. */
+    public ExperimenterScalabilityWindow() {
+        setTitle("Run an experiment (dataset size is varied)");
+        setBounds(100, 100, 825, 801);
+        setResizable(false);
+        getContentPane().setLayout(null);
+
+        // ── Step labels ─────────────────────────────────────────────
+
+        JLabel lblStep1 = new JLabel(
+            "Step 1: Select algorithm(s) to be compared "
+            + "(Note: must have the same parameters):");
+        lblStep1.setBounds(10, 15, 570, 14);
+        getContentPane().add(lblStep1);
+
+        JLabel lblStep2 = new JLabel(
+            "Step 2: Select an input file:");
+        lblStep2.setBounds(10, 123, 193, 14);
+        getContentPane().add(lblStep2);
+
+        JLabel lblStep3 = new JLabel(
+            "Step 3: Select output directory:");
+        lblStep3.setBounds(10, 166, 193, 14);
+        getContentPane().add(lblStep3);
+
+        JLabel lblStep4 = new JLabel(
+            "Step 4: Provide the algorithm(s) fixed parameter values "
+            + "(do NOT use ##):");
+        lblStep4.setBounds(10, 208, 781, 14);
+        getContentPane().add(lblStep4);
+
+        JLabel lblStep5 = new JLabel(
+            "Step 5: Percentages of dataset size to use "
+            + "(integer values 1-100, space-separated, e.g. 20 40 60 80 100):");
+        lblStep5.setBounds(10, 278, 781, 14);
+        getContentPane().add(lblStep5);
+
+        // ── Algorithm combo + text field ────────────────────────────
+
+        comboBoxAlgorithms = new JComboBox<>(new Vector<>());
+        comboBoxAlgorithms.setBounds(34, 40, 283, 22);
+        comboBoxAlgorithms.setMaximumRowCount(20);
+        comboBoxAlgorithms.addItem("");
+
+        AlgorithmManager manager = null;
+        try {
+            manager = AlgorithmManager.getInstance();
+        } catch (Exception e1) {
+            e1.printStackTrace();
+        }
+
+        if (manager != null) {
+            List<String> algorithmList =
+                    manager.getListOfAlgorithmsAsString(
+                            false, false, false, true, false);
+            for (String name : algorithmList) {
+                comboBoxAlgorithms.addItem(name);
+            }
+        }
+
+        comboBoxAlgorithms.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent evt) {
+                try {
+                    updateUserInterfaceAfterAlgorithmSelection(
+                            evt.getItem().toString(),
+                            evt.getStateChange() == ItemEvent.SELECTED);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        getContentPane().add(comboBoxAlgorithms);
+
+        textFieldAlgorithms = new JTextField();
+        textFieldAlgorithms.setBounds(34, 73, 757, 20);
+        textFieldAlgorithms.setColumns(10);
+        getContentPane().add(textFieldAlgorithms);
+
+        buttonAddAlgorithm = new JButton("Add algorithm");
+        buttonAddAlgorithm.setBounds(327, 40, 176, 23);
+        buttonAddAlgorithm.setEnabled(false);
+        buttonAddAlgorithm.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    addAnAlgorithm();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null,
+                            "An error occurred: " + ex.toString(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        getContentPane().add(buttonAddAlgorithm);
+
+        // ── Input file ───────────────────────────────────────────────
+
+        textFieldInputFile = new JTextField();
+        textFieldInputFile.setEditable(false);
+        textFieldInputFile.setBounds(213, 120, 496, 20);
+        textFieldInputFile.setColumns(10);
+        getContentPane().add(textFieldInputFile);
+
+        JButton buttonInputFile = new JButton("...");
+        buttonInputFile.setBounds(719, 119, 72, 23);
+        buttonInputFile.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                askUserToChooseInputFile();
+            }
+        });
+        getContentPane().add(buttonInputFile);
+
+        // ── Output directory ─────────────────────────────────────────
+
+        textFieldOutputDirectory = new JTextField();
+        textFieldOutputDirectory.setEditable(false);
+        textFieldOutputDirectory.setBounds(213, 160, 496, 20);
+        textFieldOutputDirectory.setColumns(10);
+        getContentPane().add(textFieldOutputDirectory);
+
+        JButton buttonOutputDir = new JButton("...");
+        buttonOutputDir.setBounds(719, 161, 72, 23);
+        buttonOutputDir.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                askUserToChooseOutputDirectory();
+            }
+        });
+        getContentPane().add(buttonOutputDir);
+
+        // ── Fixed parameters ─────────────────────────────────────────
+
+        textFieldParameters = new JTextField();
+        textFieldParameters.setBounds(34, 233, 757, 20);
+        textFieldParameters.setColumns(10);
+        getContentPane().add(textFieldParameters);
+
+        // ── Percentages ──────────────────────────────────────────────
+
+        textFieldValues = new JTextField();
+        textFieldValues.setText("20 40 60 80 100");
+        textFieldValues.setBounds(34, 299, 757, 20);
+        textFieldValues.setColumns(10);
+        getContentPane().add(textFieldValues);
+
+        // ── Options section ──────────────────────────────────────────
+
+        JLabel lblOptions = new JLabel("Options:");
+        lblOptions.setBounds(10, 350, 781, 14);
+        getContentPane().add(lblOptions);
+
+        JLabel lblTimeLimit = new JLabel(
+                "Time limit for each run (s): ");
+        lblTimeLimit.setBounds(34, 375, 169, 14);
+        getContentPane().add(lblTimeLimit);
+
+        textFieldTimeLimit = new JTextField();
+        textFieldTimeLimit.setBounds(213, 372, 496, 20);
+        textFieldTimeLimit.setColumns(10);
+        getContentPane().add(textFieldTimeLimit);
+
+        JLabel lblJarPath = new JLabel(
+                "Path to SPMF.jar (optional):");
+        lblJarPath.setBounds(34, 399, 169, 14);
+        getContentPane().add(lblJarPath);
+
+        textFieldJARPath = new JTextField();
+        pathToSPMFJar =
+                PreferencesManager.getInstance().getSPMFJarFilePath();
+        textFieldJARPath.setText(
+                pathToSPMFJar != null ? pathToSPMFJar : "");
+        textFieldJARPath.setEditable(false);
+        textFieldJARPath.setBounds(213, 396, 496, 20);
+        textFieldJARPath.setColumns(10);
+        getContentPane().add(textFieldJARPath);
+
+        JButton buttonSPMFJar = new JButton("...");
+        buttonSPMFJar.setBounds(719, 395, 72, 23);
+        buttonSPMFJar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                askUserToChooseSPMFJarPath();
+            }
+        });
+        getContentPane().add(buttonSPMFJar);
+
+        checkboxCountLines = new JCheckBox(
+            "Compare the number of lines in the output of each algorithm");
+        checkboxCountLines.setBounds(34, 420, 578, 23);
+        getContentPane().add(checkboxCountLines);
+
+        checkboxPGFPlots = new JCheckBox(
+            "Save results as LaTeX PGFPlots figures");
+        checkboxPGFPlots.setBounds(34, 446, 466, 23);
+        getContentPane().add(checkboxPGFPlots);
+
+        // ── Run button ───────────────────────────────────────────────
+
+        buttonRun = new JButton("Run the experiment");
+        buttonRun.setBounds(270, 475, 230, 23);
+        buttonRun.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                runExperiment();
+            }
+        });
+        getContentPane().add(buttonRun);
+
+        // ── Results area ─────────────────────────────────────────────
+
+        JLabel lblResults = new JLabel("Results:");
+        lblResults.setBounds(10, 484, 414, 14);
+        getContentPane().add(lblResults);
+
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setBounds(34, 509, 757, 242);
+        getContentPane().add(scrollPane);
+
+        textAreaResult = new JTextArea();
+        textAreaResult.setText(" ");
+        textAreaResult.setEditable(false);
+        scrollPane.setViewportView(textAreaResult);
+
+        // ── Help button ──────────────────────────────────────────────
+
+        buttonHelp = new JButton("");
+        buttonHelp.setIcon(new ImageIcon(
+            ExperimenterScalabilityWindow.class.getResource(
+                "/ca/pfv/spmf/gui/Help24.gif")));
+        buttonHelp.setBounds(761, 11, 38, 34);
+        buttonHelp.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    java.awt.Desktop.getDesktop().browse(
+                        java.net.URI.create(
+                            "https://www.philippe-fournier-viger.com"
+                            + "/spmf/ExperimenterPerformance"
+                            + "_Scalability.php"));
+                } catch (java.io.IOException ex) {
+                    System.out.println(ex.getMessage());
+                }
+            }
+        });
+        getContentPane().add(buttonHelp);
+    }
+
+    // ----------------------------------------------------------------
+    // Add algorithm
+    // ----------------------------------------------------------------
+
+    /**
+     * Appends the currently selected algorithm to the algorithm list
+     * text field, after verifying that its mandatory parameters match
+     * those already in the list.
+     *
+     * @throws Exception if the AlgorithmManager cannot be reached
+     */
+    protected void addAnAlgorithm() throws Exception {
+
+        String algorithms  = textFieldAlgorithms.getText().trim();
+        String newAlgorithm =
+                ((String) comboBoxAlgorithms.getSelectedItem()).trim();
+
+        if (newAlgorithm.isEmpty()) {
+            return;
+        }
+
+        // First algorithm in the list → just add it
+        if (algorithms.isEmpty()) {
+            textFieldAlgorithms.setText(newAlgorithm);
+            return;
+        }
+
+        String[] existing = algorithms.split("\\s+");
+
+        // Check for duplicates
+        for (String a : existing) {
+            if (a.equals(newAlgorithm)) {
+                return; // Already present - silently ignore
+            }
+        }
+
+        // Verify that mandatory parameters match those of the first
+        // algorithm already in the list
+        DescriptionOfAlgorithm first =
+                AlgorithmManager.getInstance()
+                                .getDescriptionOfAlgorithm(existing[0]);
+        DescriptionOfAlgorithm candidate =
+                AlgorithmManager.getInstance()
+                                .getDescriptionOfAlgorithm(newAlgorithm);
+
+        boolean sameParams = true;
+
+        if (first.getNumberOfMandatoryParameters()
+                != candidate.getNumberOfMandatoryParameters()) {
+            sameParams = false;
+        } else {
+            DescriptionOfParameter[] fp =
+                    first.getParametersDescription();
+            DescriptionOfParameter[] cp =
+                    candidate.getParametersDescription();
+            for (int i = 0; i < fp.length; i++) {
+                if (!fp[i].isOptional) {
+                    if (i >= cp.length
+                            || fp[i].getParameterType()
+                                    != cp[i].getParameterType()
+                            || !fp[i].name.equals(cp[i].name)) {
+                        sameParams = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!sameParams) {
+            JOptionPane.showMessageDialog(null,
+                "Algorithm \"" + newAlgorithm + "\" does not have the "
+                + "same mandatory parameters as \""
+                + existing[0] + "\" and cannot be added.",
+                "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        textFieldAlgorithms.setText(algorithms + " " + newAlgorithm);
+    }
+
+    // ----------------------------------------------------------------
+    // Console → text area redirect
+    // ----------------------------------------------------------------
+
+    /**
+     * Redirects bytes written to an {@link OutputStream} into a
+     * {@link JTextArea}.
+     */
+    static class TextAreaOutputStream extends OutputStream {
+
+        private final JTextArea textArea;
+
+        TextAreaOutputStream(JTextArea ta) {
+            this.textArea = ta;
+        }
+
+        @Override
+        public void flush() {
+            textArea.repaint();
+        }
+
+        @Override
+        public void write(int b) {
+            textArea.append(
+                    new String(new byte[] { (byte) b }));
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // Run experiment
+    // ----------------------------------------------------------------
+
+    /**
+     * Validates user inputs then launches
+     * {@link ExperimenterForScalability#runScalabilityExperiment}
+     * inside a background thread so the EDT is not blocked.
+     *
+     * <p>Key validation steps:
+     * <ul>
+     *   <li>At least one algorithm must be listed.</li>
+     *   <li>An input file must be chosen.</li>
+     *   <li>An output directory must be chosen.</li>
+     *   <li>Parameters must NOT contain "##".</li>
+     *   <li>Each percentage token must be a valid integer 1–100.</li>
+     * </ul>
+     */
+    protected void runExperiment() {
+
+        buttonRun.setEnabled(false);
+        textAreaResult.setText("");
+
+        try {
+            // ── Algorithm names ──────────────────────────────────────
+            String rawAlgorithms =
+                    textFieldAlgorithms.getText().trim();
+            if (rawAlgorithms.isEmpty()) {
+                throw new Exception(
+                    "You must add at least one algorithm name "
+                    + "(use the drop-down and 'Add algorithm' button).");
+            }
+            String[] algorithmNames = rawAlgorithms.split("\\s+");
+
+            // ── Input file ───────────────────────────────────────────
+            if (inputFile == null || inputFile.isEmpty()) {
+                throw new Exception(
+                    "You must select an input dataset file (Step 2).");
+            }
+
+            // ── Output directory ─────────────────────────────────────
+            if (outputDirectory == null || outputDirectory.isEmpty()) {
+                throw new Exception(
+                    "You must select an output directory (Step 3).");
+            }
+
+            // ── Fixed parameters (no "##" allowed) ───────────────────
+            String rawParams =
+                    textFieldParameters.getText().trim();
+            String[] parameters;
+            if (rawParams.isEmpty()) {
+                parameters = new String[0];
+            } else {
+                parameters = rawParams.split("\\s+");
+            }
+            for (String p : parameters) {
+                if ("##".equals(p)) {
+                    throw new Exception(
+                        "Do not use '##' in a scalability experiment.\n"
+                        + "Parameters are fixed across all runs.\n"
+                        + "Only the size of the dataset subset changes.");
+                }
+            }
+
+            // ── Percentages ──────────────────────────────────────────
+            String rawValues = textFieldValues.getText().trim();
+            if (rawValues.isEmpty()) {
+                throw new Exception(
+                    "You must provide at least one percentage value "
+                    + "in Step 5 (e.g. \"20 40 60 80 100\").");
+            }
+
+            // Split on whitespace; strip any trailing "%" from each token
+            String[] rawTokens = rawValues.split("\\s+");
+            String[] percentages = new String[rawTokens.length];
+            for (int i = 0; i < rawTokens.length; i++) {
+                // Remove "%" suffix if present (user-friendly)
+                String token = rawTokens[i].replace("%", "").trim();
+                // Validate: must be an integer 1–100
+                int pct;
+                try {
+                    pct = Integer.parseInt(token);
+                } catch (NumberFormatException nfe) {
+                    throw new Exception(
+                        "\"" + rawTokens[i] + "\" is not a valid "
+                        + "integer percentage. "
+                        + "Please use values like: 20 40 60 80 100");
+                }
+                if (pct < 1 || pct > 100) {
+                    throw new Exception(
+                        "Percentage value " + pct
+                        + " is out of range. "
+                        + "Each value must be between 1 and 100.");
+                }
+                percentages[i] = token; // clean integer string
+            }
+
+            // ── Timeout ──────────────────────────────────────────────
+            timeoutMilliseconds = Integer.MAX_VALUE;
+            String timeoutStr = textFieldTimeLimit.getText().trim();
+            if (!timeoutStr.isEmpty()) {
+                try {
+                    timeoutMilliseconds =
+                            Integer.parseInt(timeoutStr) * 1000;
+                } catch (NumberFormatException nfe) {
+                    throw new Exception(
+                        "Time limit must be a whole number of seconds.");
+                }
+            }
+
+            // ── Options ──────────────────────────────────────────────
+            boolean compareOutputSize =
+                    checkboxCountLines.isSelected();
+            boolean generatePGFPlots =
+                    checkboxPGFPlots.isSelected();
+
+            // ── Create the experimenter ───────────────────────────────
+            ExperimenterForScalability experimenter =
+                    new ExperimenterForScalability();
+
+            if (pathToSPMFJar != null && !pathToSPMFJar.isEmpty()) {
+                experimenter.setSPMFJarFilePath(pathToSPMFJar);
+            }
+
+            // ── Redirect console output to the text area ─────────────
+            System.setOut(new PrintStream(
+                    new TextAreaOutputStream(textAreaResult)));
+
+            // ── Capture finals for the background thread ─────────────
+            final String[]  fAlgorithms   = algorithmNames;
+            final String[]  fParameters   = parameters;
+            final String    fInputFile    = inputFile;
+            final String[]  fPercentages  = percentages;
+            final String    fOutputDir    = outputDirectory;
+            final int       fTimeout      = timeoutMilliseconds;
+            final boolean   fCompare      = compareOutputSize;
+            final boolean   fLatex        = generatePGFPlots;
+            final ExperimenterForScalability fExp = experimenter;
+
+            // ── Launch in a background thread ─────────────────────────
+            currentRunningAlgorithmThread = new NotifyingThread() {
+                @Override
+                public boolean doRun() throws Exception {
+                    fExp.runScalabilityExperiment(
+                            fAlgorithms,
+                            fParameters,
+                            fInputFile,
+                            fPercentages,
+                            fOutputDir,
+                            fTimeout,
+                            fCompare,
+                            false,      // showCommand = false
+                            fLatex);
+                    return true;
+                }
+            };
+
+            currentRunningAlgorithmThread.addListener(this);
+            currentRunningAlgorithmThread
+                    .setUncaughtExceptionHandler(this);
+            currentRunningAlgorithmThread.start();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null,
+                "An error occurred while trying to run the experiment."
+                + "\n\nERROR: " + e.getMessage(),
+                "Error", JOptionPane.ERROR_MESSAGE);
+            buttonRun.setEnabled(true);
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // File / directory choosers
+    // ----------------------------------------------------------------
+
+    /** Opens a file chooser for the input dataset file. */
+    private void askUserToChooseInputFile() {
+        try {
+            File startPath = resolveStartPath(
+                    PreferencesManager.getInstance().getInputFilePath());
+
+            JFileChooser fc = startPath != null
+                    ? new JFileChooser(startPath.getAbsolutePath())
+                    : new JFileChooser();
+
+            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                File file = fc.getSelectedFile();
+                textFieldInputFile.setText(file.getName());
+                inputFile = file.getPath();
+                PreferencesManager.getInstance()
+                        .setInputFilePath(file.getParent());
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null,
+                "Error opening the input file dialog.\n" + e,
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /** Opens a file chooser for the spmf.jar path. */
+    protected void askUserToChooseSPMFJarPath() {
+        try {
+            File startPath = resolveStartPath(
+                    PreferencesManager.getInstance()
+                                      .getSPMFJarFilePath());
+
+            JFileChooser fc = startPath != null
+                    ? new JFileChooser(startPath.getAbsolutePath())
+                    : new JFileChooser();
+
+            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                File file = fc.getSelectedFile();
+                pathToSPMFJar = file.getPath();
+                textFieldJARPath.setText(pathToSPMFJar);
+                PreferencesManager.getInstance()
+                        .setSPMFJarFilePath(pathToSPMFJar);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null,
+                "Error opening the spmf.jar dialog.\n" + e,
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /** Opens a directory chooser for the output directory. */
+    private void askUserToChooseOutputDirectory() {
+        try {
+            File startPath = resolveStartPath(
+                    PreferencesManager.getInstance()
+                                      .getExperimentDirectoryPath());
+
+            JFileChooser fc = new JFileChooser();
+            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fc.setAcceptAllFileFilterUsed(false);
+            if (startPath != null) {
+                fc.setCurrentDirectory(startPath);
+            }
+
+            if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                File file = fc.getSelectedFile();
+                textFieldOutputDirectory.setText(file.getName());
+                outputDirectory = file.getAbsolutePath();
+                PreferencesManager.getInstance()
+                        .setExperimentDirectoryPath(outputDirectory);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null,
+                "Error opening the output directory dialog.\n" + e,
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Returns a {@link File} for the given path string, or falls back
+     * to the SPMF examples directory, or {@code null} if neither is
+     * available.
+     */
+    private File resolveStartPath(String savedPath) {
+        if (savedPath != null) {
+            return new File(savedPath);
+        }
+        try {
+            URL url = MainTestApriori_simple_saveToFile.class
+                    .getResource("MainTestApriori_saveToFile.class");
+            if (url != null
+                    && "file".equalsIgnoreCase(url.getProtocol())) {
+                return new File(url.getPath());
+            }
+        } catch (Exception ignored) {
+            // Fall through to null
+        }
+        return null;
+    }
+
+    // ----------------------------------------------------------------
+    // Thread callbacks
+    // ----------------------------------------------------------------
+
+    @Override
+    public void uncaughtException(Thread t, Throwable e) {
+        buttonRun.setEnabled(true);
+    }
+
+    @Override
+    public void notifyOfThreadComplete(Thread thread, boolean succeed) {
+        buttonRun.setEnabled(true);
+    }
+
+    // ----------------------------------------------------------------
+    // Algorithm combo-box handler
+    // ----------------------------------------------------------------
+
+    /**
+     * Enables or disables the "Add algorithm" button depending on
+     * whether a valid algorithm is currently selected in the combo box.
+     *
+     * @param algorithmName name of the item that changed state
+     * @param isSelected    {@code true} when the item was just selected
+     * @throws Exception if the AlgorithmManager cannot be reached
+     */
+    protected void updateUserInterfaceAfterAlgorithmSelection(
+            String algorithmName, boolean isSelected) throws Exception {
+
+        if (isSelected) {
+            AlgorithmManager mgr = AlgorithmManager.getInstance();
+            DescriptionOfAlgorithm alg =
+                    mgr.getDescriptionOfAlgorithm(algorithmName);
+            buttonAddAlgorithm.setEnabled(alg != null);
+        } else {
+            buttonAddAlgorithm.setEnabled(false);
+        }
+    }
 }

@@ -21,22 +21,21 @@ import ca.pfv.spmf.algorithms.frequentpatterns.hmine.AlgoHMine;
 
 /**
  * This class represents a pointer to a transaction item in the CAUL structure.
- * It indicates the position of the item in the transaction and the utility
- * of the current prefix ending with that item.
+ * It stores the position of the item and the prefix utility value.
  *
  * @see AlgoHMine
  * @author Philippe Fournier-Viger
  */
 class Pointer {
-	/** the item **/
+	/** Item position */
 	int pos;  
-	/** prefix utility **/
+	/** Prefix utility */
 	int prefixUtility; 
 
 	/**
-	 * Constructor.
-	 * @param item the item 
-	 * @param pos  a position
+	 * Constructor
+	 * @param prefixUtility the prefix utility
+	 * @param pos the item position
 	 */
 	public Pointer(int prefixUtility, int pos){
 		this.prefixUtility = prefixUtility;

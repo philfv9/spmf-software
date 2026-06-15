@@ -164,7 +164,7 @@ public class AlgoBio_HUIF_BA {
 
 		@Override
 		public int compare(Object item1, Object item2) {
-			// TODO Auto-generated method stub
+			
 			if(item1 instanceof Integer){
 				return -(mapItemToTWU.get((Integer)item1) - mapItemToTWU.get((Integer)item2));
 			}else{
@@ -178,7 +178,7 @@ public class AlgoBio_HUIF_BA {
 
 		@Override
 		public int compare(Object item1, Object item2) {
-			// TODO Auto-generated method stub
+			
 			if(item1 instanceof Integer){
 				return (mapItemToUtil.get((Integer)item1) - mapItemToUtil.get((Integer)item2));
 			}else {
@@ -192,7 +192,7 @@ public class AlgoBio_HUIF_BA {
 
 		@Override
 		public int compare(Object item1, Object item2) {
-			// TODO Auto-generated method stub
+			
 			if(item1 instanceof Integer){
 				return -(mapItemToSup.get((Integer)item1) - mapItemToSup.get((Integer)item2));
 			}else{

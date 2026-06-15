@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import ca.pfv.spmf.algorithms.ArraysAlgos;
-import ca.pfv.spmf.algorithms.frequentpatterns.apriori_HT.ItemsetHashTree;
+import ca.pfv.spmf.algorithms.frequentpatterns.aprioriHT.ItemsetHashTree;
 import ca.pfv.spmf.tools.MemoryLogger;
 
 /**

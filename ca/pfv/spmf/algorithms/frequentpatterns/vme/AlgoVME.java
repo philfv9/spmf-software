@@ -14,6 +14,7 @@ package ca.pfv.spmf.algorithms.frequentpatterns.vme;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* Do not remove the license or copyright information.
 */
 
 import java.io.BufferedReader;
@@ -74,7 +75,7 @@ public class AlgoVME {
 	long endTimeStamp = 0; 
 	
 	/** the maximum profit loss */
-	double maxProfitLoss =0;
+	double maxProfitLoss = 0;
 	
 	/** the overall profit */
 	double overallProfit = 0;
@@ -116,7 +117,7 @@ public class AlgoVME {
 		overallProfit = 0;
 		BufferedReader reader = new BufferedReader(new FileReader(input));
 		String line;
-		int i=0;
+		int i = 0;
 		// for each transaction (line) until the end of file
 		while( ((line = reader.readLine())!= null)){ 
 			// if the line is  a comment, is  empty or is a
@@ -141,12 +142,12 @@ public class AlgoVME {
 		reader.close();
 		
 		// Calculate max profit loss
-		maxProfitLoss  = overallProfit * threshold;
+		maxProfitLoss = overallProfit * threshold;
 		
 		// Scan the database second time to find erasable itemset of size 1 
 		// and their tid list.
 		reader = new BufferedReader(new FileReader(input));
-		i=0;
+		i = 0;
 		// for each transaction (line) until the end of file
 		while( ((line = reader.readLine())!= null)){ 
 			// if the line is  a comment, is  empty or is a
@@ -160,7 +161,7 @@ public class AlgoVME {
 			// split the line
 			String[] lineSplited = line.split(" ");
 			// for each item in that line
-			for(int j=1; j< lineSplited.length; j++){
+			for(int j = 1; j < lineSplited.length; j++){
 				// convert item to integer
 				int item = Integer.parseInt(lineSplited[j]);
 				// get the tidset of that item
@@ -187,14 +188,14 @@ public class AlgoVME {
 			// get the tidset  of that item
 			Map.Entry<Integer, Set<Integer>> entry = (Map.Entry<Integer, Set<Integer>>) iterator.next();
 			// init loss to 0
-			int loss =0;
+			double loss = 0;
 			// for each tid in the tidset
 			for(Integer tid : entry.getValue()){
 				// add the loss resulting from erasing that item
 				loss += mapTransactionProfit.get(tid);
 			}
 			// if the looss is less than the max profit loss
-			if(loss <= maxProfitLoss && maxItemsetSize >=1){
+			if(loss <= maxProfitLoss && maxItemsetSize >= 1){
 				// it is an erasable itemset
 				Itemset itemset = new Itemset(entry.getKey());
 				itemset.setTIDs(mapItemTIDs.get(entry.getKey()));
@@ -241,15 +242,15 @@ public class AlgoVME {
 		List<Itemset> candidates = new ArrayList<Itemset>();
 
 // For each itemset I1 and I2 of level k-1
-loop1:	for(int i=0; i< levelK_1.size(); i++){
+loop1:	for(int i = 0; i < levelK_1.size(); i++){
 			Itemset itemset1 = levelK_1.get(i);
-loop2:		for(int j=i+1; j< levelK_1.size(); j++){
+loop2:		for(int j = i+1; j < levelK_1.size(); j++){
 				Itemset itemset2 = levelK_1.get(j);
 				
 				// we compare items of itemset1  and itemset2.
 				// If they have all the same k-1 items and the last item of itemset1 is smaller than
 				// the last item of itemset2, we will combine them to generate a candidate
-				for(int k=0; k< itemset1.size(); k++){
+				for(int k = 0; k < itemset1.size(); k++){
 					// if they are the last items
 					if(k == itemset1.size()-1){ 
 						// the one from itemset1 should be smaller (lexical order) 
@@ -275,7 +276,7 @@ loop2:		for(int j=i+1; j< levelK_1.size(); j++){
 				unionTIDS.addAll(itemset2.getTransactionsIds());
 				
 				// calculate loss
-				int loss =0;
+				double loss = 0;
 				// for each tid, add the profit ot the transaction to the loss
 				for(Integer tid : unionTIDS){
 					loss += mapTransactionProfit.get(tid);
@@ -307,9 +308,9 @@ loop2:		for(int j=i+1; j< levelK_1.size(); j++){
 	 * @param loss the loss
 	 * @throws IOException exception if error while writing to output file
 	 */
-	private void saveItemsetToFile(Itemset itemset, int loss) throws IOException{
+	private void saveItemsetToFile(Itemset itemset, double loss) throws IOException{
 		// write the itemset
-		writer.write(itemset.toString() + " #LOSS: " + loss);
+		writer.write(itemset.toString() + "#LOSS: " + loss);
 		writer.newLine();
 		// increase the itemset count
 		erasableItemsetCount++; 
@@ -329,6 +330,7 @@ loop2:		for(int j=i+1; j< levelK_1.size(); j++){
 		System.out
 				.println("===================================================");
 	}
+
 	/** 
 	 * Set the maximum pattern length
 	 * @param length the maximum length

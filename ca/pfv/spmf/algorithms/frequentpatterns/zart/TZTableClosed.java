@@ -35,25 +35,25 @@ public class TZTableClosed {
 	/** This store the closed itemsets by size
 	 At position i, there are the list of closed itemsets 
 	 of size i */
-	public final List<List<Itemset>> levels = new ArrayList<List<Itemset>>();  // itemset classé par taille
+	public final List<List<Itemset>> levels = new ArrayList<List<Itemset>>();  // itemset classÃ© par taille
 	
 	/** each entry of the following map is :  <br/>
 	 key : a closed itemset       <br/>
 	 values : the corresponding generator(s)  */
-	public Map<Itemset, List<Itemset>> mapGenerators = new HashMap<Itemset, List<Itemset>>();
+	public final Map<Itemset, List<Itemset>> mapGenerators = new HashMap<Itemset, List<Itemset>>();
 
 	/**
 	 * Add a closed itemsets to this structure.
 	 * @param itemset  the itemset
 	 */
 	void addClosedItemset(Itemset itemset){
-		// if there is no array list until the size of this itemset
-		// then create them.
-		while(levels.size() <= itemset.size()){
+		int size = itemset.size();
+		// Ensure the levels list has enough capacity
+		while(levels.size() <= size){
 			levels.add(new ArrayList<Itemset>());
 		}
 		// add the itemset in the proper arraylist according to the size of the itemset
-		levels.get(itemset.size()).add(itemset);
+		levels.get(size).add(itemset);
 	}
 	
 	/**
@@ -62,14 +62,15 @@ public class TZTableClosed {
 	 * @return  a list of itemsets
 	 */
 	public List<Itemset> getLevelForZart(int i){
+		int index = i + 1;
 		// if this level does not exist
-		if(i+1 == levels.size()){
+		if(index == levels.size()){
 			// create it
 			List<Itemset> newList = new ArrayList<Itemset>();
 			levels.add(newList);
 			return newList;
 		}
 		// return the list of itemsets  (empty or not)
-		return levels.get(i+1);
+		return levels.get(index);
 	}
 }

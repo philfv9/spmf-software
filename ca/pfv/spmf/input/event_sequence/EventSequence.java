@@ -27,6 +27,8 @@ import java.util.Set;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove the copyright and license information.
  */
 /**
  * This class represents an event sequence as used by algorithms such as TKE,

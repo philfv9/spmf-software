@@ -15,6 +15,8 @@ package ca.pfv.spmf.input.sequence_database_list_strings;
 * 
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove the copyright and license information.
 */
 import java.util.ArrayList;
 import java.util.List;

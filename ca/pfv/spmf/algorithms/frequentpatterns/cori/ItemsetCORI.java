@@ -18,20 +18,19 @@ import ca.pfv.spmf.patterns.itemset_array_integers_with_count.Itemset;
 */
 
 /**
- * This class represents an itemset (a set of items) implemented as an array of integers with
- * a variable to store the support count of the itemset and a double value to store
- * the bond of the itemset.
-* 
+ * This class represents an itemset with support count and bond value.
+ * It extends the standard Itemset class to add bond functionality.
+ * 
  * @author Philippe Fournier-Viger 2015
  * @see AlgoCORI
  */
 public class ItemsetCORI extends Itemset{
-	/**  the bond of this itemset */
+	
+	/** The bond value of this itemset */
 	public double bond = 0; 
 
-
 	/**
-	 * Default constructor
+	 * Constructor
 	 * @param array an array of items representing this itemset
 	 */
 	public ItemsetCORI(int[] array) {
@@ -39,20 +38,18 @@ public class ItemsetCORI extends Itemset{
 	}
 
 	/**
-	 * Get the bond value of this itemset
-	 * @return the bond ( a double value)
+	 * Get the bond value
+	 * @return the bond value
 	 */
 	public double getBond() {
 		return bond;
 	}
 
 	/**
-	 * Set the support of this itemset
-	 * @param support the support
+	 * Set the bond value
+	 * @param bond the bond value
 	 */
 	public void setBond(Integer bond) {
 		this.bond = bond;
 	}
-
-
 }

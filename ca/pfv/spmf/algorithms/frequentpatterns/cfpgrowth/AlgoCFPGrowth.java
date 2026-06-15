@@ -310,64 +310,6 @@ public class AlgoCFPGrowth {
 		reader.close();
 	}
 
-//	/**
-//	 * This method used the frequency of items to generate an MIS value by
-//	 * using the function presented in the article of MISApriori  
-//	 * (This method is an alternative to initMISfromFile() and is not used
-//	 * by default).
-//	 * @param input  the input file
-//	 * @param mapSupport  a
-//	 * @param beta
-//	 * @param LS
-//	 * @return
-//	 * @throws FileNotFoundException
-//	 * @throws IOException
-//	 */
-//	private int initMISfromFrequency(String input,
-//			final Map<Integer, Integer> mapSupport, double beta, double LS)
-//			throws FileNotFoundException, IOException {
-//		int maxItemID = 0;
-//		BufferedReader reader = new BufferedReader(new FileReader(input));
-//		String line;
-//		// for each transaction
-//		while (((line = reader.readLine()) != null)) { 
-//			String[] lineSplited = line.split(" ");
-//			// for each item in the transaction
-//			for (String itemString : lineSplited) { 
-//				// increase the support count of the item
-//				Integer item = Integer.parseInt(itemString);
-//				Integer count = mapSupport.get(item);
-//				if (count == null) {
-//					mapSupport.put(item, 1);
-//					// az
-//					if (maxItemID < item)
-//						maxItemID = item;
-//				} else {
-//					mapSupport.put(item, ++count);
-//				}
-//			}
-//			transactionCount++;
-//		}
-//		reader.close();
-//		MIS = new int[maxItemID + 1];
-//		minMIS = 1;
-//		int LSRelative = (int) Math.ceil(LS * transactionCount);
-//		for (Entry<Integer, Integer> entry : mapSupport.entrySet()) {
-//			// calculate the MIS value
-//			MIS[entry.getKey()] = (int) (beta * entry.getValue());
-//			if (MIS[entry.getKey()] < LSRelative) {
-//				MIS[entry.getKey()] = LSRelative;
-//			}// if
-//			if (MIS[entry.getKey()] < minMIS) {
-//				minMIS = MIS[entry.getKey()];
-//			}// if
-//		}// for
-//
-//		return minMIS;
-//	}
-//
-//	// end az-------------------------------------------------------------------
-
 	/**
 	 * This method mines pattern from a Prefix-Tree recursively
 	 * 
@@ -378,12 +320,6 @@ public class AlgoCFPGrowth {
 	 */
 	private void cfpgrowth(MISTree tree, int[] prefixAlpha, int prefixSupport, MapIntToInt mapSupport)
 			throws IOException {
-
-		// String test = "";
-		// for(int item : prefixAlpha){
-		// test += item + " ";
-		// }
-		// System.out.println(test);
 
 		// We check if there is only one item in the header table
 		if (tree.headerList.size() == 1) {

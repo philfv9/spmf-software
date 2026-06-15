@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.frequentpatterns.dci_closed_optimized.AlgoDCI_Closed_Optimized;
+import ca.pfv.spmf.algorithms.frequentpatterns.dci_closed_fast.AlgoDCI_Closed_FAST;
 
 /**
  * Example of how to use DCI_Closed algorithm from the source code.
@@ -17,10 +17,10 @@ public class MainTestDCI_Closed_Optimized {
 		
 		String input = fileToPath("contextPasquier99.txt");
 		String output = ".//output.txt";
-		int minsup = 2;  // means 2 transactions (we use a relative support)
+		double minsup = 0.2;  // means 2 transactions (we use a relative support)
 		
 		// Applying the  algorithm
-		AlgoDCI_Closed_Optimized algorithm = new AlgoDCI_Closed_Optimized();
+		AlgoDCI_Closed_FAST algorithm = new AlgoDCI_Closed_FAST();
 		
 		// Set this variable to true to show the transaction identifiers where patterns appear in the output file
 //		algorithm.setShowTransactionIdentifiers(true);

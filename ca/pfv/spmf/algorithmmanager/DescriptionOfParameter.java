@@ -17,6 +17,8 @@ import java.io.Serializable;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information from this file.
 */
 /**
  * This class is used to describe an algorithm's parameter.
@@ -37,7 +39,8 @@ public class DescriptionOfParameter implements Serializable {
 
 	/** type of parameter value */
 	@SuppressWarnings("rawtypes")
-	public final Class parameterType;
+	private
+	final Class parameterType;
 
 	/** this parameter is optional or not? */
 	public final boolean isOptional;
@@ -66,7 +69,7 @@ public class DescriptionOfParameter implements Serializable {
 	 * @return a String
 	 */
 	public String toString() {
-		return "[" + name + ", " + example + ", " + parameterType + ", isOptional = " + isOptional + " ]";
+		return "[" + name + ", " + example + ", " + getParameterType() + ", isOptional = " + isOptional + " ]";
 	}
 
 	/**

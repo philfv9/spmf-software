@@ -14,6 +14,7 @@
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
 * 
+* Do not remove the copyright and license information from this file.
 */
 package ca.pfv.spmf.algorithms.frequentpatterns.fhuqiminer;
 
@@ -90,9 +91,6 @@ public class AlgoFHUQIMiner {
 
 	/** number of HUQIs that have been found */
 	private int HUQIcount = 0;
-
-	/** number of utility lists */
-	private int countUL = 0;
 
 	/** number of construction for utility lists */
 	private int countConstruct = 0;
@@ -271,7 +269,6 @@ public class AlgoFHUQIMiner {
 		while ((str = br_inputDatabase.readLine()) != null) {
 			tid++;
 			String[] itemInfo = str.split(" ");
-			ArrayList<Qitem> qItemset;// line qItemset
 			int remainingUtility = 0;
 			Integer newTWU = 0; // NEW OPTIMIZATION
 			List<Qitem> revisedTransaction = new ArrayList<Qitem>();
@@ -323,6 +320,7 @@ public class AlgoFHUQIMiner {
 				}
 			}
 		}
+		br_inputDatabase.close();
 		MemoryLogger.getInstance().checkMemory();
 		// Sort the final list of Q-itemsets according to their utilities
 		Collections.sort(qitemNameList, new Comparator<Qitem>() {
@@ -834,10 +832,8 @@ public class AlgoFHUQIMiner {
 				if (tid1 == tid2) {
 					// QItemTrans combine = new QItemTrans();
 					int eu1 = qT1.get(i).getEu();
-					int ru1 = qT1.get(i).getRu();
 					int eu2 = qT2.get(j).getEu();
 
-					// 褌銉︻爣顎� preitem顎檜tility顓�
 					while (preQT.get(k).getTid() != tid1) {
 						k++;
 					}
@@ -949,7 +945,7 @@ public class AlgoFHUQIMiner {
 					nextNameList.add(afterUL.getSingleItemsetName()); // item can be explored
 //					countnext++;
 					nextHUL.put(afterUL.getSingleItemsetName(), afterUL);
-					countUL++;
+//					countUL++;
 					if (afterUL.getSumIutils() >= minUtil) {
 						writeOut1(prefix, prefixLength, qItemNameList.get(i), qItemNameList.get(j),
 								afterUL.getSumIutils());
@@ -1048,40 +1044,6 @@ public class AlgoFHUQIMiner {
 
 	}
 
-	/**
-	 * Write statistics about the algorithm execution to the file
-	 * 
-	 * @throws IOException if error while writing to file
-	 */
-	private void writeFileStatistics() throws IOException {
-
-		StringBuilder buffer = new StringBuilder();
-
-		buffer.append("#HUQIcount:");
-		buffer.append(HUQIcount);
-		buffer.append(System.lineSeparator());
-
-		buffer.append("#runTime:");
-		buffer.append((double) (endTime - startTime) / 1000);
-		buffer.append(System.lineSeparator());
-
-		buffer.append("#memory use:");
-		buffer.append(MemoryLogger.getInstance().getMaxMemory());
-		buffer.append(System.lineSeparator());
-
-		buffer.append("#countUL:");
-		buffer.append(countUL);
-		buffer.append(System.lineSeparator());
-
-		buffer.append("#countJoin:");
-		buffer.append(countConstruct);
-		buffer.append(System.lineSeparator());
-
-		// write to file
-		writer_hqui.write(buffer.toString());
-		writer_hqui.newLine();
-
-	}
 
 	/**
 	 * Comparator to order qItems

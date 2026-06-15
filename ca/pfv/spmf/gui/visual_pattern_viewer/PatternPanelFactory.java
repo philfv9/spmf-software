@@ -11,6 +11,8 @@ import ca.pfv.spmf.gui.visual_pattern_viewer.sequentialpatterns.SequentialPatter
 import ca.pfv.spmf.gui.visual_pattern_viewer.sequentialpatterns.SequentialPatternsReader;
 import ca.pfv.spmf.gui.visual_pattern_viewer.sequentialpatterns.StringGapPatternReader;
 import ca.pfv.spmf.gui.visual_pattern_viewer.sequentialpatterns.StringNoGapPattenrReader;
+import ca.pfv.spmf.gui.visual_pattern_viewer.subgraphs.SubgraphsPanel;
+import ca.pfv.spmf.gui.visual_pattern_viewer.subgraphs.SubgraphsReader;
 
 /*
  * Copyright (c) 2008-2025 Philippe Fournier-Viger
@@ -25,56 +27,70 @@ import ca.pfv.spmf.gui.visual_pattern_viewer.sequentialpatterns.StringNoGapPatte
  *
  * SPMF is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information
  */
 /**
- * A factory for Pattern pannels for the Visual Pattern Viewer
+ * A factory for pattern panels used by the Visual Pattern Viewer. Each
+ * {@link PatternType} maps to a dedicated reader / panel pair.
+ *
  * @author Philippe Fournier-Viger
  */
 public class PatternPanelFactory {
 
-	/**
-	 * Private constructor
-	 */
-	private PatternPanelFactory() {
-		
-	}
-	
-	/**
-	 * Create a panel to display patterns
-	 * @param filePath the path to a pattern file
-	 * @param type the type of patterns as a String
-	 * @param mode the layout mode
-	 * @return the panel or null if this type of files cannot be viewed
-	 * @throws IOException if error reading  the pattern file.
-	 */
-	public static PatternsPanel getPatternPanel(String filePath, PatternType type, LayoutMode mode) throws IOException {
-		if(PatternType.ASSOCIATION_RULES.equals(type)) {
-			RulesReader reader = new RulesReader(filePath);
-			return new RulesPanel(reader, mode);
-		}else if(PatternType.STRING_SEQUENTIAL_PATTERNS.equals(type)) {
-			SequentialPatternsReader reader = new StringGapPatternReader(filePath);
-			return new SequentialPatternsPanel(reader, mode);
-		}else if(PatternType.STRING_SEQUENTIAL_PATTERNS_NO_GAP.equals(type)) {
-			SequentialPatternsReader reader = new StringNoGapPattenrReader(filePath);
-			return new SequentialPatternsPanel(reader, mode);
-		}else if(PatternType.SEQUENTIAL_PATTERNS.equals(type)) {
-			SequentialPatternsReader reader = new SequentialPatternsReader(filePath);
-			return new SequentialPatternsPanel(reader, mode);
-		}else if(PatternType.ITEMSETS.equals(type)) {
-			ItemsetsReader reader = new ItemsetsReader(filePath);
-			return new ItemsetsPanel(reader, mode);
-		}else if(PatternType.UNCERTAIN_ITEMSETS.equals(type)) {
-			ItemsetsReader reader = new UncertainItemsetsReader(filePath);
-			return new ItemsetsPanel(reader, mode);
-		}
-		return null;
-	}
-	
+    /**
+     * Private constructor – this class is not meant to be instantiated.
+     */
+    private PatternPanelFactory() {
+    }
 
+    /**
+     * Creates and returns a {@link PatternsPanel} appropriate for the given pattern
+     * type and file.
+     *
+     * @param filePath the path to a pattern file
+     * @param type     the type of patterns as a {@link PatternType}
+     * @param mode     the layout mode
+     * @return the panel, or {@code null} if this type of file cannot be viewed
+     * @throws IOException if an error occurs while reading the pattern file
+     */
+    public static PatternsPanel getPatternPanel(String filePath, PatternType type,
+            LayoutMode mode) throws IOException {
 
+        if (PatternType.ASSOCIATION_RULES.equals(type)) {
+            RulesReader reader = new RulesReader(filePath);
+            return new RulesPanel(reader, mode);
+
+        } else if (PatternType.STRING_SEQUENTIAL_PATTERNS.equals(type)) {
+            SequentialPatternsReader reader = new StringGapPatternReader(filePath);
+            return new SequentialPatternsPanel(reader, mode);
+
+        } else if (PatternType.STRING_SEQUENTIAL_PATTERNS_NO_GAP.equals(type)) {
+            SequentialPatternsReader reader = new StringNoGapPattenrReader(filePath);
+            return new SequentialPatternsPanel(reader, mode);
+
+        } else if (PatternType.SEQUENTIAL_PATTERNS.equals(type)) {
+            SequentialPatternsReader reader = new SequentialPatternsReader(filePath);
+            return new SequentialPatternsPanel(reader, mode);
+
+        } else if (PatternType.ITEMSETS.equals(type)) {
+            ItemsetsReader reader = new ItemsetsReader(filePath);
+            return new ItemsetsPanel(reader, mode);
+
+        } else if (PatternType.UNCERTAIN_ITEMSETS.equals(type)) {
+            ItemsetsReader reader = new UncertainItemsetsReader(filePath);
+            return new ItemsetsPanel(reader, mode);
+
+        } else if (PatternType.SUBGRAPHS.equals(type)) {
+            SubgraphsReader reader = new SubgraphsReader(filePath);
+            return new SubgraphsPanel(reader, mode);
+        }
+
+        return null;
+    }
 }

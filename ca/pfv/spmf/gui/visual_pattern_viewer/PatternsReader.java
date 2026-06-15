@@ -26,6 +26,8 @@ import java.util.TreeSet;
  *
  * You should have received a copy of the GNU General Public License
  * along with SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information
  */
 /**
  * An abstract class for reading a file containing patterns, used by the Visual
@@ -113,6 +115,7 @@ public abstract class PatternsReader {
 		minMeasureValuesAdjusted.replace("LOSS", 0d);
 		minMeasureValuesAdjusted.replace("FVL", 0d);
 		minMeasureValuesAdjusted.replace("SUP", 0d);
+		minMeasureValuesAdjusted.replace("INTER", 0d);
 		Double minUtil = minMeasureValuesAdjusted.get("UTIL");
 		if (minUtil != null && minUtil > 0) {
 			minMeasureValuesAdjusted.replace("UTIL", 0d);
@@ -122,6 +125,10 @@ public abstract class PatternsReader {
 		maxMeasureValuesAdjusted.replace("CONF", 1d);
 		minMeasureValuesAdjusted.replace("UCONF", 0d);
 		maxMeasureValuesAdjusted.replace("UCONF", 1d);
+		minMeasureValuesAdjusted.replace("WAVG", 0d);
+		maxMeasureValuesAdjusted.replace("WAVG", 1d);
+		minMeasureValuesAdjusted.replace("WSUP", 0d);
+		maxMeasureValuesAdjusted.replace("WSUP", 1d);
 		minMeasureValuesAdjusted.replace("RA", 0d);
 		maxMeasureValuesAdjusted.replace("RA", 1d);
 	}

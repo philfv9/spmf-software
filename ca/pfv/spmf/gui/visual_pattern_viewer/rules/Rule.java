@@ -28,6 +28,8 @@ import ca.pfv.spmf.gui.visual_pattern_viewer.Pattern;
 /**
  * Represents a single rule, including its antecedent, consequent,
  * and its evaluation measures and corresponding values.
+ * Supports negative rules where the antecedent or consequent
+ * may be preceded by "NOT", indicating negation.
  * @author Philippe Fournier-Viger
  */
 public class Rule implements Pattern {
@@ -46,14 +48,24 @@ public class Rule implements Pattern {
 	 * Map of measure names to their string values (e.g., support, confidence).
 	 */
 	private final Map<String, String> measures;
-	
+
+	/**
+	 * Flag indicating whether the antecedent is negated (preceded by NOT).
+	 */
+	private final boolean antecedentNegated;
+
+	/**
+	 * Flag indicating whether the consequent is negated (preceded by NOT).
+	 */
+	private final boolean consequentNegated;
+
 	/**
 	 * Cached string representation
 	 */
 	private final String cachedToString;
 
 	/**
-	 * Constructs a new Rule instance.
+	 * Constructs a new Rule instance without negation (backward-compatible constructor).
 	 *
 	 * @param antecedent list of items on the left-hand side (antecedent)
 	 * @param consequent list of items on the right-hand side (consequent)
@@ -61,10 +73,32 @@ public class Rule implements Pattern {
 	 * @throws NullPointerException if any argument is null
 	 */
 	public Rule(List<String> antecedent, List<String> consequent, Map<String, String> measures) {
-		this.antecedent = antecedent;
-		this.consequent = consequent;
-		this.measures = measures;
-		cachedToString = antecedent + " --> " + consequent;
+		this(antecedent, false, consequent, false, measures);
+	}
+
+	/**
+	 * Constructs a new Rule instance with optional negation flags for antecedent
+	 * and consequent.
+	 *
+	 * @param antecedent         list of items on the left-hand side (antecedent)
+	 * @param antecedentNegated  true if the antecedent is negated (NOT)
+	 * @param consequent         list of items on the right-hand side (consequent)
+	 * @param consequentNegated  true if the consequent is negated (NOT)
+	 * @param measures           mapping of measure names to measure values
+	 * @throws NullPointerException if any argument is null
+	 */
+	public Rule(List<String> antecedent, boolean antecedentNegated,
+				List<String> consequent, boolean consequentNegated,
+				Map<String, String> measures) {
+		this.antecedent = Objects.requireNonNull(antecedent, "antecedent must not be null");
+		this.consequent = Objects.requireNonNull(consequent, "consequent must not be null");
+		this.measures = Objects.requireNonNull(measures, "measures must not be null");
+		this.antecedentNegated = antecedentNegated;
+		this.consequentNegated = consequentNegated;
+		// Build a human-readable string representation including NOT labels if needed
+		String antStr = (antecedentNegated ? "NOT " : "") + antecedent;
+		String conStr = (consequentNegated ? "NOT " : "") + consequent;
+		cachedToString = antStr + " --> " + conStr;
 	}
 
 	/**
@@ -89,7 +123,22 @@ public class Rule implements Pattern {
 	}
 
 	/**
-	 * @return a human-readable representation of the rule
+	 * @return true if the antecedent of this rule is negated (preceded by NOT)
+	 */
+	public boolean isAntecedentNegated() {
+		return antecedentNegated;
+	}
+
+	/**
+	 * @return true if the consequent of this rule is negated (preceded by NOT)
+	 */
+	public boolean isConsequentNegated() {
+		return consequentNegated;
+	}
+
+	/**
+	 * @return a human-readable representation of the rule, including NOT labels
+	 *         where applicable
 	 */
 	@Override
 	public String toString() {
@@ -103,12 +152,16 @@ public class Rule implements Pattern {
 		if (!(o instanceof Rule))
 			return false;
 		Rule that = (Rule) o;
-		return getAntecedent().equals(that.getAntecedent()) && getConsequent().equals(that.getConsequent())
+		return antecedentNegated == that.antecedentNegated
+				&& consequentNegated == that.consequentNegated
+				&& getAntecedent().equals(that.getAntecedent())
+				&& getConsequent().equals(that.getConsequent())
 				&& getMeasures().equals(that.getMeasures());
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(getAntecedent(), getConsequent(), getMeasures());
+		return Objects.hash(getAntecedent(), antecedentNegated,
+				getConsequent(), consequentNegated, getMeasures());
 	}
 }

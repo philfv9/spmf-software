@@ -1,20 +1,5 @@
 package ca.pfv.spmf.gui;
 
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
-import javax.swing.SwingConstants;
-
 /*
  * Copyright (c) 2008-2022 Philippe Fournier-Viger
  *
@@ -32,113 +17,189 @@ import javax.swing.SwingConstants;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Do not remove copyright or license information.
  */
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JEditorPane;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
+
 import ca.pfv.spmf.algorithmmanager.AlgorithmManager;
 
 /**
- * JFrame to provide general information about SPMF
- * 
- * @author Philippe Fournier-Viger
+ * This class is a modal dialog that provides general information about the
+ * SPMF software: version number, algorithm count, tool count, license
+ * information, and links to the website, documentation, and contributors page.
  *
+ * @author Philippe Fournier-Viger
  */
 public class AboutWindow extends JDialog {
 
-	/**
-	 * default UID
-	 */
-	private static final long serialVersionUID = 6173164103462475327L;
+    /** Default serial UID */
+    private static final long serialVersionUID = 6173164103462475327L;
 
-	/**
-	 * Constructor
-	 * 
-	 * @param window the parent window
-	 * @throws Exception if error occurs
-	 */
-	public AboutWindow(JFrame window) throws Exception {
-		super(window);
-		setIconImage(Toolkit.getDefaultToolkit()
-				.getImage(AboutWindow.class.getResource("/ca/pfv/spmf/gui/icons/About24.gif")));
+    /** URL of the SPMF documentation page */
+    private static final String URL_DOCUMENTATION =
+            "http://philippe-fournier-viger.com/spmf/index.php?link=documentation.php";
 
-		setResizable(false);
-		setTitle("About SPMF " + Main.SPMF_VERSION);
-		// set the layout of the content pane to a new BorderLayout with 10 pixels gaps
-		getContentPane().setLayout(new BorderLayout(10, 10));
+    /** URL of the SPMF contributors page */
+    private static final String URL_CONTRIBUTORS =
+            "http://philippe-fournier-viger.com/spmf/index.php?link=contributors.php";
 
-		JLabel logoLabel = new JLabel("");
-		logoLabel.setIcon(new ImageIcon(AboutWindow.class.getResource("/ca/pfv/spmf/gui/spmf.png")));
-		logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		// add the label to the content pane with the NORTH constraint
-		getContentPane().add(logoLabel, BorderLayout.NORTH);
+    /** URL of the SPMF website */
+    private static final String URL_WEBSITE =
+            "http://www.philippe-fournier-viger.com/spmf/";
 
-		JTextArea textArea = new JTextArea();
-		textArea.setText("Thanks for using SPMF version " + Main.SPMF_VERSION + ". This version has "
-				+ AlgorithmManager.getInstance().getListOfAlgorithmsAsString(false, false, false, true, false).size()
-				+ " algorithms and "
-				+ AlgorithmManager.getInstance().getListOfAlgorithmsAsString(true, true, true, false, false).size() + " tools."
-				+ System.lineSeparator() + System.lineSeparator()
-				+ "SPMF is distributed under the open-source GNU GPL license version 3." + System.lineSeparator()
-				+ "This license is available at: <http://www.gnu.org/licenses/>." + System.lineSeparator()
-				+ System.lineSeparator()
-				+ "SPMF was founded in 2008 by Philippe Fournier-Viger and many persons have contributed to the project."
-				+ System.lineSeparator() + System.lineSeparator() + "Click the buttons below for more information:");
-		textArea.setEditable(false);
-		textArea.setRows(10);
-		
-		// add the text area to the content pane with the CENTER constraint
-		getContentPane().add(textArea, BorderLayout.CENTER);
+    /** Background colour used for the information text area */
+    private static final Color COLOR_INFO_BACKGROUND = Color.WHITE;
 
-		// Set the window as modal
-		setModalExclusionType(ModalExclusionType.APPLICATION_EXCLUDE);
+    /** Border colour used for the information text area wrapper */
+    private static final Color COLOR_INFO_BORDER = new Color(200, 200, 200);
 
-		JButton btnNewButton_1 = new JButton("Documentation");
-		btnNewButton_1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				openWebPage("http://philippe-fournier-viger.com/spmf/index.php?link=documentation.php");
-			}
-		});
+    /**
+     * Constructor. Builds and displays the About dialog.
+     *
+     * @param window the parent frame used for dialog positioning
+     * @throws Exception if the AlgorithmManager cannot be initialised
+     */
+    public AboutWindow(JFrame window) throws Exception {
+        super(window);
 
-		JButton btnNewButton_2 = new JButton("Contributors");
-		btnNewButton_2.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				openWebPage("http://philippe-fournier-viger.com/spmf/index.php?link=contributors.php");
-			}
-		});
+        setIconImage(Toolkit.getDefaultToolkit().getImage(
+                AboutWindow.class.getResource("/ca/pfv/spmf/gui/icons/About24.gif")));
+        setResizable(false);
+        setTitle("About SPMF " + Main.SPMF_VERSION);
 
-		JButton btnNewButton_3 = new JButton("Website");
-		btnNewButton_3.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				openWebPage("http://www.philippe-fournier-viger.com/spmf/");
-			}
-		});
+        // Use APPLICATION_MODAL so the parent frame is blocked while this dialog
+        // is open. Do not also call setModalExclusionType — it would contradict
+        // the modal setting and is unnecessary.
+        setModalityType(ModalityType.APPLICATION_MODAL);
 
-		// create a new panel to hold the buttons
-		JPanel buttonPanel = new JPanel();
-		// set the layout of the panel to a new FlowLayout with center alignment
-		buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-		// add the buttons to the panel
-		buttonPanel.add(btnNewButton_1);
-		buttonPanel.add(btnNewButton_2);
-		buttonPanel.add(btnNewButton_3);
-		// add the panel to the content pane with the SOUTH constraint
-		getContentPane().add(buttonPanel, BorderLayout.SOUTH);
+        // ----- Root panel with padding ----
+        JPanel root = new JPanel(new BorderLayout(10, 10));
+        root.setBorder(new EmptyBorder(12, 12, 12, 12));
+        setContentPane(root);
 
-		setSize(680, 300);
-		this.setLocationRelativeTo(null);
-		// show this window as modal
-		setModalityType(ModalityType.APPLICATION_MODAL);
-		setModal(true);
-	}
+        // ----- Logo ----
+        JLabel logoLabel = new JLabel(new ImageIcon(
+                AboutWindow.class.getResource("/ca/pfv/spmf/gui/spmf.png")));
+        logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        logoLabel.setBorder(new EmptyBorder(0, 0, 6, 0));
+        root.add(logoLabel, BorderLayout.NORTH);
 
-	/**
-	 * This method open a URL in the default web browser.
-	 *
-	 * @param url : URL of the webpage
-	 */
-	private void openWebPage(String url) {
-		try {
-			java.awt.Desktop.getDesktop().browse(java.net.URI.create(url));
-		} catch (java.io.IOException e) {
-			System.out.println(e.getMessage());
-		}
-	}
+        // ----- Info text ----
+        // Count algorithms and tools from the AlgorithmManager
+        int algorithmCount = AlgorithmManager.getInstance()
+                .getListOfAlgorithmsAsString(false, false, false, true, false).size();
+        int toolCount = AlgorithmManager.getInstance()
+                .getListOfAlgorithmsAsString(true, true, true, false, false).size();
+
+        // Build the HTML body text. Using HTML inside a JEditorPane gives us
+        // word-wrap, correct background colour, and the system UI font without
+        // the monospaced look of a plain JTextArea.
+        String bodyHtml = "<html><body style='font-family: Dialog; font-size: 11pt; width: 420px;'>"
+                + "<p>Thanks for using <b>SPMF version " + Main.SPMF_VERSION + "</b>. "
+                + "This version has <b>" + algorithmCount + " algorithms</b> and "
+                + "<b>" + toolCount + " tools</b>.</p>"
+                + "<p>SPMF is distributed under the open-source <b>GNU GPL license version 3</b>.<br>"
+                + "This license is available at: "
+                + "<a href='http://www.gnu.org/licenses/'>http://www.gnu.org/licenses/</a>.</p>"
+                + "<p>SPMF was founded in <b>2008</b> by <b>Philippe Fournier-Viger</b> and many "
+                + "persons have contributed to the project.</p>"
+                + "<p>Click the buttons below for more information.</p>"
+                + "</body></html>";
+
+        // JEditorPane with text/html renders HTML, respects system font, word-wraps.
+        // White background is set explicitly to match the original readable appearance.
+        JEditorPane infoPane = new JEditorPane("text/html", bodyHtml);
+        infoPane.setEditable(false);
+        infoPane.setOpaque(true);
+        infoPane.setBackground(COLOR_INFO_BACKGROUND);
+        infoPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+
+        // Wrap the pane in a white panel with a subtle light-gray border so the
+        // white area is cleanly separated from the dialog's gray background
+        JPanel infoWrapper = new JPanel(new BorderLayout());
+        infoWrapper.setBackground(COLOR_INFO_BACKGROUND);
+        infoWrapper.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COLOR_INFO_BORDER, 1),
+                new EmptyBorder(6, 8, 6, 8)));
+        infoWrapper.add(infoPane, BorderLayout.CENTER);
+        root.add(infoWrapper, BorderLayout.CENTER);
+
+        // ----- Buttons ----
+        JButton btnDocumentation = new JButton("Documentation");
+        btnDocumentation.setToolTipText("Open the SPMF documentation page in your browser");
+        btnDocumentation.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                openWebPage(URL_DOCUMENTATION);
+            }
+        });
+
+        JButton btnContributors = new JButton("Contributors");
+        btnContributors.setToolTipText("Open the SPMF contributors page in your browser");
+        btnContributors.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                openWebPage(URL_CONTRIBUTORS);
+            }
+        });
+
+        JButton btnWebsite = new JButton("Website");
+        btnWebsite.setToolTipText("Open the SPMF website in your browser");
+        btnWebsite.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                openWebPage(URL_WEBSITE);
+            }
+        });
+
+        // Close button so the user has an explicit way to dismiss the dialog
+        JButton btnClose = new JButton("Close");
+        btnClose.setToolTipText("Close this window");
+        btnClose.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+
+        // Button panel — centred row with all four buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+        buttonPanel.setBorder(new EmptyBorder(6, 0, 0, 0));
+        buttonPanel.add(btnDocumentation);
+        buttonPanel.add(btnContributors);
+        buttonPanel.add(btnWebsite);
+        buttonPanel.add(btnClose);
+        root.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Let pack() compute the natural size from content rather than hardcoding
+        pack();
+        setLocationRelativeTo(window);
+    }
+
+    /**
+     * Opens the given URL in the system default web browser.
+     *
+     * @param url the URL to open
+     */
+    private void openWebPage(String url) {
+        try {
+            java.awt.Desktop.getDesktop().browse(java.net.URI.create(url));
+        } catch (java.io.IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 }

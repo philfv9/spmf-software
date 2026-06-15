@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+
 /*
  * Copyright (c) 2022 Philippe Fournier-Viger
  *
@@ -21,108 +22,110 @@ import java.awt.Graphics2D;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Do not remove copyright and license information.
  */
+
 /**
- * A class that represents a node that is an algorithm, which will be drawn on the DrawPanel of the workflow editor.
- * This class stores information about the selected algorithm like its name and parameters.
- * 
+ * Node representing an algorithm step on the workflow draw panel, storing the algorithm name and parameters.
+ *
  * @author Philippe Fournier-Viger
  * @see WorkflowEditorWindow
  */
-class NodeAlgorithm extends Node {
-	/** The arc width for drawing the node as a rounded rectangle */
-	int ARC_WIDTH = 10;
-	
-	/** The arc height for drawing the node as a rounded rectangle */
-	int ARC_HEIGHT = 10;
-	
-	/** The parameters of the algorithm */
-	public String[] parameters = null;
-	
-	/**
-	 * Constructor
-	 * @param label
-	 * @param x
-	 * @param y
-	 */
-	public NodeAlgorithm(String label, int x, int y) {
-		super(label, x, y);
-	}
+public class NodeAlgorithm extends Node {
 
-	 
-	/**
-	 * Method to paint this node on a Panel
-	 * 
-	 * @param g          the Graphics object on which the node should be drawn
-	 * @param isSelected whether the node is selected or not
-	 */
-	void paintNode(Graphics g, boolean isSelected) {
-		if (rectangle == null) {
-			recalculateRectangle(g);
-		}
+    /** Arc width used when drawing the rounded-rectangle border. */
+    int ARC_WIDTH = 10;
 
-		int x = getX();
-		int y = getY();
+    /** Arc height used when drawing the rounded-rectangle border. */
+    int ARC_HEIGHT = 10;
 
-		// Set the color based on selection
-		Graphics2D g2 = (Graphics2D) g;
-		g.setColor(Color.RED);
-		if(isSelected) {
-			float thickness = 3;
-			g2.setStroke(new BasicStroke(thickness));
-		}else {
-			float thickness = 1;
-			g2.setStroke(new BasicStroke(thickness));
-		}
-		g.fillRoundRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height, ARC_WIDTH, ARC_HEIGHT);
-		
-		g.setColor(Color.BLACK);
-		// Draw the rounded rectangle
-		g.drawRoundRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height, ARC_WIDTH, ARC_HEIGHT);
+    /** The parameter values for this algorithm, or null if none have been set. */
+    public String[] parameters = null;
 
-		// Draw the text, aligned to the center of the rectangle
-		g.drawString(name, x - textWidth / 2, y + textHeight / 4);
-	}
+    /**
+     * Creates a new algorithm node with the given label and position.
+     *
+     * @param label the algorithm name to display.
+     * @param x     the initial X position.
+     * @param y     the initial Y position.
+     */
+    public NodeAlgorithm(String label, int x, int y) {
+        super(label, x, y);
+    }
 
-	@Override
-	public String getType() {
-		return "Algorithm";
-	}
+    /**
+     * Paints this algorithm node as a rounded rectangle on the given Graphics context.
+     *
+     * @param g          the Graphics object to draw on.
+     * @param isSelected true if the node should be drawn with a thicker border.
+     */
+    @Override
+    void paintNode(Graphics g, boolean isSelected) {
+        if (rectangle == null) {
+            recalculateRectangle(g);
+        }
 
-	/**
-	 * Update  the information stored about the algorithm
-	 * @param algorithmName the name
-	 * @param hasOutput true if he has an output file. Otherwise, false.
-	 * @param hasInput true if he has an input file. Otherwise, false.
-	 */
-	public void updateAlgorithmChoice(String algorithmName, boolean hasOutput, boolean hasInput) {
-		name = algorithmName;
-		group.showInput = hasInput;
-		group.showOutput = hasOutput;
-		rectangle = null;
-	}
+        int x = getX();
+        int y = getY();
 
+        Graphics2D g2 = (Graphics2D) g;
+        g.setColor(Color.RED);
+        float thickness = isSelected ? 3f : 1f;
+        g2.setStroke(new BasicStroke(thickness));
+        g.fillRoundRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height,
+                ARC_WIDTH, ARC_HEIGHT);
 
-	/**
-	 * Get the non null parameters of this algorithm
-	 * @return the array of non null parameters with the last null parameters being trimmed.
-	 */
-	public String[] getNonNullParameters() {
-	    int nonNullCount = 0;
-	    for (String parameter : parameters) {
-	        if (parameter != null) {
-	            nonNullCount++;
-	        }
-	    }
-	    String[] nonNullParameters = new String[nonNullCount];
-	    int index = 0;
-	    for (String parameter : parameters) {
-	        if (parameter != null) {
-	            nonNullParameters[index] = parameter;
-	            index++;
-	        }
-	    }
-	    return nonNullParameters;
-	}
+        g.setColor(Color.BLACK);
+        g.drawRoundRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height,
+                ARC_WIDTH, ARC_HEIGHT);
+        g.drawString(name, x - textWidth / 2, y + textHeight / 4);
+    }
 
+    /**
+     * Returns the type label for this node.
+     *
+     * @return the string "Algorithm".
+     */
+    @Override
+    public String getType() {
+        return "Algorithm";
+    }
+
+    /**
+     * Updates the algorithm name and adjusts the owning group's output visibility flag.
+     * The input visibility flag is only set if the group was originally created with a visible input node.
+     *
+     * @param algorithmName the new algorithm name.
+     * @param hasOutput     true if the algorithm produces an output file.
+     * @param hasInput      true if the algorithm requires an input file.
+     */
+    public void updateAlgorithmChoice(String algorithmName, boolean hasOutput, boolean hasInput) {
+        name = algorithmName;
+        // Only update showInput if this group originally had an input node (i.e., it's a root or explicitly has input)
+        // Child nodes always receive input from parent's output, so showInput must remain false
+        if (group.nodeInput != null) {
+            group.showInput = hasInput;
+        }
+        group.showOutput = hasOutput;
+        rectangle = null;
+    }
+
+    /**
+     * Returns a trimmed copy of the parameters array containing only non-null entries.
+     *
+     * @return an array of non-null parameter strings.
+     */
+    public String[] getNonNullParameters() {
+        int nonNullCount = 0;
+        for (String parameter : parameters) {
+            if (parameter != null) nonNullCount++;
+        }
+        String[] nonNullParameters = new String[nonNullCount];
+        int index = 0;
+        for (String parameter : parameters) {
+            if (parameter != null) nonNullParameters[index++] = parameter;
+        }
+        return nonNullParameters;
+    }
 }

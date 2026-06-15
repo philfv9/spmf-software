@@ -1,51 +1,5 @@
 package ca.pfv.spmf.gui.workflow_editor;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Image;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.ProcessBuilder.Redirect;
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
-import ca.pfv.spmf.gui.AboutWindow;
-import ca.pfv.spmf.gui.CommandProcessor;
-import ca.pfv.spmf.gui.ConsolePanel;
-import ca.pfv.spmf.gui.Main;
-import ca.pfv.spmf.gui.MainWindow;
-import ca.pfv.spmf.gui.MemoryViewer;
-import ca.pfv.spmf.gui.NotifyingThread;
-import ca.pfv.spmf.gui.ThreadCompleteListener;
-import ca.pfv.spmf.gui.algorithmexplorer.AlgorithmExplorer;
-import ca.pfv.spmf.gui.preferences.PreferencesManager;
-import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
-
 /*
  * Copyright (c) 2024 Philippe Fournier-Viger
  *
@@ -63,815 +17,1112 @@ import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Do not remove license and copyright information
  */
-@SuppressWarnings("serial")
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import ca.pfv.spmf.gui.CommandProcessor;
+import ca.pfv.spmf.gui.ConsolePanel;
+import ca.pfv.spmf.gui.Main;
+import ca.pfv.spmf.gui.MainWindow;
+import ca.pfv.spmf.gui.MemoryViewer;
+import ca.pfv.spmf.gui.NotifyingThread;
+import ca.pfv.spmf.gui.algorithmexplorer.AlgorithmExplorer;
+import ca.pfv.spmf.gui.preferences.PreferencesManager;
+import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
+
 /**
- * This class is a Workflow Editor tool offered in the SPMF software. It is a
- * JFrame that let the user build a workflow consisting of multiple groups. A
- * group is a set of node that may include: an input file, an algorithm to be
- * applied on it, and an output file produced by the algorithm. This JFrame
- * contains a DrawPanel for displaying the current workflow and an information
- * panel to display information about the current selected node of the workflow.
- * There are also a menu and some buttons for interacting with the workflow
- * editor
- * 
+ * Workflow Editor window for SPMF that allows building, validating, and running branching algorithm workflows.
+ *
  * @author Philippe Fournier-Viger
  */
+@SuppressWarnings("serial")
 public class WorkflowEditorWindow extends JFrame
-		implements DrawPanelListener, ThreadCompleteListener, UncaughtExceptionHandler {
-	// The draw panel
-	DrawPanel drawPanel;
-
-	/** The progress bar when an algorithm is running */
-	private JProgressBar progressBar;
-
-	/** The textArea to display the console output */
-	private ConsolePanel consolePanel;
-
-	// The buttons
-	JButton buttonAddAlgorithm, buttonEditNode, buttonRemoveLastNode, buttonValidate, buttonRun;
-
-	/** Max time **/
-	int maxTime = Integer.MAX_VALUE;
-
-	public WorkflowEditorWindow(boolean runAsStandalone) throws Exception {
-		// Set the title of the frame
-		setTitle("SPMF Workflow Editor " + Main.SPMF_VERSION);
-		setIconImage(Toolkit.getDefaultToolkit().getImage(MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/History24.gif")));
-
-		// Set the size of the frame
-		setSize(900, 700);
-
-		// Set the layout of the frame to border layout
-		setLayout(new BorderLayout());
-		
-
-		// Create the draw panel and add it to the center of the frame
-		drawPanel = new DrawPanel();
-		drawPanel.addDrawPanelListener(this);
-
-		// Create a panel for the buttons and add it to the south of the frame
-		JPanel buttonPanel = new JPanel();
-
-		buttonAddAlgorithm = new JButton("Add an algorithm");
-		buttonAddAlgorithm.setIcon(new ImageIcon(MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Add.png")));
-		buttonAddAlgorithm.setEnabled(true);
-		buttonPanel.add(buttonAddAlgorithm);
-
-		// Create the remove button and add it to the button panel
-		buttonRemoveLastNode = new JButton("Remove last algorithm");
-		buttonRemoveLastNode.setIcon(new ImageIcon(MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Remove.png")));
-		buttonRemoveLastNode.setEnabled(false);
-		buttonPanel.add(buttonRemoveLastNode);
-
-		JPanel runPanel = new JPanel();
-		buttonValidate = new JButton("Validate the workflow");
-		buttonValidate.setIcon(new ImageIcon(MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Validate.png")));
-		buttonValidate.setEnabled(false);
-		buttonRun = new JButton("Run the workflow");
-		runPanel.add(buttonValidate);
-		buttonRun.setIcon(new ImageIcon(MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Play24.gif")));
-		buttonRun.setEnabled(false);
-		runPanel.add(buttonRun);
-
-		JPanel consoleProgressPanel = new JPanel();
-		consoleProgressPanel.setLayout(new BorderLayout());
-		progressBar = new JProgressBar();
-		consolePanel = new ConsolePanel(false);
-		consolePanel.setPreferredSize(new Dimension(200, 200));
-		JLabel consoleLabel = new JLabel("Console:");
-		consoleProgressPanel.add(consoleLabel, BorderLayout.NORTH);
-		consoleProgressPanel.add(consolePanel, BorderLayout.CENTER);
-		consoleProgressPanel.add(progressBar, BorderLayout.SOUTH);
-
-		JPanel southPanel = new JPanel();
-		southPanel.setLayout(new BorderLayout());
-		southPanel.add(buttonPanel, BorderLayout.NORTH);
-		southPanel.add(runPanel, BorderLayout.SOUTH);
-		southPanel.add(consoleProgressPanel, BorderLayout.CENTER);
-
-		add(southPanel, BorderLayout.SOUTH);
-
-		infoPanel = new InformationPanel(this);
-		drawPanel.addDrawPanelListener(infoPanel);
-		// ===========================================================
-
-		JScrollPane scrollPaneDraw = new JScrollPane(drawPanel);
-		JScrollPane scrollPaneInformation = new JScrollPane(infoPanel);
-		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, scrollPaneDraw, scrollPaneInformation);
-		splitPane.setDividerLocation((int) (getWidth() * 0.30));
-
-		JLabel workflowLabel = new JLabel("Workflow:");
-		add(workflowLabel, BorderLayout.NORTH);
-		add(splitPane, BorderLayout.CENTER);
-
-		createMenuBar();
-
-//		// Add an action listener to the add button to handle clicks
-//		buttonAddInput.addActionListener(new ActionListener() {
-//			@Override
-//			public void actionPerformed(ActionEvent e) {
-//				drawPanel.addInputNode();
-//			}
-//		});
-
-		buttonAddAlgorithm.addActionListener(e -> drawPanel.addAlgorithmNode());
-		buttonRemoveLastNode.addActionListener(e -> drawPanel.removeLastNode());
-		buttonValidate.addActionListener(e -> validateWorkflow());
-		buttonRun.addActionListener(e -> {
-			try {
-				runWorkflow();
-			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-		});
-
-		// Set the default close operation of the frame to exit on close
-		if (runAsStandalone) {
-			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		}
-
-		setLocationRelativeTo(null);
-
-		// Set the visibility of the frame to true
-		setVisible(true);
-	}
-
-	private void validateWorkflow() {
-		// Save the current node information
-		infoPanel.saveInformation(infoPanel.currentNode);
-
-		String errorMessage = drawPanel.validateTheWorkflow();
-		if (errorMessage != null) {
-			JOptionPane.showMessageDialog(null, "The workflow is not valid. " + errorMessage, "Error",
-					JOptionPane.ERROR_MESSAGE);
-			return;
-		} else {
-			JOptionPane.showMessageDialog(null, "The workflow is valid. ", "", JOptionPane.INFORMATION_MESSAGE);
-		}
-	}
-
-	private void runWorkflow() throws InterruptedException {
-		// Save the current node information
-		infoPanel.saveInformation(infoPanel.currentNode);
-
-		String errorMessage = drawPanel.validateTheWorkflow();
-		if (errorMessage != null) {
-			JOptionPane.showMessageDialog(null, "The workflow is not valid. " + errorMessage, "Error",
-					JOptionPane.ERROR_MESSAGE);
-			System.out.println("  " + errorMessage);
-			return;
-		}
-
-		processRunAlgorithmCommandFromGUI();
-
-	}
-
-	private void createMenuBar() {
-		// Create the menu bar
-		JMenuBar menuBar = new JMenuBar();
-
-		// Build the second menu "General"
-//		JMenu menuAbout = new JMenu("About");
-//		JMenuItem menuItemAbout = new JMenuItem("About SPMF");
-		JMenuItem menuDocumentation = new JMenuItem("Open documentation webpage");
-//		menuAbout.add(menuItemAbout);
-//		menuAbout.add(menuDocumentation);
-
-		// Build the second menu "Run options"
-		JMenu menuRun = new JMenu("Options");
-		checkBoxSeparatedProcess = new JCheckBoxMenuItem("Run workflow in a separated process");
-//		JMenuItem menuItemRunWorkflowSeparatedProcess = new JMenuItem("Run workflow in a separated process");
-//		menuTimeLimit = new JMenuItem("Run algorithms with time limit (s)");
-//		menuRun.add(menuItemRunWorkflow);
-//		menuRun.add(menuItemRunWorkflowSeparatedProcess);
-//		menuRun.addSeparator();
-		menuRun.add(checkBoxSeparatedProcess);
-//		menuRunOptions.addSeparator();
-//		menuRunOptions.add(menuTimeLimit);
-
-		// Build the third menu "Tools"
-		JMenu menuTools = new JMenu("Tools");
-		JMenuItem menuItemAlgorithmExplorer = new JMenuItem("Algorithm Explorer");
-		JMenuItem menuItemMemoryViewer = new JMenuItem("Memory viewer");
-
-		menuTools.add(menuDocumentation);
-		menuTools.addSeparator();
-		menuTools.add(menuItemAlgorithmExplorer);
-		menuTools.add(menuItemMemoryViewer);
-		
-		// Build the third menu "Export"
-		JMenu menuExport = new JMenu("Workflow");
-		menuItemValidate = new JMenuItem("Validate the workflow");
-		menuItemRun = new JMenuItem("Run the workflow");
-		JMenuItem menuExportBAT = new JMenuItem("Export workflow as BAT script (for Windows)");
-		JMenuItem menuExportSH = new JMenuItem("Export workflow as SH script (for Linux)");
-		menuExport.add(menuItemValidate);
-		menuExport.add(menuItemRun);
-		menuExport.addSeparator();
-		menuExport.add(menuExportBAT);
-		menuExport.add(menuExportSH);
-
-		// Add menus to the menu bar
-		menuBar.add(menuRun);
-		menuBar.add(menuExport);
-		menuBar.add(menuTools);
-//		menuBar.add(menuAbout);
-
-		// Set the menu bar for the frame
-		setJMenuBar(menuBar);
-
-		// Add action listeners
-//		menuItemAbout.addActionListener(e -> showAboutDialog());
-		menuDocumentation.addActionListener(e -> openDocumentation());
-		menuItemAlgorithmExplorer.addActionListener(e -> openAlgorithmExplorer());
-		menuItemMemoryViewer.addActionListener(e -> openMemoryViewer());
-		menuExportBAT.addActionListener(e -> exportAsBATFile());
-		menuExportSH.addActionListener(e -> exportAsSHFile());
-		menuItemValidate.addActionListener(e -> validateWorkflow());
-		menuItemValidate.setEnabled(false);
-		menuItemRun.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				try {
-					runWorkflow();
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-		});
-		menuItemRun.setEnabled(false);
-	}
-
-	/**
-	 * This method open the documentation in the default web browser.
-	 *
-	 * @param url : URL of the webpage
-	 */
-	private void openDocumentation() {
-		try {
-			java.awt.Desktop.getDesktop().browse(
-					java.net.URI.create("http://philippe-fournier-viger.com/spmf/index.php?link=documentation.php"));
-		} catch (java.io.IOException e) {
-			System.out.println(e.getMessage());
-		}
-	}
-
-	private void openMemoryViewer() {
-		MemoryViewer.displayMemoryChart();
-	}
-
-	private void openAlgorithmExplorer() {
-		AlgorithmExplorer frame = new AlgorithmExplorer(false);
-		frame.setVisible(true);
-	}
-
-	// Methods for each action
-	private void showAboutDialog() {
-		try {
-			AboutWindow about = new AboutWindow(this);
-			about.setVisible(true);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public void notifyNodeSelected(Node node) {
-		// do nothing
-
-	}
-
-	@Override
-	public void notifyHasOutputNode(boolean hasOutput) {
-		buttonAddAlgorithm.setEnabled(hasOutput);
-
-	}
-
-	@Override
-	public void notifyOfListOfGroups(List<GroupOfNodes> allgroups) {
-		buttonRemoveLastNode.setEnabled(allgroups.size() > 0);
-		buttonRun.setEnabled(allgroups.size() > 0);
-		buttonValidate.setEnabled(allgroups.size() > 0);
-		menuItemRun.setEnabled(allgroups.size() > 0);
-		menuItemValidate.setEnabled(allgroups.size() > 0);
-	}
-
-	/** The current data mining task (used for running an algorithm as a thread */
-	private static NotifyingThread currentRunningAlgorithmThread = null;
-
-	/** the current data mining process */
-	private static Process currentExternalProcess = null;
-
-	private JCheckBoxMenuItem checkBoxSeparatedProcess;
-
-	private InformationPanel infoPanel;
-
-	private int tasksCompleted;
-
-	private JMenuItem menuItemValidate;
-
-	private JMenuItem menuItemRun; 
-
-	/**
-	 * This method receives the notifications when an algorithm launched by the user
-	 * throw an exception
-	 */
-	@Override
-	public void uncaughtException(Thread thread, Throwable e) {
-		// If the thread just die because the user click on the "Stop algorithm" button
-		if (e instanceof ThreadDeath) {
-			// we just let the thread die.
-		} else if (e instanceof NumberFormatException) {
-			// if it is a number format exception, meaning that the user enter a string as a
-			// parameter instead
-			// of an integer or double value.
-			JOptionPane.showMessageDialog(null,
-					"Error. Please check the parameters of the algorithm.  The format for numbers is incorrect. \n"
-							+ "\n ERROR MESSAGE = " + e.toString(),
-					"Error", JOptionPane.ERROR_MESSAGE);
-		} else {
-			// If another kind of error occurred while running the algorithm, show the
-			// error.
-			JOptionPane.showMessageDialog(null,
-					"An error occurred while trying to run the algorithm. \n ERROR MESSAGE = " + e.toString(), "Error",
-					JOptionPane.ERROR_MESSAGE);
-			e.printStackTrace();
-		}
-		consolePanel.clearConsole();
-	}
-	
-	/**
-	 * Method to export the current workflow as a SH file.
-	 * 
-	 * @throws IOException if some errors occurs
-	 */
-	private void exportAsSHFile() {
-		/// ASK TO CHOOSE A FILE PATH
-		BufferedWriter writer = null;
-		try {
-			// Determine the path and preference based on input or output
-			String previousPath = PreferencesManager.getInstance().getInputFilePath();
-			File path = null;
-			if (previousPath == null) {
-				URL main = MainTestApriori_simple_saveToFile.class.getResource("MainTestApriori_saveToFile.class");
-				if ("file".equalsIgnoreCase(main.getProtocol())) {
-					path = new File(main.getPath());
-				}
-			} else {
-				path = new File(previousPath);
-			}
-
-		    // Create a file chooser
-		    final JFileChooser fc = path != null ? new JFileChooser(path.getAbsolutePath()) : new JFileChooser();
-
-		    // Set up the file filter for .sh files
-		    FileNameExtensionFilter filter = new FileNameExtensionFilter("SH Scripts", "sh");
-		    fc.setFileFilter(filter);
-		    fc.setAcceptAllFileFilterUsed(false);
-
-		    // Show save dialog
-		    int returnVal = fc.showSaveDialog(this);
-
-			File file = null;
-			// Process the result of the file chooser
-			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				file = fc.getSelectedFile();
-				PreferencesManager.getInstance().setInputFilePath(file.getParent());
-			}
-			if (file == null) {
-				return;
-			}
-
-			writer = new BufferedWriter(new FileWriter(file.getPath()));
-			
-		    // Write the shebang line for Unix/Linux script
-	        writer.write("#!/bin/bash");
-	        writer.newLine();
-
-			// For each group
-			for (int i = 0; i < drawPanel.groups.size(); i++) {
-				GroupOfNodes group = drawPanel.groups.get(i);
-				// Get the parameters
-				final String choice = group.nodeAlgorithm.name;
-				boolean isFirst = (i == 0);
-
-				String inputFile = (isFirst) ? group.nodeInput.inputFile
-						: drawPanel.groups.get(i - 1).nodeOutput.outputFile;
-
-				List<String> commandWithParameters = new ArrayList<String>(15);
-				commandWithParameters.add("java");
-				commandWithParameters.add("-jar");
-				commandWithParameters.add("spmf.jar");
-				commandWithParameters.add("run");
-
-				commandWithParameters.add(choice);
-				// If the first algorithm and it has an input
-				if (isFirst) {
-					if (group.showInput == true) {
-			            // Replace backslashes with forward slashes in file paths
-						inputFile = inputFile.replace(File.separatorChar, '/');
-						commandWithParameters.add(inputFile);
-					}
-				} else {
-					commandWithParameters.add(inputFile);
-				}
-
-				if (group.showOutput == true) {
-					String outputFile = group.nodeOutput.outputFile;
-					outputFile = outputFile.replace(File.separatorChar, '/');
-					commandWithParameters.add(outputFile);
-				}
-
-				final String[] parameters = group.nodeAlgorithm.getNonNullParameters();
-				for (int j = 0; j < parameters.length; j++) {
-					if (parameters[j] != null & !parameters[j].isEmpty()) {
-						commandWithParameters.add(parameters[j]);
-					}
-				}
-
-				StringBuffer singleLineCommand = new StringBuffer();
-				for (String value : commandWithParameters) {
-					singleLineCommand.append(value);
-					singleLineCommand.append(" ");
-				}
-
-				writer.write(singleLineCommand.toString());
-				writer.newLine();
-
-			}
-			writer.close();
-			
-			System.out.println("Workflow exported successfully as a .sh script.");
-
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null,
-					"An error occurred while opening the file dialog. ERROR MESSAGE = " + e.toString(), "Error",
-					JOptionPane.ERROR_MESSAGE);
-		}
-	}
-
-	/**
-	 * Method to export the current workflow as a BAT file.
-	 * 
-	 * @throws IOException if some errors occurs
-	 */
-	private void exportAsBATFile() {
-		/// ASK TO CHOOSE A FILE PATH
-		BufferedWriter writer = null;
-		try {
-			// Determine the path and preference based on input or output
-			String previousPath = PreferencesManager.getInstance().getInputFilePath();
-			File path = null;
-			if (previousPath == null) {
-				URL main = MainTestApriori_simple_saveToFile.class.getResource("MainTestApriori_saveToFile.class");
-				if ("file".equalsIgnoreCase(main.getProtocol())) {
-					path = new File(main.getPath());
-				}
-			} else {
-				path = new File(previousPath);
-			}
-
-		    // Create a file chooser
-		    final JFileChooser fc = path != null ? new JFileChooser(path.getAbsolutePath()) : new JFileChooser();
-
-		    // Set up the file filter for .sh files
-		    FileNameExtensionFilter filter = new FileNameExtensionFilter("BAT Scripts", "bat");
-		    fc.setFileFilter(filter);
-		    fc.setAcceptAllFileFilterUsed(false);
-
-		    // Show save dialog
-		    int returnVal = fc.showSaveDialog(this);
-
-			File file = null;
-			// Process the result of the file chooser
-			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				file = fc.getSelectedFile();
-				PreferencesManager.getInstance().setInputFilePath(file.getParent());
-			}
-			if (file == null) {
-				return;
-			}
-
-			writer = new BufferedWriter(new FileWriter(file.getPath()));
-
-			// For each group
-			for (int i = 0; i < drawPanel.groups.size(); i++) {
-				GroupOfNodes group = drawPanel.groups.get(i);
-				// Get the parameters
-				final String choice = group.nodeAlgorithm.name;
-				boolean isFirst = (i == 0);
-
-				String inputFile = (isFirst) ? group.nodeInput.inputFile
-						: drawPanel.groups.get(i - 1).nodeOutput.outputFile;
-
-				List<String> commandWithParameters = new ArrayList<String>(15);
-				commandWithParameters.add("java");
-				commandWithParameters.add("-jar");
-				commandWithParameters.add("spmf.jar");
-				commandWithParameters.add("run");
-
-				commandWithParameters.add(choice);
-				// If the first algorithm and it has an input
-				if (isFirst) {
-					if (group.showInput == true) {
-						commandWithParameters.add(inputFile);
-					}
-				} else {
-					commandWithParameters.add(inputFile);
-				}
-
-				if (group.showOutput == true) {
-					commandWithParameters.add(group.nodeOutput.outputFile);
-				}
-
-				final String[] parameters = group.nodeAlgorithm.getNonNullParameters();
-				for (int j = 0; j < parameters.length; j++) {
-					if (parameters[j] != null & !parameters[j].isEmpty()) {
-						commandWithParameters.add(parameters[j]);
-					}
-				}
-
-				StringBuffer singleLineCommand = new StringBuffer();
-				for (String value : commandWithParameters) {
-					singleLineCommand.append(value);
-					singleLineCommand.append(" ");
-				}
-
-				writer.write(singleLineCommand.toString());
-				writer.newLine();
-
-			}
-			writer.close();
-			
-			System.out.println(" Workflow exported successfully.");
-
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null,
-					"An error occurred while opening the file dialog. ERROR MESSAGE = " + e.toString(), "Error",
-					JOptionPane.ERROR_MESSAGE);
-		}
-	}
-	
-	/**
-	 * This method is called when the user click the "Run" or "Stop" button of the
-	 * user interface, to launch the chosen algorithm and thereafter catch exception
-	 * if one occurs.
-	 * 
-	 * @throws InterruptedException
-	 */
-	private void processRunAlgorithmCommandFromGUI() throws InterruptedException {
-
-		if (checkBoxSeparatedProcess.isSelected()) {
-			File file = new File("spmf.jar");
-			if (file.exists() == false) {
-				JOptionPane.showMessageDialog(null,
-						"The workflow cannot be run in a separated process because spmf.jar is not found. It will be run in the same process.",
-						"Error", JOptionPane.ERROR_MESSAGE);
-				checkBoxSeparatedProcess.setSelected(false);
-			}
-		}
-
-		buttonRun.setEnabled(false);
-
-		// If the algorithm is running, try to kill it
-		boolean killed = tryToKillProcess();
-		if (killed) {
-			return;
-		}
-
-		tasksCompleted = 0;
-
-		// For each group
-		for (int i = 0; i < drawPanel.groups.size(); i++) {
-			GroupOfNodes group = drawPanel.groups.get(i);
-			// Get the parameters
-			final String choice = group.nodeAlgorithm.name;
-
-			// Get the current time
-			SimpleDateFormat dateTimeInGMT = new SimpleDateFormat("hh:mm:ss aa");
-			String time = dateTimeInGMT.format(new Date());
-
-			consolePanel.postStatusMessage("Algorithm is running... (" + time + ")  \n");
-
-			////////////////////////////////////////
-			if (!choice.equals("MemoryViewer")) {
-				////////////////////////////////////////
-				currentRunningAlgorithmThread = null;
-				progressBar.setIndeterminate(true);
-				buttonRun.setText("Stop algorithm");
-				buttonRun.setIcon(new ImageIcon(MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Stop24.gif")));
-//				buttonRun.setEnabled(false);
-			}
-
-			Thread.sleep(10);
-
-			boolean isFirst = (i == 0);
-
-			// Wait for the previous tasks to be completed
-			while (tasksCompleted != i) {
-				Thread.sleep(10);
-
-				if (tasksCompleted == -1) {
-					return;
-				}
-			}
-//			System.out.println("Starting task i");
-
-			String inputFile = (isFirst) ? group.nodeInput.inputFile
-					: drawPanel.groups.get(i - 1).nodeOutput.outputFile;
-
-			// RUN THE SELECTED ALGORITHM in a new thread
-			// create a thread to execute the algorithm
-			if (checkBoxSeparatedProcess.isSelected()) {
-				// If the algorithm is run as an external program
-				currentRunningAlgorithmThread = new NotifyingThread() {
-					@Override
-					public boolean doRun() throws Exception {
-						List<String> commandWithParameters = new ArrayList<String>(15);
-						commandWithParameters.add("java");
-						commandWithParameters.add("-jar");
-						commandWithParameters.add("spmf.jar");
-						commandWithParameters.add("run");
-
-						commandWithParameters.add(choice);
-						// If the first algorithm and it has an input
-						if (isFirst) {
-							if (group.showInput == true) {
-								commandWithParameters.add(inputFile);
-							}
-						} else {
-							commandWithParameters.add(inputFile);
-						}
-
-						if (group.showOutput == true) {
-							commandWithParameters.add(group.nodeOutput.outputFile);
-						}
-
-						final String[] parameters = group.nodeAlgorithm.getNonNullParameters();
-						for (int i = 0; i < parameters.length; i++) {
-							if (parameters[i] != null & !parameters[i].isEmpty()) {
-								commandWithParameters.add(parameters[i]);
-							}
-						}
-
-						// Call the JAR file to run the algorithm
-						System.out.println("===== RUN AS EXTERNAL PROGRAM ========");
-						StringBuffer singleLineCommand = new StringBuffer(80);
-						singleLineCommand.append(" COMMAND: ");
-						for (String value : commandWithParameters) {
-							singleLineCommand.append(value);
-							singleLineCommand.append(" ");
-						}
-						System.out.println(singleLineCommand);
-						ProcessBuilder pb = new ProcessBuilder(commandWithParameters);
-						pb.redirectOutput(Redirect.INHERIT);
-						pb.redirectError(Redirect.INHERIT);
-
-						int exitValue = 1;
-						try {
-							currentExternalProcess = pb.start();
-							exitValue = currentExternalProcess.waitFor();
-						} catch (IOException e) {
-							throw new IllegalArgumentException(
-									System.lineSeparator() + System.lineSeparator() + "I/O Error.");
-						}
-						notifyOfThreadComplete(this, false);
-						return (exitValue == 0);
-					}
-				};
-				// The main thread will listen for} the completion of the algorithm
-				currentRunningAlgorithmThread.addListener(this);
-				// The main thread will also listen for exception generated by the
-				// algorithm.
-				currentRunningAlgorithmThread.setUncaughtExceptionHandler(this);
-				// Run the thread
-				currentRunningAlgorithmThread.start();
-
-			} else {
-				final String[] parameters = group.nodeAlgorithm.getNonNullParameters();
-
-				// If the algorithm is run as a thread
-				currentRunningAlgorithmThread = new NotifyingThread() {
-					@Override
-					public boolean doRun() throws Exception {
-						CommandProcessor.runAlgorithm(choice, inputFile, group.nodeOutput.outputFile, parameters);
-						return true;
-					}
-				};
-				// The main thread will listen for the completion of the algorithm
-				currentRunningAlgorithmThread.addListener(this);
-				// The main thread will also listen for exception generated by the
-				// algorithm.
-				currentRunningAlgorithmThread.setUncaughtExceptionHandler(this);
-				// Run the thread
-				currentRunningAlgorithmThread.start();
-
-				if (choice.equals("MemoryViewer")) {
-					currentRunningAlgorithmThread = null;
-				}
-			}
-
-			// If the user set a max time limit, we launch a thread to monitor and kill the
-			// process
-			// if the time limit is exceeded
-			if (maxTime >= 0) {
-
-				// Create the killer thread
-				NotifyingThread killerThread = new NotifyingThread() {
-					@Override
-					public boolean doRun() throws Exception {
-						int secondsElapsed = 0;
-
-						// While the algorithm is still running
-						while (currentRunningAlgorithmThread != null && currentRunningAlgorithmThread.isAlive()
-								|| currentExternalProcess != null && currentExternalProcess.isAlive()) {
-
-							// wait one second
-							Thread.sleep(1000);
-
-							// increase number of seconds by 1
-							secondsElapsed++;
-
-							// If time is up
-							if (secondsElapsed >= maxTime) {
-
-								// Try to kill the algorithm
-								boolean killed = tryToKillProcess();
-								if (killed) {
-									System.out.println(" Stopped because of time limit of " + maxTime + " seconds");
-								}
-							}
-						}
-						return false;
-					}
-				};
-				// Run the killer thread
-				killerThread.start();
-			}
-
-		}
-	}
-
-	/**
-	 * Try to kill the current algorithm if it is running
-	 * 
-	 * @return true if the algorithm is killed, otherwise false.
-	 */
-	private boolean tryToKillProcess() {
-		// if an external process is running
-		if (currentExternalProcess != null && currentExternalProcess.isAlive()) {
-			// stop that thread
-			currentExternalProcess.destroyForcibly();
-			consolePanel.postStatusMessage("Algorithm stopped. \n");
-			currentRunningAlgorithmThread = null;
-			resetUIAfterThreadCompletion();
-			return true;
-		}
-		// If a thread is already running (the user click on the stop Button
-		else if (currentRunningAlgorithmThread != null && currentRunningAlgorithmThread.isAlive()) {
-			// stop that thread
-			try {
-				currentRunningAlgorithmThread.stop();
-				consolePanel.postStatusMessage("Algorithm stopped. \n");
-				currentRunningAlgorithmThread = null;
-				resetUIAfterThreadCompletion();
-				return true;
-			} catch (java.lang.UnsupportedOperationException e) {
-				JOptionPane.showMessageDialog(null, "Stopping the algorithm is not supported for Java version "
-						+ System.getProperty("java.version"), "Error", JOptionPane.ERROR_MESSAGE);
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Reset the UI after thread completion
-	 */
-	private void resetUIAfterThreadCompletion() {
-		buttonRun.setText("Run workflow");
-		buttonRun.setIcon(new ImageIcon(MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Play24.gif")));
-		buttonRun.setEnabled(true);
-		progressBar.setIndeterminate(false);
-	}
-
-	@Override
-	public void notifyOfThreadComplete(Thread thread, boolean succeed) {
-		currentRunningAlgorithmThread = null;
-		// If success
-		if (succeed) {
-			tasksCompleted += 1;
-			if (tasksCompleted == drawPanel.groups.size()) {
-				resetUIAfterThreadCompletion();
-			}
-		} else {
-			// If failure
-			tasksCompleted = -1;
-			resetUIAfterThreadCompletion();
-		}
-	}
+        implements DrawPanelListener, UncaughtExceptionHandler {
 
+    /** The branching draw panel that renders the workflow graph. */
+    DrawPanel drawPanel;
+
+    /** Progress bar displayed while algorithms are running. */
+    private JProgressBar progressBar;
+
+    /** Console output panel for displaying algorithm status messages and output. */
+    private ConsolePanel consolePanel;
+
+    /** Information panel shown on the right-hand side. */
+    private InformationPanel infoPanel;
+
+    /** Button to add a new algorithm node to the workflow. */
+    JButton buttonAddAlgorithm;
+
+    /** Button to remove the currently selected leaf algorithm node. */
+    JButton buttonRemoveSelectedNode;
+
+    /** Button to validate the entire workflow. */
+    JButton buttonValidate;
+
+    /** Button to run the workflow, relabelled "Stop workflow" while running. */
+    JButton buttonRun;
+
+    /** Menu item to create a new empty workflow. */
+    private JMenuItem menuItemNew;
+
+    /** Menu item to load a workflow from a file using the file chooser. */
+    private JMenuItem menuItemLoad;
+
+    /** Submenu listing recently opened workflow files for quick loading. */
+    private JMenu menuRecentWorkflows;
+
+    /** Menu item to save the current workflow to the current file. */
+    private JMenuItem menuItemSave;
+
+    /** Menu item to save the current workflow to a new file chosen by the user. */
+    private JMenuItem menuItemSaveAs;
+
+    /** Menu item to validate the workflow. */
+    private JMenuItem menuItemValidate;
+
+    /** Menu item to run the workflow. */
+    private JMenuItem menuItemRun;
+
+    /** Check box menu item to run the workflow in a separate JVM process. */
+    private JCheckBoxMenuItem checkBoxSeparatedProcess;
+
+    /** Maximum execution time in seconds; Integer.MAX_VALUE means unlimited. */
+    int maxTime = Integer.MAX_VALUE;
+
+    /** Set to true when the user clicks Stop during a run. */
+    private final AtomicBoolean stopRequested = new AtomicBoolean(false);
+
+    /** All OS processes launched during the current run. */
+    private final List<Process> activeProcesses = new ArrayList<>();
+
+    /** All algorithm threads launched during the current run. */
+    private final List<NotifyingThread> activeThreads = new ArrayList<>();
+
+    /** The file path of the workflow file currently open, or null if none has been saved or loaded. */
+    private String currentWorkflowFilePath = null;
+
+    /** True when the workflow has unsaved changes relative to the last save or load. */
+    private boolean workflowModified = false;
+
+    /**
+     * Creates and displays the workflow editor window.
+     *
+     * @param runAsStandalone when true the JVM exits when this window is closed.
+     * @throws Exception if any UI resource cannot be loaded.
+     */
+    public WorkflowEditorWindow(boolean runAsStandalone) throws Exception {
+        setTitle("SPMF Workflow Editor " + Main.SPMF_VERSION);
+        setIconImage(Toolkit.getDefaultToolkit().getImage(
+                MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/History24.gif")));
+        setSize(1000, 750);
+        setLayout(new BorderLayout());
+
+        drawPanel = new DrawPanel();
+        drawPanel.addDrawPanelListener(this);
+
+        infoPanel = new InformationPanel(this, drawPanel);
+        drawPanel.addDrawPanelListener(infoPanel);
+
+        JScrollPane scrollDraw = new JScrollPane(drawPanel);
+        scrollDraw.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollDraw.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        JScrollPane scrollInfo = new JScrollPane(infoPanel);
+
+        // Horizontal split: draw panel on the left, info panel on the right
+        JSplitPane horizontalSplit = new JSplitPane(
+                JSplitPane.HORIZONTAL_SPLIT, scrollDraw, scrollInfo);
+        horizontalSplit.setDividerLocation((int) (getWidth() * 0.3));
+
+        // Top area: workflow label above the horizontal split
+        JPanel topArea = new JPanel(new BorderLayout());
+        topArea.add(new JLabel("Workflow:"), BorderLayout.NORTH);
+        topArea.add(horizontalSplit, BorderLayout.CENTER);
+
+        // Button toolbar
+        JPanel buttonPanel = new JPanel();
+
+        buttonAddAlgorithm = new JButton("Add algorithm");
+        buttonAddAlgorithm.setIcon(new ImageIcon(
+                MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Add.png")));
+        buttonAddAlgorithm.setEnabled(true);
+        buttonPanel.add(buttonAddAlgorithm);
+
+        buttonRemoveSelectedNode = new JButton("Remove algorithm (leaf only)");
+        buttonRemoveSelectedNode.setIcon(new ImageIcon(
+                MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Remove.png")));
+        buttonRemoveSelectedNode.setEnabled(false);
+        buttonPanel.add(buttonRemoveSelectedNode);
+
+        buttonValidate = new JButton("Validate the workflow");
+        buttonValidate.setIcon(new ImageIcon(
+                MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Validate.png")));
+        buttonValidate.setEnabled(false);
+        buttonPanel.add(buttonValidate);
+
+        buttonRun = new JButton("Run the workflow");
+        buttonRun.setIcon(new ImageIcon(
+                MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Play24.gif")));
+        buttonRun.setEnabled(false);
+        buttonPanel.add(buttonRun);
+
+        // Console and progress bar panel
+        JPanel consoleProgressPanel = new JPanel(new BorderLayout());
+        progressBar = new JProgressBar();
+        consolePanel = new ConsolePanel(false);
+        consolePanel.setPreferredSize(new Dimension(200, 120));
+        consoleProgressPanel.add(new JLabel("Console:"), BorderLayout.NORTH);
+        consoleProgressPanel.add(consolePanel, BorderLayout.CENTER);
+        consoleProgressPanel.add(progressBar, BorderLayout.SOUTH);
+
+        // Bottom area: buttons above the console panel
+        JPanel bottomArea = new JPanel(new BorderLayout());
+        bottomArea.add(buttonPanel, BorderLayout.NORTH);
+        bottomArea.add(consoleProgressPanel, BorderLayout.CENTER);
+
+        // Vertical split: top is the workflow area, bottom is the console area
+        JSplitPane verticalSplit = new JSplitPane(
+                JSplitPane.VERTICAL_SPLIT, topArea, bottomArea);
+        verticalSplit.setResizeWeight(0.75);
+        verticalSplit.setDividerLocation((int) (getHeight() * 0.75));
+        verticalSplit.setOneTouchExpandable(true);
+
+        add(verticalSplit, BorderLayout.CENTER);
+
+        createMenuBar();
+
+        buttonAddAlgorithm.addActionListener(e -> {
+            drawPanel.addAlgorithmNode();
+            markModified();
+        });
+        buttonRemoveSelectedNode.addActionListener(e -> {
+            drawPanel.removeSelectedNode();
+            markModified();
+        });
+        buttonValidate.addActionListener(e -> validateWorkflow());
+        buttonRun.addActionListener(e -> {
+            try { runWorkflow(); }
+            catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
+        });
+
+        if (runAsStandalone) setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setVisible(true);
+
+        consolePanel.redirectOutputStream();
+        consolePanel.postStatusMessage("Workflow editor initialized and ready.");
+    }
+
+    /**
+     * Builds and attaches the menu bar with Workflow, Options, and Tools menus.
+     */
+    private void createMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        // Workflow menu (first)
+        JMenu menuWorkflow = new JMenu("Workflow");
+
+        menuItemNew      = new JMenuItem("New workflow");
+        menuItemLoad     = new JMenuItem("Load workflow");
+        menuRecentWorkflows = new JMenu("Load recent workflow");
+        menuItemSave     = new JMenuItem("Save workflow");
+        menuItemSaveAs   = new JMenuItem("Save workflow as");
+        menuItemValidate = new JMenuItem("Validate the workflow");
+        menuItemRun      = new JMenuItem("Run the workflow");
+        JMenuItem menuExportBAT = new JMenuItem("Export workflow as BAT script (for Windows)");
+        JMenuItem menuExportSH  = new JMenuItem("Export workflow as SH script (for Linux)");
+        JMenuItem menuExportPNG = new JMenuItem("Export workflow graph as PNG image");
+        JMenuItem menuExportJPG = new JMenuItem("Export workflow graph as JPG image");
+
+        menuWorkflow.add(menuItemNew);
+        menuWorkflow.addSeparator();
+        menuWorkflow.add(menuItemLoad);
+        menuWorkflow.add(menuRecentWorkflows);
+        menuWorkflow.add(menuItemSave);
+        menuWorkflow.add(menuItemSaveAs);
+        menuWorkflow.addSeparator();
+        menuWorkflow.add(menuItemValidate);
+        menuWorkflow.add(menuItemRun);
+        menuWorkflow.addSeparator();
+        menuWorkflow.add(menuExportBAT);
+        menuWorkflow.add(menuExportSH);
+        menuWorkflow.addSeparator();
+        menuWorkflow.add(menuExportPNG);
+        menuWorkflow.add(menuExportJPG);
+
+        menuItemValidate.setEnabled(false);
+        menuItemRun.setEnabled(false);
+
+        // Populate the recent workflows submenu now and each time it is opened
+        rebuildRecentWorkflowsMenu();
+        menuRecentWorkflows.addMenuListener(new javax.swing.event.MenuListener() {
+            @Override
+            public void menuSelected(javax.swing.event.MenuEvent e) {
+                rebuildRecentWorkflowsMenu();
+            }
+            @Override public void menuDeselected(javax.swing.event.MenuEvent e) { }
+            @Override public void menuCanceled(javax.swing.event.MenuEvent e)   { }
+        });
+
+        // Options menu (second)
+        JMenu menuOptions = new JMenu("Options");
+        checkBoxSeparatedProcess = new JCheckBoxMenuItem("Run workflow in a separated process");
+        menuOptions.add(checkBoxSeparatedProcess);
+
+        // Tools menu (third)
+        JMenu menuTools = new JMenu("Tools");
+        JMenuItem menuDocumentation         = new JMenuItem("Open documentation webpage");
+        JMenuItem menuItemAlgorithmExplorer = new JMenuItem("Algorithm Explorer");
+        JMenuItem menuItemMemoryViewer      = new JMenuItem("Memory viewer");
+        menuTools.add(menuDocumentation);
+        menuTools.addSeparator();
+        menuTools.add(menuItemAlgorithmExplorer);
+        menuTools.add(menuItemMemoryViewer);
+
+        menuBar.add(menuWorkflow);
+        menuBar.add(menuOptions);
+        menuBar.add(menuTools);
+        setJMenuBar(menuBar);
+
+        menuDocumentation.addActionListener(e -> openDocumentation());
+        menuItemAlgorithmExplorer.addActionListener(e -> openAlgorithmExplorer());
+        menuItemMemoryViewer.addActionListener(e -> openMemoryViewer());
+        menuExportBAT.addActionListener(e -> exportAsBATFile());
+        menuExportSH.addActionListener(e -> exportAsSHFile());
+        menuExportPNG.addActionListener(e -> exportGraphAsImage("PNG", "png"));
+        menuExportJPG.addActionListener(e -> exportGraphAsImage("JPEG", "jpg"));
+        menuItemNew.addActionListener(e -> newWorkflow());
+        menuItemLoad.addActionListener(e -> loadWorkflow());
+        menuItemSave.addActionListener(e -> saveWorkflow());
+        menuItemSaveAs.addActionListener(e -> saveWorkflowAs());
+        menuItemValidate.addActionListener(e -> validateWorkflow());
+        menuItemRun.addActionListener(e -> {
+            try { runWorkflow(); }
+            catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
+        });
+    }
+
+    /**
+     * Clears and rebuilds the recent-workflows submenu from the current preference store contents.
+     * Each entry is a JMenuItem whose action directly loads that workflow file.
+     * If the list is empty a single disabled placeholder item is shown.
+     */
+    private void rebuildRecentWorkflowsMenu() {
+        menuRecentWorkflows.removeAll();
+        List<String> recent = PreferencesManager.getInstance().getRecentWorkflowFiles();
+        if (recent.isEmpty()) {
+            JMenuItem empty = new JMenuItem("(no recent workflows)");
+            empty.setEnabled(false);
+            menuRecentWorkflows.add(empty);
+            return;
+        }
+        for (String filePath : recent) {
+            String label = new File(filePath).getName() + "  [" + filePath + "]";
+            JMenuItem item = new JMenuItem(label);
+            item.setToolTipText(filePath);
+            item.addActionListener(e -> loadWorkflowFromPath(filePath));
+            menuRecentWorkflows.add(item);
+        }
+    }
+
+    /**
+     * Exports the workflow draw panel as a raster image (PNG or JPG) chosen by the user.
+     *
+     * @param formatName the ImageIO format name, e.g. "PNG" or "JPEG".
+     * @param extension  the file extension without a leading dot, e.g. "png" or "jpg".
+     */
+    private void exportGraphAsImage(String formatName, String extension) {
+        if (drawPanel.roots.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "The workflow is empty. There is nothing to export.",
+                    "Export", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        File file = chooseExportFile(formatName.toUpperCase() + " Images", extension);
+        if (file == null) return;
+
+        if (!file.getName().toLowerCase().endsWith("." + extension)) {
+            file = new File(file.getAbsolutePath() + "." + extension);
+        }
+
+        Dimension size = drawPanel.getPreferredSize();
+        int width  = Math.max(size.width,  1);
+        int height = Math.max(size.height, 1);
+
+        int imageType = "JPEG".equalsIgnoreCase(formatName)
+                ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
+        BufferedImage image = new BufferedImage(width, height, imageType);
+
+        Graphics2D g2 = image.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING,         RenderingHints.VALUE_RENDER_QUALITY);
+
+        g2.setColor(java.awt.Color.WHITE);
+        g2.fillRect(0, 0, width, height);
+        drawPanel.paint(g2);
+        g2.dispose();
+
+        try {
+            boolean written = ImageIO.write(image, formatName, file);
+            if (!written) {
+                JOptionPane.showMessageDialog(this,
+                        "Could not write image format: " + formatName,
+                        "Export Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            consolePanel.postStatusMessage(
+                    "Workflow graph exported as " + formatName + " to: " + file.getAbsolutePath());
+        } catch (IOException ex) {
+            consolePanel.postStatusMessage("Error exporting image: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this,
+                    "Error exporting image: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Called when the user selects a node; button state is managed by other callbacks.
+     *
+     * @param node the newly selected node, or null if selection was cleared.
+     */
+    @Override
+    public void notifyNodeSelected(Node node) {
+        // Button state managed by notifyHasOutputNode and notifyCanRemoveSelectedNode.
+    }
+
+    /**
+     * Enables or disables the Add Algorithm button based on whether adding is currently legal.
+     *
+     * @param hasOutput true if a new algorithm node may be added.
+     */
+    @Override
+    public void notifyHasOutputNode(boolean hasOutput) {
+        buttonAddAlgorithm.setEnabled(hasOutput);
+    }
+
+    /**
+     * Enables or disables the validate and run buttons based on whether the workflow has nodes.
+     *
+     * @param roots the current list of root BranchNodes.
+     */
+    @Override
+    public void notifyOfListOfRootNodes(List<BranchNode> roots) {
+        boolean hasNodes = !roots.isEmpty();
+        buttonRun.setEnabled(hasNodes);
+        buttonValidate.setEnabled(hasNodes);
+        menuItemRun.setEnabled(hasNodes);
+        menuItemValidate.setEnabled(hasNodes);
+    }
+
+    /**
+     * Enables or disables the Remove button based on whether a leaf algorithm node is selected.
+     *
+     * @param canRemove true if the selected node is a leaf algorithm and may be removed.
+     */
+    @Override
+    public void notifyCanRemoveSelectedNode(boolean canRemove) {
+        buttonRemoveSelectedNode.setEnabled(canRemove);
+    }
+
+    /**
+     * Marks the workflow as having unsaved changes.
+     */
+    private void markModified() {
+        workflowModified = true;
+    }
+
+    /**
+     * Asks the user whether to discard or save unsaved changes; returns false if the user cancels.
+     *
+     * @return true if it is safe to proceed with the destructive operation, false if the user cancelled.
+     */
+    private boolean confirmDiscardOrSave() {
+        if (!workflowModified || drawPanel.roots.isEmpty()) {
+            return true;
+        }
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                "The current workflow has unsaved changes. What would you like to do?",
+                "Unsaved Changes",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                new Object[]{"Save", "Discard", "Cancel"},
+                "Save");
+        if (choice == JOptionPane.YES_OPTION) {
+            return saveWorkflow();
+        } else if (choice == JOptionPane.NO_OPTION) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Clears the current workflow and resets the editor to an empty state.
+     */
+    private void newWorkflow() {
+        if (!confirmDiscardOrSave()) {
+            return;
+        }
+        drawPanel.roots.clear();
+        drawPanel.selected           = null;
+        drawPanel.selectedBranchNode = null;
+
+        infoPanel.notifyNodeSelected(null);
+
+        drawPanel.relayoutAndRepaint();
+        currentWorkflowFilePath = null;
+        workflowModified        = false;
+        consolePanel.postStatusMessage("New workflow created.");
+    }
+
+    /**
+     * Opens a file chooser so the user can select a workflow file to load, replacing the current workflow.
+     */
+    private void loadWorkflow() {
+        if (!confirmDiscardOrSave()) {
+            return;
+        }
+
+        File startDir = resolveStartDirectory();
+        JFileChooser fc = (startDir != null)
+                ? new JFileChooser(startDir.getAbsolutePath()) : new JFileChooser();
+        fc.setFileFilter(new FileNameExtensionFilter("Workflow files (*.txt)", "txt"));
+        fc.setAcceptAllFileFilterUsed(true);
+        fc.setDialogTitle("Load Workflow");
+
+        if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File file = fc.getSelectedFile();
+        PreferencesManager.getInstance().setInputFilePath(file.getParent());
+        loadWorkflowFromPath(file.getAbsolutePath());
+    }
+
+    /**
+     * Loads a workflow from the given absolute file path, replacing the current workflow.
+     *
+     * @param filePath the absolute path of the workflow file to load.
+     */
+    private void loadWorkflowFromPath(String filePath) {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            JOptionPane.showMessageDialog(this,
+                    "The workflow file no longer exists:\n" + filePath,
+                    "File Not Found", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            List<BranchNode> loaded = WorkflowSerializer.load(file.getAbsolutePath());
+            drawPanel.roots.clear();
+            drawPanel.roots.addAll(loaded);
+            drawPanel.selected           = null;
+            drawPanel.selectedBranchNode = null;
+
+            infoPanel.notifyNodeSelected(null);
+
+            drawPanel.relayoutAndRepaint();
+
+            currentWorkflowFilePath = file.getAbsolutePath();
+            workflowModified        = false;
+
+            PreferencesManager.getInstance().addRecentWorkflowFile(file.getAbsolutePath());
+            rebuildRecentWorkflowsMenu();
+
+            consolePanel.postStatusMessage("Workflow loaded from: " + file.getAbsolutePath());
+        } catch (IOException ex) {
+            consolePanel.postStatusMessage("Error loading workflow: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this,
+                    "Error loading workflow: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Saves the current workflow to the previously used file, or opens a chooser if none exists.
+     *
+     * @return true if the workflow was saved successfully, false if the user cancelled or an error occurred.
+     */
+    private boolean saveWorkflow() {
+        infoPanel.saveInformation(infoPanel.currentNode);
+        if (currentWorkflowFilePath != null) {
+            return writeWorkflowToFile(currentWorkflowFilePath);
+        }
+        return saveWorkflowAs();
+    }
+
+    /**
+     * Opens a save file chooser and writes the workflow to the chosen file, always prompting for a new path.
+     *
+     * @return true if the workflow was saved successfully, false if the user cancelled or an error occurred.
+     */
+    private boolean saveWorkflowAs() {
+        infoPanel.saveInformation(infoPanel.currentNode);
+        File startDir = resolveStartDirectory();
+        JFileChooser fc = (startDir != null)
+                ? new JFileChooser(startDir.getAbsolutePath()) : new JFileChooser();
+        fc.setFileFilter(new FileNameExtensionFilter("Workflow files (*.txt)", "txt"));
+        fc.setAcceptAllFileFilterUsed(false);
+        fc.setDialogTitle("Save Workflow As");
+
+        if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return false;
+        }
+
+        File file = fc.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith(".txt")) {
+            file = new File(file.getAbsolutePath() + ".txt");
+        }
+        PreferencesManager.getInstance().setInputFilePath(file.getParent());
+        currentWorkflowFilePath = file.getAbsolutePath();
+        return writeWorkflowToFile(currentWorkflowFilePath);
+    }
+
+    /**
+     * Serializes the current workflow to the given file path and updates the modified flag.
+     *
+     * @param filePath the absolute path of the destination file.
+     * @return true if the file was written without error, false otherwise.
+     */
+    private boolean writeWorkflowToFile(String filePath) {
+        try {
+            WorkflowSerializer.save(drawPanel.roots, filePath);
+            workflowModified = false;
+
+            PreferencesManager.getInstance().addRecentWorkflowFile(filePath);
+            rebuildRecentWorkflowsMenu();
+
+            consolePanel.postStatusMessage("Workflow saved to: " + filePath);
+            return true;
+        } catch (IOException ex) {
+            consolePanel.postStatusMessage("Error saving workflow: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this,
+                    "Error saving workflow: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+    /**
+     * Returns the directory to use as the starting location for file choosers, or null if unknown.
+     *
+     * @return the starting directory File, or null.
+     */
+    private File resolveStartDirectory() {
+        String previousPath = PreferencesManager.getInstance().getInputFilePath();
+        if (previousPath != null) {
+            return new File(previousPath);
+        }
+        URL url = MainTestApriori_simple_saveToFile.class
+                .getResource("MainTestApriori_saveToFile.class");
+        if (url != null && "file".equalsIgnoreCase(url.getProtocol())) {
+            return new File(url.getPath());
+        }
+        return null;
+    }
+
+    /**
+     * Saves the current node's information, validates the workflow, and reports the result in a dialog.
+     */
+    private void validateWorkflow() {
+        infoPanel.saveInformation(infoPanel.currentNode);
+        String error = drawPanel.validateTheWorkflow();
+        if (error != null) {
+            consolePanel.postStatusMessage("Validation failed: " + error);
+            JOptionPane.showMessageDialog(this,
+                    "The workflow is not valid. " + error,
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        } else {
+            consolePanel.postStatusMessage("Workflow validation successful.");
+            JOptionPane.showMessageDialog(this,
+                    "The workflow is valid.", "", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    /**
+     * Validates and then executes the workflow in a background orchestrator thread.
+     *
+     * @throws InterruptedException if the calling thread is interrupted while waiting.
+     */
+    private void runWorkflow() throws InterruptedException {
+        infoPanel.saveInformation(infoPanel.currentNode);
+
+        String error = drawPanel.validateTheWorkflow();
+        if (error != null) {
+            consolePanel.postStatusMessage("Cannot run workflow: " + error);
+            JOptionPane.showMessageDialog(this,
+                    "The workflow is not valid. " + error,
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (checkBoxSeparatedProcess.isSelected() && !new File("spmf.jar").exists()) {
+            consolePanel.postStatusMessage("spmf.jar not found. Running in same process.");
+            JOptionPane.showMessageDialog(this,
+                    "spmf.jar not found. The workflow will run in the same process.",
+                    "Warning", JOptionPane.WARNING_MESSAGE);
+            checkBoxSeparatedProcess.setSelected(false);
+        }
+
+        stopRequested.set(false);
+        synchronized (activeProcesses) { activeProcesses.clear(); }
+        synchronized (activeThreads)   { activeThreads.clear(); }
+
+        switchToRunningMode();
+        consolePanel.postStatusMessage("Starting workflow execution...");
+
+        List<List<BranchNode>> levels = buildBFSLevels();
+        Thread orchestrator = new Thread(
+                () -> executeWorkflowLevels(levels), "workflow-orchestrator");
+        orchestrator.setDaemon(true);
+        orchestrator.setUncaughtExceptionHandler(this);
+        orchestrator.start();
+    }
+
+    /**
+     * Executes the workflow level by level, running all nodes within a level concurrently.
+     *
+     * @param levels BFS levels as produced by buildBFSLevels.
+     */
+    private void executeWorkflowLevels(List<List<BranchNode>> levels) {
+        try {
+            for (int i = 0; i < levels.size(); i++) {
+                List<BranchNode> level = levels.get(i);
+                if (stopRequested.get()) break;
+
+                final int levelNum = i;
+                SwingUtilities.invokeLater(() ->
+                    consolePanel.postStatusMessage("Executing level " + (levelNum + 1) +
+                        " with " + level.size() + " algorithm(s)..."));
+
+                CountDownLatch latch = new CountDownLatch(level.size());
+                AtomicBoolean levelFailed = new AtomicBoolean(false);
+
+                for (BranchNode bn : level) {
+                    if (stopRequested.get()) { latch.countDown(); continue; }
+                    launchBranchNode(bn, latch, levelFailed);
+                }
+
+                latch.await();
+
+                if (levelFailed.get()) {
+                    SwingUtilities.invokeLater(() -> {
+                        consolePanel.postStatusMessage("Workflow execution stopped due to algorithm failure.");
+                        JOptionPane.showMessageDialog(this,
+                                "One or more algorithms failed. Workflow execution stopped.",
+                                "Error", JOptionPane.ERROR_MESSAGE);
+                    });
+                    break;
+                }
+            }
+
+            if (!stopRequested.get()) {
+                SwingUtilities.invokeLater(() ->
+                    consolePanel.postStatusMessage("Workflow execution completed successfully."));
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            SwingUtilities.invokeLater(() ->
+                consolePanel.postStatusMessage("Workflow execution interrupted."));
+        } finally {
+            SwingUtilities.invokeLater(this::resetUIAfterRunCompletion);
+        }
+    }
+
+    /**
+     * Launches the algorithm associated with the given branch node, either in-process or as a subprocess.
+     *
+     * @param bn          the branch node whose algorithm should be executed.
+     * @param latch       decremented when the algorithm finishes.
+     * @param levelFailed set to true if the algorithm fails.
+     */
+    private void launchBranchNode(BranchNode bn, CountDownLatch latch,
+                                   AtomicBoolean levelFailed) {
+        GroupOfNodes group  = bn.group;
+        String choice       = group.nodeAlgorithm.name;
+        String inputFile    = resolveInputFile(bn);
+        String outputFile   = group.showOutput ? group.nodeOutput.outputFile : null;
+        String[] parameters = group.nodeAlgorithm.getNonNullParameters();
+
+        SimpleDateFormat fmt = new SimpleDateFormat("hh:mm:ss aa");
+        consolePanel.postStatusMessage(
+                "Algorithm '" + choice + "' is running... (" + fmt.format(new Date()) + ")");
+        progressBar.setIndeterminate(true);
+
+        if (checkBoxSeparatedProcess.isSelected()) {
+            List<String> cmd = buildCommand(choice, inputFile, outputFile,
+                    parameters, bn.isRoot(), group.showInput);
+            NotifyingThread t = new NotifyingThread() {
+                @Override
+                public boolean doRun() throws Exception {
+                    ProcessBuilder pb = new ProcessBuilder(cmd);
+                    pb.redirectOutput(Redirect.INHERIT);
+                    pb.redirectError(Redirect.INHERIT);
+                    Process proc = pb.start();
+                    synchronized (activeProcesses) { activeProcesses.add(proc); }
+                    int exit = proc.waitFor();
+                    synchronized (activeProcesses) { activeProcesses.remove(proc); }
+                    return exit == 0;
+                }
+            };
+            startAlgorithmThread(t, choice, latch, levelFailed);
+        } else {
+            NotifyingThread t = new NotifyingThread() {
+                @Override
+                public boolean doRun() throws Exception {
+                    CommandProcessor.runAlgorithm(choice, inputFile, outputFile, parameters);
+                    return true;
+                }
+            };
+            startAlgorithmThread(t, choice, latch, levelFailed);
+        }
+    }
+
+    /**
+     * Wires completion callbacks onto the given thread and starts it.
+     *
+     * @param thread      the thread to start.
+     * @param algName     human-readable algorithm name used in log messages.
+     * @param latch       decremented when the thread completes.
+     * @param levelFailed set to true if the thread reports failure.
+     */
+    private void startAlgorithmThread(NotifyingThread thread, String algName,
+                                       CountDownLatch latch, AtomicBoolean levelFailed) {
+        thread.setUncaughtExceptionHandler(this);
+        thread.addListener((t, succeeded) -> {
+            if (!succeeded) {
+                levelFailed.set(true);
+                consolePanel.postStatusMessage("Algorithm '" + algName + "' FAILED.");
+            } else {
+                consolePanel.postStatusMessage("Algorithm '" + algName + "' completed successfully.");
+            }
+            synchronized (activeThreads) { activeThreads.remove(thread); }
+            latch.countDown();
+        });
+        synchronized (activeThreads) { activeThreads.add(thread); }
+        thread.start();
+    }
+
+    /**
+     * Performs a BFS over the workflow tree and groups BranchNodes by depth level.
+     *
+     * @return an ordered list of levels, each containing the nodes at that depth.
+     */
+    private List<List<BranchNode>> buildBFSLevels() {
+        List<List<BranchNode>> levels = new ArrayList<>();
+        Queue<BranchNode> queue = new LinkedList<>();
+        Map<BranchNode, Integer> depthMap = new HashMap<>();
+
+        for (BranchNode root : drawPanel.roots) {
+            queue.add(root);
+            depthMap.put(root, 0);
+        }
+
+        while (!queue.isEmpty()) {
+            BranchNode current = queue.poll();
+            int depth = depthMap.get(current);
+            while (levels.size() <= depth) levels.add(new ArrayList<>());
+            levels.get(depth).add(current);
+            for (BranchNode child : current.children) {
+                if (!depthMap.containsKey(child)) {
+                    depthMap.put(child, depth + 1);
+                    queue.add(child);
+                }
+            }
+        }
+        return levels;
+    }
+
+    /**
+     * Determines the input file path for the given branch node based on its position in the tree.
+     *
+     * @param bn the branch node whose input file should be resolved.
+     * @return the resolved input file path, or null if none applies.
+     */
+    private String resolveInputFile(BranchNode bn) {
+        if (bn.isRoot()) {
+            return bn.group.showInput ? bn.group.nodeInput.inputFile : null;
+        }
+        BranchNode parent = bn.parent;
+        return (parent != null && parent.group.showOutput)
+                ? parent.group.nodeOutput.outputFile : null;
+    }
+
+    /**
+     * Builds the ordered list of command-line tokens needed to invoke spmf.jar for the given algorithm.
+     *
+     * @param algorithmName the SPMF algorithm identifier.
+     * @param inputFile     the resolved input file path, may be null.
+     * @param outputFile    the output file path, may be null.
+     * @param parameters    algorithm-specific parameter values.
+     * @param isRoot        true if this node is a root node.
+     * @param showInput     true if this node uses an explicit input file.
+     * @return the ordered list of command tokens.
+     */
+    private List<String> buildCommand(String algorithmName, String inputFile,
+                                       String outputFile, String[] parameters,
+                                       boolean isRoot, boolean showInput) {
+        List<String> cmd = new ArrayList<>();
+        cmd.add("java"); cmd.add("-jar"); cmd.add("spmf.jar"); cmd.add("run");
+        cmd.add(algorithmName);
+        if (isRoot) {
+            if (showInput && inputFile != null) cmd.add(inputFile);
+        } else {
+            if (inputFile != null) cmd.add(inputFile);
+        }
+        if (outputFile != null && !outputFile.isEmpty()) cmd.add(outputFile);
+        for (String p : parameters) {
+            if (p != null && !p.isEmpty()) cmd.add(p);
+        }
+        return cmd;
+    }
+
+    /**
+     * Forcibly stops all currently running algorithm processes and threads.
+     */
+    private void stopWorkflow() {
+        stopRequested.set(true);
+        synchronized (activeProcesses) {
+            for (Process p : activeProcesses) p.destroyForcibly();
+            activeProcesses.clear();
+        }
+        synchronized (activeThreads) {
+            for (NotifyingThread t : activeThreads) {
+                try { t.cancel(); } catch (UnsupportedOperationException ignored) { }
+            }
+            activeThreads.clear();
+        }
+        consolePanel.postStatusMessage("Workflow stopped by user.");
+        SwingUtilities.invokeLater(this::resetUIAfterRunCompletion);
+    }
+
+    /**
+     * Switches the UI into running mode by relabelling the Run button to Stop.
+     */
+    private void switchToRunningMode() {
+        buttonRun.setText("Stop workflow");
+        buttonRun.setIcon(new ImageIcon(
+                MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Stop24.gif")));
+        for (ActionListener al : buttonRun.getActionListeners()) {
+            buttonRun.removeActionListener(al);
+        }
+        buttonRun.addActionListener(e -> stopWorkflow());
+        progressBar.setIndeterminate(true);
+    }
+
+    /**
+     * Resets the UI back to idle mode after a workflow run finishes or is stopped.
+     */
+    private void resetUIAfterRunCompletion() {
+        buttonRun.setText("Run the workflow");
+        buttonRun.setIcon(new ImageIcon(
+                MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/Play24.gif")));
+        buttonRun.setEnabled(true);
+        for (ActionListener al : buttonRun.getActionListeners()) {
+            buttonRun.removeActionListener(al);
+        }
+        buttonRun.addActionListener(e -> {
+            try { runWorkflow(); }
+            catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
+        });
+        progressBar.setIndeterminate(false);
+    }
+
+    /**
+     * Exports the workflow as a Windows BAT script file chosen by the user.
+     */
+    private void exportAsBATFile() {
+        File file = chooseExportFile("BAT Scripts", "bat");
+        if (file == null) return;
+        List<List<BranchNode>> levels = buildBFSLevels();
+        try (BufferedWriter w = new BufferedWriter(new FileWriter(file))) {
+            for (List<BranchNode> level : levels) {
+                for (BranchNode bn : level) {
+                    w.write(buildSingleLineCommand(bn, false));
+                    w.newLine();
+                }
+            }
+            consolePanel.postStatusMessage("Workflow exported as .bat to: " + file.getAbsolutePath());
+        } catch (IOException e) {
+            consolePanel.postStatusMessage("Error writing BAT file: " + e.getMessage());
+            JOptionPane.showMessageDialog(this,
+                    "Error writing BAT file: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Exports the workflow as a Unix/Linux SH script file chosen by the user.
+     */
+    private void exportAsSHFile() {
+        File file = chooseExportFile("SH Scripts", "sh");
+        if (file == null) return;
+        List<List<BranchNode>> levels = buildBFSLevels();
+        try (BufferedWriter w = new BufferedWriter(new FileWriter(file))) {
+            w.write("#!/bin/bash");
+            w.newLine();
+            for (List<BranchNode> level : levels) {
+                for (BranchNode bn : level) {
+                    w.write(buildSingleLineCommand(bn, true));
+                    w.newLine();
+                }
+            }
+            consolePanel.postStatusMessage("Workflow exported as .sh to: " + file.getAbsolutePath());
+        } catch (IOException e) {
+            consolePanel.postStatusMessage("Error writing SH file: " + e.getMessage());
+            JOptionPane.showMessageDialog(this,
+                    "Error writing SH file: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Assembles a single command line string for the given branch node.
+     *
+     * @param bn             the branch node for which to build the command.
+     * @param normalisePaths when true, backslashes are replaced with forward slashes.
+     * @return the command line as a trimmed string.
+     */
+    private String buildSingleLineCommand(BranchNode bn, boolean normalisePaths) {
+        GroupOfNodes group  = bn.group;
+        String choice       = group.nodeAlgorithm.name;
+        String inputFile    = resolveInputFile(bn);
+        String outputFile   = group.showOutput ? group.nodeOutput.outputFile : null;
+        String[] parameters = group.nodeAlgorithm.getNonNullParameters();
+
+        if (normalisePaths) {
+            if (inputFile  != null) inputFile  = inputFile.replace(File.separatorChar, '/');
+            if (outputFile != null) outputFile = outputFile.replace(File.separatorChar, '/');
+        }
+
+        List<String> cmd = buildCommand(choice, inputFile, outputFile,
+                parameters, bn.isRoot(), group.showInput);
+        StringBuilder sb = new StringBuilder();
+        for (String token : cmd) sb.append(token).append(' ');
+        return sb.toString().trim();
+    }
+
+    /**
+     * Opens a Save file chooser filtered to the given file extension and returns the chosen file.
+     *
+     * @param description the file-type description shown in the chooser.
+     * @param extension   the file extension without a leading dot.
+     * @return the chosen File, or null if the user cancelled.
+     */
+    private File chooseExportFile(String description, String extension) {
+        File startDir = resolveStartDirectory();
+        JFileChooser fc = (startDir != null)
+                ? new JFileChooser(startDir.getAbsolutePath()) : new JFileChooser();
+        fc.setFileFilter(new FileNameExtensionFilter(description, extension));
+        fc.setAcceptAllFileFilterUsed(false);
+
+        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File file = fc.getSelectedFile();
+            PreferencesManager.getInstance().setInputFilePath(file.getParent());
+            return file;
+        }
+        return null;
+    }
+
+    /**
+     * Opens the SPMF documentation web page in the default browser.
+     */
+    private void openDocumentation() {
+        try {
+            java.awt.Desktop.getDesktop().browse(java.net.URI.create(
+                    "http://philippe-fournier-viger.com/spmf/index.php?link=documentation.php"));
+        } catch (IOException e) {
+            consolePanel.postStatusMessage("Error opening documentation: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Opens the memory usage viewer window.
+     */
+    private void openMemoryViewer() {
+        MemoryViewer.displayMemoryChart();
+    }
+
+    /**
+     * Opens the algorithm explorer window.
+     */
+    private void openAlgorithmExplorer() {
+        new AlgorithmExplorer(false).setVisible(true);
+    }
+
+    /**
+     * Handles uncaught exceptions thrown by algorithm threads and shows an error dialog.
+     *
+     * @param thread the thread that threw the exception.
+     * @param e      the throwable that was not caught.
+     */
+    @Override
+    public void uncaughtException(Thread thread, Throwable e) {
+        if (e instanceof ThreadDeath) return;
+        SwingUtilities.invokeLater(() -> {
+            if (e instanceof NumberFormatException) {
+                consolePanel.postStatusMessage("Parameter format error: " + e.getMessage());
+                JOptionPane.showMessageDialog(this,
+                        "Parameter format error. Please check numeric parameters.\nERROR: " + e.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                consolePanel.postStatusMessage("Algorithm error: " + e.getMessage());
+                JOptionPane.showMessageDialog(this,
+                        "An error occurred while running an algorithm.\nERROR: " + e.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+            resetUIAfterRunCompletion();
+        });
+    }
 }

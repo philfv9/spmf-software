@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.frequentpatterns.hmine.AlgoHMine;
+import ca.pfv.spmf.algorithms.frequentpatterns.hmine_fast.AlgoHMine_FAST;
 
 /**
  * Example of how to use HMine from the source code.
@@ -20,7 +20,7 @@ public class MainTestHMine {
 		double minsup = 0.4; // 40% means a minsup of 2 transaction (we used a relative support)
 		
 		// Applying the  algorithm
-		AlgoHMine algorithm = new AlgoHMine();
+		AlgoHMine_FAST algorithm = new AlgoHMine_FAST();
 		
 		// Uncomment the following line to set the maximum pattern length (number of items per itemset)
 		algorithm.setMaximumPatternLength(4);

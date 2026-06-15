@@ -115,8 +115,7 @@ public class DescriptionAlgoHMPSA extends DescriptionOfAlgorithm {
     @Override
     public String[] getInputFileTypes() {
         return new String[]{"Database of instances",
-                "Simple transaction database",
-                "Transaction database"};
+                "Simple transaction database"};
     }
 
     @Override

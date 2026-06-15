@@ -16,6 +16,8 @@ package ca.pfv.spmf.input.sequence_database_array_integers;
 * 
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove the copyright and license information.
 */
 import java.io.BufferedReader;
 import java.io.File;

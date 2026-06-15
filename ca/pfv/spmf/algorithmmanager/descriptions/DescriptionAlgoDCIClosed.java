@@ -5,23 +5,8 @@ import java.io.IOException;
 import ca.pfv.spmf.algorithmmanager.AlgorithmType;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
-import ca.pfv.spmf.algorithms.frequentpatterns.dci_closed_optimized.AlgoDCI_Closed_Optimized;
-/* This file is copyright (c) 2008-2016 Philippe Fournier-Viger
-* 
-* This file is part of the SPMF DATA MINING SOFTWARE
-* (http://www.philippe-fournier-viger.com/spmf).
-* 
-* SPMF is free software: you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation, either version 3 of the License, or (at your option) any later
-* version.
-* 
-* SPMF is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License along with
-* SPMF. If not, see <http://www.gnu.org/licenses/>.
-*/
+import ca.pfv.spmf.algorithms.frequentpatterns.dci_closed_fast.AlgoDCI_Closed_FAST;
+import ca.pfv.spmf.algorithms.frequentpatterns.dci_closed_simple.AlgoDCI_Closed_Optimized;
 
 /**
  * This class describes the DCI_Closed algorithm parameters. It is designed to
@@ -55,8 +40,8 @@ public class DescriptionAlgoDCIClosed extends DescriptionOfAlgorithm {
 
 	@Override
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
-		int minsup = getParamAsInteger(parameters[0]);
-		AlgoDCI_Closed_Optimized algorithm = new AlgoDCI_Closed_Optimized();
+		double minsup = getParamAsDouble(parameters[0]);
+		AlgoDCI_Closed_FAST algorithm = new AlgoDCI_Closed_FAST();
 
 		if (parameters.length >= 2 && "".equals(parameters[1]) == false) {
 			algorithm.setShowTransactionIdentifiers(getParamAsBoolean(parameters[1]));
@@ -67,7 +52,7 @@ public class DescriptionAlgoDCIClosed extends DescriptionOfAlgorithm {
 	@Override
 	public DescriptionOfParameter[] getParametersDescription() {
 		DescriptionOfParameter[] parameters = new DescriptionOfParameter[2];
-		parameters[0] = new DescriptionOfParameter("Minsup", "(e.g. 2 transactions)", Integer.class, false);
+		parameters[0] = new DescriptionOfParameter("Minsup (%)", "(e.g. 0.4)", Double.class, false);
 		parameters[1] = new DescriptionOfParameter("Show transaction ids?", "(default: false)", Boolean.class, true);
 		return parameters;
 	}

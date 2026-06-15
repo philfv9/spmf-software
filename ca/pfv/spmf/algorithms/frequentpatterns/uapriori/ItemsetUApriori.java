@@ -73,7 +73,7 @@ public class ItemsetUApriori{
 	 * Add an item to that itemset
 	 * @param value the item to be added
 	 */
-	void addItem(ItemUApriori value){
+	public void addItem(ItemUApriori value){
 			items.add(value);
 	}
 	
@@ -116,13 +116,25 @@ public class ItemsetUApriori{
 	/**
 	 * Get a string representation of the items in this itemset.
 	 */
+//	public String toString(){  // Before version 2.66 of SPMF we saved the probabilities of items in the output file
+//		StringBuilder r = new StringBuilder ();
+//		for(ItemUApriori attribute : items){
+//			r.append(attribute.toString());
+//			r.append(' ');
+//		}
+//		return r.toString();
+//	}
+	/**
+	 * Get a string representation of the items in this itemset.
+	 * Items are listed as space-separated integers without probabilities.
+	 */
 	public String toString(){
-		StringBuilder r = new StringBuilder ();
-		for(ItemUApriori attribute : items){
-			r.append(attribute.toString());
-			r.append(' ');
-		}
-		return r.toString();
+	    StringBuilder r = new StringBuilder();
+	    for(ItemUApriori attribute : items){
+	        r.append(attribute.getId());
+	        r.append(' ');
+	    }
+	    return r.toString();
 	}
 
 	/**

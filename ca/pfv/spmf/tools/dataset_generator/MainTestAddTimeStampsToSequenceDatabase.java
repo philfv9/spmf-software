@@ -13,6 +13,8 @@ package ca.pfv.spmf.tools.dataset_generator;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove the copyright and license information.
 */
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;

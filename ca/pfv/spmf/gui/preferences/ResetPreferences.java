@@ -19,16 +19,24 @@ package ca.pfv.spmf.gui.preferences;
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * The main method of this class reset the input/output file paths
- * that are stored in the registry by the GUI version of SPMF 
- * (This class is intended for developers only).
- * 
+ * The main method of this class resets all the input/output file paths and
+ * other preferences that are stored in the registry by the GUI version of SPMF.
+ * This includes clearing the recent input-file and output-file lists that are
+ * maintained by {@link PreferencesManager}.
+ *
+ * <p>This class is intended for developers only.</p>
+ *
  * @author Philippe Fournier-Viger
  */
- class ResetPreferences {
+class ResetPreferences {
 
-	public static void main(String[] args) {
-		PreferencesManager.getInstance().resetPreferences();
-	}
-
+    /**
+     * Resets all SPMF GUI preferences to their default values, including the
+     * recent input-file and output-file lists.
+     *
+     * @param args command-line arguments (ignored)
+     */
+    public static void main(String[] args) {
+        PreferencesManager.getInstance().resetPreferences();
+    }
 }

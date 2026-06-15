@@ -67,6 +67,8 @@ import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright, authorship and license information.
  */
 
 /**
@@ -75,7 +77,17 @@ import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
  * separate classes: - PatternFileReader: handles file I/O and parsing -
  * ContrastEngine: computes contrast patterns - ContrastExporter: exports
  * results to various formats
- * 
+ *
+ * <p>The analyzer can be launched in two ways:</p>
+ * <ul>
+ *   <li>With no pre-loaded file — the user browses for both File A and
+ *       File B manually.</li>
+ *   <li>With a pre-loaded File A path supplied via the constructor — File A
+ *       is loaded automatically on startup and the user only needs to supply
+ *       File B.  This mode is used when the window is opened from the
+ *       {@code OutputPanel} "Contrast with..." button.</li>
+ * </ul>
+ *
  * @author Philippe Fournier-Viger
  */
 public class PatternDiffAnalyzer extends JFrame {
@@ -95,8 +107,7 @@ public class PatternDiffAnalyzer extends JFrame {
 	/** Button to show instructions when hidden */
 	private JButton btnShowInstructions;
 
-	// ==================== UI Components - Tab 1: File Selection
-	// ====================
+	// ==================== UI Components - Tab 1: File Selection ====================
 	/** Text field for file 1 path */
 	private JTextField textFieldFile1;
 	/** Table for displaying file 1 patterns */
@@ -111,8 +122,7 @@ public class PatternDiffAnalyzer extends JFrame {
 	/** Label showing file 2 pattern count */
 	private JLabel labelFile2Count;
 
-	// ==================== UI Components - Tab 2: Contrast Options
-	// ====================
+	// ==================== UI Components - Tab 2: Contrast Options ====================
 	/** Combo box for selecting measure (shared for both files) */
 	private JComboBox<String> comboMeasure;
 	/** Combo box for contrast method selection */
@@ -158,6 +168,13 @@ public class PatternDiffAnalyzer extends JFrame {
 	/** Current contrast results */
 	private List<ContrastResult> contrastResults;
 
+	/**
+	 * Optional path for File A supplied at construction time (may be {@code null}).
+	 * When non-null the file is loaded automatically after the UI is built so
+	 * the user immediately sees File A populated and only has to choose File B.
+	 */
+	private final String preloadedFile1Path;
+
 	// ==================== Services ====================
 	/** File reader service */
 	private final GenericPatternFileReader fileReader;
@@ -168,7 +185,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Create the map of method descriptions.
-	 * 
+	 *
 	 * @return the method descriptions map
 	 */
 	private static Map<String, String> createMethodDescriptions() {
@@ -225,17 +242,38 @@ public class PatternDiffAnalyzer extends JFrame {
 	}
 
 	/**
-	 * Constructor - creates and displays the Contrast Pattern Comparator window.
-	 * 
-	 * @param runAsStandaloneProgram if the viewer is run as a standalone program.
+	 * Constructor — creates the window with no pre-loaded file.
+	 * Both File A and File B must be selected manually by the user.
+	 *
+	 * @param runAsStandaloneProgram if {@code true} the JVM exits when the
+	 *                               window is closed
 	 */
 	public PatternDiffAnalyzer(boolean runAsStandaloneProgram) {
+		this(runAsStandaloneProgram, null);
+	}
+
+	/**
+	 * Constructor — creates the window and optionally pre-loads a file as
+	 * File A (File 1).
+	 *
+	 * <p>When {@code fileAPath} is non-null and refers to an existing file,
+	 * that file is loaded automatically into the File A panel once the UI has
+	 * been fully constructed.  The user then only needs to browse for File B
+	 * and run the comparison.</p>
+	 *
+	 * @param runAsStandaloneProgram if {@code true} the JVM exits when the
+	 *                               window is closed
+	 * @param fileAPath              optional path for File A; {@code null}
+	 *                               means no pre-loading
+	 */
+	public PatternDiffAnalyzer(boolean runAsStandaloneProgram, String fileAPath) {
 
 		if (runAsStandaloneProgram) {
 			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		}
 
-
+		// Store the pre-loaded path so initializeComponents() can use it
+		this.preloadedFile1Path = fileAPath;
 
 		// Initialize services
 		this.fileReader = new GenericPatternFileReader();
@@ -247,6 +285,16 @@ public class PatternDiffAnalyzer extends JFrame {
 		initializeComponents();
 		setupEventHandlers();
 		finalizeWindow();
+
+		// If a file path was supplied, load it now that the UI is ready.
+		// We do this on the EDT via invokeLater so the window is fully
+		// rendered before any file-read dialog or error message can appear.
+		if (preloadedFile1Path != null && !preloadedFile1Path.trim().isEmpty()) {
+			javax.swing.SwingUtilities.invokeLater(() -> {
+				textFieldFile1.setText(preloadedFile1Path);
+				loadFile(1);
+			});
+		}
 	}
 
 	// ========================================================================
@@ -262,7 +310,7 @@ public class PatternDiffAnalyzer extends JFrame {
 		setMinimumSize(new Dimension(900, 600));
 		setLocationRelativeTo(null);
 		getContentPane().setLayout(new BorderLayout(5, 5));
-		
+
 		Image icon = new ImageIcon(
 			    getClass().getResource("/ca/pfv/spmf/gui/icons/viewdatatwice24.png")
 			).getImage();
@@ -307,7 +355,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Create the instructions panel at the top of the window.
-	 * 
+	 *
 	 * @return the instructions panel
 	 */
 	private JPanel createInstructionsPanel() {
@@ -342,12 +390,14 @@ public class PatternDiffAnalyzer extends JFrame {
 
 		contentPanel.add(headerPanel, BorderLayout.NORTH);
 
-		// Instructions text
+		// Instructions text — note that when a file is pre-loaded the user
+		// can skip Step 1 for File A as it is already populated.
 		JLabel instructionsLabel = new JLabel("<html><div style='margin-top: 5px;'>"
 				+ "<b>Step 1:</b> In the 'Select Files' tab, load two pattern files (File A and File B) by clicking 'Browse...'<br>"
 				+ "<b>Step 2:</b> Switch to the 'Compute Contrast' tab to configure the analysis.<br>"
 				+ "<b>Step 3:</b> Select a measure (e.g., support) and choose a contrast method with threshold.<br>"
-				+ "<b>Step 4:</b> Click 'Compute Contrast Patterns' and review/export the results." + "</div></html>");
+				+ "<b>Step 4:</b> Click 'Compute Contrast Patterns' and review/export the results."
+				+ "</div></html>");
 		instructionsLabel.setFont(instructionsLabel.getFont().deriveFont(12f));
 		contentPanel.add(instructionsLabel, BorderLayout.CENTER);
 
@@ -378,7 +428,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Create the file selection tab (Tab 1).
-	 * 
+	 *
 	 * @return the file selection panel
 	 */
 	private JPanel createFileSelectionTab() {
@@ -407,7 +457,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Create a file loading panel for either file 1 or file 2.
-	 * 
+	 *
 	 * @param fileNumber 1 or 2
 	 * @return the file panel
 	 */
@@ -466,7 +516,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Create the contrast computation tab (Tab 2).
-	 * 
+	 *
 	 * @return the contrast tab panel
 	 */
 	private JPanel createContrastTab() {
@@ -493,7 +543,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Create the contrast options panel.
-	 * 
+	 *
 	 * @return the options panel
 	 */
 	private JPanel createOptionsPanel() {
@@ -596,7 +646,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Create the results panel.
-	 * 
+	 *
 	 * @return the results panel
 	 */
 	private JPanel createResultsPanel() {
@@ -743,7 +793,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Adjust column widths based on content.
-	 * 
+	 *
 	 * @param table the table to adjust
 	 */
 	private void adjustColumnWidths(JTable table) {
@@ -809,7 +859,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Browse for and load a file.
-	 * 
+	 *
 	 * @param fileNumber 1 or 2
 	 */
 	private void openFile(int fileNumber) {
@@ -852,7 +902,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Load a pattern file.
-	 * 
+	 *
 	 * @param fileNumber 1 or 2
 	 */
 	private void loadFile(int fileNumber) {
@@ -892,7 +942,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Update file panel with loaded data.
-	 * 
+	 *
 	 * @param table       the table to update
 	 * @param patternData the loaded pattern data
 	 * @param labelCount  the count label
@@ -957,17 +1007,17 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Build ContrastOptions from current UI settings.
-	 * 
+	 *
 	 * @param measure measure name for both files
 	 * @return the built options
 	 */
 	private ContrastOptions buildContrastOptions(String measure) {
 		ContrastOptions.Builder builder = ContrastOptions.builder()
-				.contrastMethod((String) comboContrastMethod.getSelectedItem()).matchingMethod("Exact itemset match") // Default
-																														// matching
-																														// method
-				.measureName1(measure).measureName2(measure).treatMissingAsZero(true); // Default to true since checkbox
-																						// is removed
+				.contrastMethod((String) comboContrastMethod.getSelectedItem())
+				.matchingMethod("Exact itemset match") // Default matching method
+				.measureName1(measure)
+				.measureName2(measure)
+				.treatMissingAsZero(true); // Default to true since checkbox is removed
 
 		// Parse threshold
 		try {
@@ -1061,7 +1111,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Show an error message dialog.
-	 * 
+	 *
 	 * @param message the message
 	 */
 	private void showError(String message) {
@@ -1070,7 +1120,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Show a warning message dialog.
-	 * 
+	 *
 	 * @param message the message
 	 * @param title   the dialog title
 	 */
@@ -1080,7 +1130,7 @@ public class PatternDiffAnalyzer extends JFrame {
 
 	/**
 	 * Show an information message dialog.
-	 * 
+	 *
 	 * @param message the message
 	 * @param title   the dialog title
 	 */
@@ -1139,5 +1189,4 @@ public class PatternDiffAnalyzer extends JFrame {
 			return c;
 		}
 	}
-
 }

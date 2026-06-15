@@ -5,7 +5,8 @@ import java.io.IOException;
 import ca.pfv.spmf.algorithmmanager.AlgorithmType;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
-import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTIDClose.AlgoAprioriTIDClose;
+import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_fast.AlgoAprioriTIDClose_FAST;
+import ca.pfv.spmf.algorithms.frequentpatterns.aprioriTID_simple.AlgoAprioriTIDClose;
 import ca.pfv.spmf.input.transaction_database_list_integers.TransactionDatabase;
 /* This file is copyright (c) 2008-2016 Philippe Fournier-Viger
 * 
@@ -60,13 +61,13 @@ public class DescriptionAlgoAprioriTIDClose extends DescriptionOfAlgorithm {
 
 		TransactionDatabase database = new TransactionDatabase();
 		database.loadFile(inputFile);
-		AlgoAprioriTIDClose algo = new AlgoAprioriTIDClose();
+		AlgoAprioriTIDClose_FAST algo = new AlgoAprioriTIDClose_FAST();
 		
 		if (parameters.length >=2 && "".equals(parameters[1]) == false) {
 			algo.setShowTransactionIdentifiers(getParamAsBoolean(parameters[1]));
 		}
 		
-		algo.runAlgorithm(database, minsup, outputFile);
+		algo.runAlgorithm(inputFile, outputFile, minsup);
 		algo.printStats();
 	}
 

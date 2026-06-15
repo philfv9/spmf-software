@@ -1,20 +1,17 @@
 package ca.pfv.spmf.gui.workflow_editor;
 
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Vector;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -24,11 +21,14 @@ import javax.swing.JTextField;
 import ca.pfv.spmf.algorithmmanager.AlgorithmManager;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
+import ca.pfv.spmf.gui.AlgorithmSelectorDialog;
 import ca.pfv.spmf.gui.DialogSelectAlgorithmParameter;
-import ca.pfv.spmf.gui.MainWindow;
+import ca.pfv.spmf.gui.RecentFilesPopup;
 import ca.pfv.spmf.gui.parameterselectionpanel.ParameterSelectionPanel;
+import ca.pfv.spmf.gui.preferences.PreferencesManager;
+
 /*
- * Copyright (c) 2022 Philippe Fournier-Viger
+ * Copyright (c) 2024 Philippe Fournier-Viger
  *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
@@ -44,564 +44,742 @@ import ca.pfv.spmf.gui.parameterselectionpanel.ParameterSelectionPanel;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Do not remove copyright and license information.
+ */
+
+/**
+ * Information panel for the branching workflow editor that displays and allows editing of the currently selected node.
+ *
+ * @author Philippe Fournier-Viger
  */
 @SuppressWarnings("serial")
-/**
- * This class is the information panel of the workflow editor. It is used to display information about
- * the currently selected node of the workflow.  
- * The information panel displays information about the currently selected node based on the type of node that is selected.
- * The selected node can be either an input file node, an algorithm node or an output file node.
- * 
- * @author Philippe Fournier-Viger
- * @see WorkflowEditorWindow
- */
 class InformationPanel extends JPanel implements DrawPanelListener {
-	/** The JFrame containing the information panel */
-	JFrame parent = null;
-	
-	/** The list of all groups currently displayed by the draw panel of the workflow editor*/
-	List<GroupOfNodes> allGroups = null;
-	
-	/** The currently selected node, displayed by the information panel */
-	Node currentNode = null;
-
-	// ======= Output File panel =======
-	/** For output node: a text field to display its name */
-	private JTextField textFieldFileNameOutput;
-	/** For output node: a panel to display it */
-	private JPanel nodeFileOutputPanel;
-	/** For output node: a button to select the output file */
-	private JButton buttonOutput;
-
-	// ======= Input File panel =======
-	/** For input node: a text field to display its name */
-	private JTextField textFieldFileNameInput;
-	/** For input node: a panel to display it */
-	private JPanel nodeFileInputPanel;
-	/** For input node: a button to select the input file */
-	private JButton buttonInput;
-	/** For input node: a button to view the input file */
-	JButton buttonViewInput;
-
-	// ======= Algorithm node =======
-	/** For algorithm node: a panel to display it */
-	private JPanel nodeAlgorithmPanel;
-	/** For algorithm node: a panel to display and let the user set the parameter values*/
-	private ParameterSelectionPanel parameterSelectionPanel;
-	/** For algorithm node: The JComboBox to select an algorithm */
-	private JComboBox<String> comboBoxAlgorithms;
-	/** For algorithm node: a  button to open the example from the documentation */
-	private JButton buttonExample;
-	/** For algorithm node: a combobox rendered that is used for displaying the list of algorithms */
-	WorkflowAlgoBoxRenderer comboBoxRenderer = null;
-
-	/**
-	 * Constructor of the information panel
-	 * @param parent the parent JFrame from the workflow editor
-	 * @throws Exception if something bad happens
-	 */
-	public InformationPanel(JFrame parent) throws Exception {
-		super();
-		this.parent = parent;
-
-		createNodeInputFilePanel();
-		add(nodeFileInputPanel);
-		nodeFileInputPanel.setVisible(false);
-
-		createNodeOutputFilePanel();
-		add(nodeFileOutputPanel);
-		nodeFileOutputPanel.setVisible(false);
-
-		createNodeAlgorithmPanel();
-		add(nodeAlgorithmPanel);
-		nodeAlgorithmPanel.setVisible(false);
-	}
-
-	/**
-	 *  Initialize the panel for displaying nodes of type "okutput file"
-	 */
-	private void createNodeOutputFilePanel() {
-		nodeFileOutputPanel = new JPanel();
-		nodeFileOutputPanel.setLayout(new GridBagLayout());
-		GridBagConstraints gbc = new GridBagConstraints();
-
-		// For information about INPUT node:
-		JLabel labelFileName = new JLabel("File:");
-		textFieldFileNameOutput = new JTextField(30);
-		textFieldFileNameOutput.setEditable(false);
-
-		// Set the initial gridx and gridy to 0,0
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		// Set the anchor to north
-		gbc.anchor = GridBagConstraints.NORTHWEST;
-		// Set the weighty to 1 to allow vertical spacing
-		gbc.weighty = 0;
-
-		// Add the label to the information panel
-		nodeFileOutputPanel.add(labelFileName, gbc);
-
-		// Increment the gridx for the next component
-		gbc.gridx = 1;
-		gbc.gridy = 1;
-		// Add the text field to the information panel
-		nodeFileOutputPanel.add(textFieldFileNameOutput, gbc);
-
-		buttonOutput = new JButton("...");
-		buttonOutput.setToolTipText("Select a file");
-		gbc.anchor = GridBagConstraints.NORTHWEST;
-		gbc.fill = GridBagConstraints.NONE;
-		gbc.gridx = 2;
-		gbc.gridy = 1;
-		nodeFileOutputPanel.add(buttonOutput, gbc);
-
-		// Add a filler component with weighty = 1.0 at the end to push everything up
-		gbc.gridx = 0;
-		gbc.gridy = GridBagConstraints.RELATIVE;
-		gbc.weighty = 1;
-		nodeFileOutputPanel.add(Box.createVerticalGlue(), gbc);
-
-		buttonOutput.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				((NodeFileOutput) currentNode).askUserToReplaceFile(parent);
-				notifyNodeSelected(currentNode);
-				textFieldFileNameOutput.setText(currentNode.name);
-				parent.repaint();
-			}
-		});
-	}
-
-	/**
-	 *  Initialize the panel for displaying nodes of type "input file"
-	 */
-	private void createNodeInputFilePanel() {
-		nodeFileInputPanel = new JPanel();
-		nodeFileInputPanel.setLayout(new GridBagLayout());
-		GridBagConstraints gbc = new GridBagConstraints();
-
-		// For information about INPUT node:
-		JLabel labelFileName = new JLabel("File:");
-		textFieldFileNameInput = new JTextField(30);
-		textFieldFileNameInput.setEditable(false);
-
-		// Set the initial gridx and gridy to 0,0
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		// Set the anchor to north
-		gbc.anchor = GridBagConstraints.NORTHWEST;
-		// Set the weighty to 1 to allow vertical spacing
-		gbc.weighty = 0;
-
-		// Add the label to the information panel
-		nodeFileInputPanel.add(labelFileName, gbc);
-
-		// Increment the gridx for the next component
-		gbc.gridx = 1;
-		gbc.gridy = 1;
-		// Add the text field to the information panel
-		nodeFileInputPanel.add(textFieldFileNameInput, gbc);
-
-		buttonInput = new JButton("...");
-		buttonInput.setToolTipText("Choose a filename");
-		gbc.anchor = GridBagConstraints.NORTHWEST;
-		gbc.fill = GridBagConstraints.NONE;
-		gbc.gridx = 2;
-		gbc.gridy = 1;
-		nodeFileInputPanel.add(buttonInput, gbc);
-
-		buttonViewInput = new JButton("View",
-				new ImageIcon(MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/viewdata20.png")));
-		buttonViewInput.setToolTipText("View the input file");
-		buttonViewInput.setEnabled(false);
-		gbc.anchor = GridBagConstraints.NORTHWEST;
-		gbc.fill = GridBagConstraints.NONE;
-		gbc.gridx = 3;
-		gbc.gridy = 1;
-		nodeFileInputPanel.add(buttonViewInput, gbc);
-
-		// Add a filler component with weighty = 1.0 at the end to push everything up
-		gbc.gridx = 0;
-		gbc.gridy = GridBagConstraints.RELATIVE;
-		gbc.weighty = 1;
-		nodeFileInputPanel.add(Box.createVerticalGlue(), gbc);
-
-		buttonInput.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				((NodeFileInput) currentNode).askUserToChooseFile(parent);
-				notifyNodeSelected(currentNode);
-				textFieldFileNameInput.setText(currentNode.name);
-				if (currentNode.name != null && "".equals(currentNode.name) == false) {
-					buttonViewInput.setEnabled(true);
-				}
-				parent.repaint();
-			}
-		});
-
-		buttonViewInput.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				openInputFileWithViewer(((NodeFileInput) currentNode).inputFile);
-			}
-		});
-	}
-
-	/**
-	 * Open the selected input file with the corresponding viewer tool available in
-	 * SPMF
-	 */
-	protected void openInputFileWithViewer(String inputFile) {
-		try {
-			if (inputFile == null || "".equals(inputFile)) {
-				JOptionPane.showMessageDialog(null,
-						"This button is for viewing an input file but none is selected. Please first, click on the \"...\" button to select an input file.",
-						"Error", JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-			String algorithmName = currentNode.group.nodeAlgorithm.name;
-			DescriptionOfAlgorithm algorithm = AlgorithmManager.getInstance().getDescriptionOfAlgorithm(algorithmName);
-			DescriptionOfAlgorithm viewer = AlgorithmManager.getInstance().getViewerFor(algorithm.getInputFileTypes());
-
-			String[] params;
-			if (viewer.getParametersDescription().length > 0) {
-				params = new String[viewer.getParametersDescription().length];
-				for (int i = 0; i < viewer.getParametersDescription().length; i++) {
-					DescriptionOfParameter paramDescription = viewer.getParametersDescription()[i];
-					params[i] = askUserValueForParameter(paramDescription);
-				}
-			} else {
-				params = new String[] {};
-			}
-			viewer.runAlgorithm(params, inputFile, null);
-		} catch (IOException e) {
-			JOptionPane.showMessageDialog(null,
-					"The output file failed to open with the default application. "
-							+ "\n This error occurs if there is no default application on your system "
-							+ "for opening the output file or the application failed to start. " + "\n\n"
-							+ "To fix the problem, consider changing the extension of the output file to .txt."
-							+ "\n\n ERROR MESSAGE = " + e.toString(),
-					"Error", JOptionPane.ERROR_MESSAGE);
-		} catch (SecurityException e) {
-			JOptionPane.showMessageDialog(null,
-					"A security error occured while trying to open the output file. ERROR MESSAGE = " + e.toString(),
-					"Error", JOptionPane.ERROR_MESSAGE);
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null,
-					"An error occured while opening the output file. ERROR MESSAGE = " + e.toString(), "Error",
-					JOptionPane.ERROR_MESSAGE);
-		}
-	}
-
-	/**
-	 * A method that asks the user to set a value for a parameter using a dialog
-	 * box.
-	 * 
-	 * @param paramDescription the description of the parameter to be set
-	 * @return the user chosen value as a string
-	 */
-	private String askUserValueForParameter(DescriptionOfParameter paramDescription) {
-		// create an instance of the dialog class
-		DialogSelectAlgorithmParameter dialog = new DialogSelectAlgorithmParameter(paramDescription, parent);
-		// return the user input from the dialog
-		return dialog.getUserInput();
-	}
-
-	/**
-	 *  Initialize the panel for displaying nodes of type "algorithm"
-	 */
-	private void createNodeAlgorithmPanel() throws Exception {
-		nodeAlgorithmPanel = new JPanel();
-		nodeAlgorithmPanel.setLayout(new GridBagLayout());
-
-		GridBagConstraints gbc = new GridBagConstraints();
-
-		// Label algorithm name
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		gbc.anchor = GridBagConstraints.NORTHWEST;
-		gbc.weighty = 0;
-		nodeAlgorithmPanel.add(new JLabel("Name:"), gbc);
-
-		// Textfield algorithm name
-		gbc.gridx = 1;
-		gbc.gridy = 1;
-
-		comboBoxAlgorithms = new JComboBox<>(new Vector<>());
-		comboBoxAlgorithms.setMaximumRowCount(30);
-		comboBoxAlgorithms.addItem("");
-		// Assuming AlgorithmManager and showTools, showAlgorithms, showExperimentTools
-		// are defined elsewhere
-		List<String> algorithmList = AlgorithmManager.getInstance().getListOfAlgorithmsAsString(true, true, true, true, true);
-		for (String algorithmOrCategoryName : algorithmList) {
-			comboBoxAlgorithms.addItem(algorithmOrCategoryName);
-		}
-		comboBoxRenderer = new WorkflowAlgoBoxRenderer(comboBoxAlgorithms);
-		comboBoxAlgorithms.setRenderer(comboBoxRenderer);
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.anchor = GridBagConstraints.NORTHWEST;
-		gbc.gridwidth = 3;
-		nodeAlgorithmPanel.add(comboBoxAlgorithms, gbc);
-
-		buttonExample = new JButton("?");
-		buttonExample.setEnabled(false);
-		gbc.fill = GridBagConstraints.NONE;
-		gbc.anchor = GridBagConstraints.NORTHWEST;
-		gbc.gridx = 4;
-		gbc.gridy = 1;
-		nodeAlgorithmPanel.add(buttonExample, gbc);
-
-		// Label parameters
-		gbc.gridx = 0;
-		gbc.gridy = 2;
-		gbc.weighty = 0;
-		nodeAlgorithmPanel.add(new JLabel("Parameters:"), gbc);
-
-		// Parameters table
-		gbc.gridx = 1;
-		gbc.gridy = 3;
-		gbc.weighty = 0;
-		parameterSelectionPanel = new ParameterSelectionPanel(null);
-		nodeAlgorithmPanel.add(parameterSelectionPanel, gbc);
-
-		// What to do when the user choose an algorithm :
-		comboBoxAlgorithms.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent evt) {
-				if (evt.getStateChange() == ItemEvent.SELECTED) {
-					updateUserInterfaceForAlgorithm(evt.getItem().toString(), null, true);
-				}
-			}
-
-		});
-
-		buttonExample.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				// When the user clicks on the "?",
-				// we open the webpage of the selected algorithm.
-				String choice = (String) comboBoxAlgorithms.getSelectedItem();
-				try {
-					openHelpWebPageForAlgorithm(choice);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
-
-	/**
-	 * This method show the help webpage for a given algorithm in the default
-	 * browser of the user.
-	 * 
-	 * @param algorithmName the algorithm name (e.g. "PrefixSpan")
-	 * @throws Exception
-	 */
-	private void openHelpWebPageForAlgorithm(String algorithmName) throws Exception {
-		DescriptionOfAlgorithm algorithm = AlgorithmManager.getInstance().getDescriptionOfAlgorithm(algorithmName);
-		if (algorithm != null) {
-			try {
-				java.awt.Desktop.getDesktop().browse(java.net.URI.create(algorithm.getURLOfDocumentation()));
-			} catch (java.io.IOException e) {
-				System.out.println(e.getMessage());
-			}
-		}
-	}
-
-	/**
-	 * Update the Example button after an algorithm is selected
-	 * 
-	 * @param algorithm the algorithm
-	 */
-	private void updateExampleButton(DescriptionOfAlgorithm algorithm) {
-		boolean visible = algorithm != null;
-		buttonExample.setEnabled(visible);
-	}
-
-	@Override
-	public void notifyNodeSelected(Node node) {
-		if (node == currentNode) {
-			return;
-		} else {
-			saveInformation(currentNode);
-		}
-		this.currentNode = node;
-
-		boolean isOutputFile = node != null && node instanceof NodeFileOutput;
-		boolean isInputFile = node != null && node instanceof NodeFileInput;
-		boolean isAlgorithm = node != null && node instanceof NodeAlgorithm;
-
-		nodeFileOutputPanel.setVisible(isOutputFile);
-		nodeFileInputPanel.setVisible(isInputFile);
-		if (isAlgorithm) {
-			nodeAlgorithmPanel.setVisible(true);
-			updateUserInterfaceForAlgorithm(node.name, ((NodeAlgorithm) node).parameters, false);
-		} else {
-			nodeAlgorithmPanel.setVisible(false);
-		}
-
-		if (isOutputFile) {
-			textFieldFileNameOutput.setText(currentNode.name);
-		}
-
-		if (node == null) {
-			// Set the text of the labels to the node information
-			setBorder(BorderFactory.createTitledBorder(""));
-			return;
-		} else {
-			// Set the text of the labels to the node information
-			setBorder(BorderFactory.createTitledBorder(node.getType()));
-		}
-	}
-
-	/**
-	 * Method to update the items in the JComboBox based on an algorithm
-	 * @param group the group of nodes
-	 * @throws Exception if something happens
-	 */
-	public void updateComboBoxItems(GroupOfNodes group) throws Exception {
-		// Find the index of the current group
-		int index = allGroups.indexOf(group);
-
-		int cardinality = comboBoxRenderer.cardinality;
-		comboBoxRenderer.suggested.set(0, cardinality, true);
-
-		if (allGroups.size() >= 1 && index > 0) {
-			
-			GroupOfNodes previousGroup = allGroups.get(index - 1);
-			
-			DescriptionOfAlgorithm previousAlgorithm = AlgorithmManager.getInstance()
-					.getDescriptionOfAlgorithm(previousGroup.nodeAlgorithm.name);
-			
-			String[] outputTypes = previousAlgorithm.getOutputFileTypes();
-
-			if (outputTypes == null) {
-				comboBoxRenderer.suggested.set(0, cardinality, false);
-			} else {
-				for (int i = 1; i < comboBoxAlgorithms.getItemCount(); i++) {
-					String algo = comboBoxAlgorithms.getItemAt(i);
-
-					if ("Open_text_file_with_SPMF_text_editor".equals(algo) || "Open_text_file_with_system_text_editor".equals(algo) ||
-							"Open_text_file_with_pattern_viewer".equals(algo)) {
-						comboBoxRenderer.suggested.set(i, true);
-					}else if (algo.startsWith(" --")) {
-						comboBoxRenderer.suggested.set(i, true);
-					}else if ("Visualize_With_ItemItemset_Matrix".equals(algo)){
-						// Check if the itemset matrix viewer should be added
-						for(String type: outputTypes) {
-							if(type.contains("itemset")) {
-								comboBoxRenderer.suggested.set(i, true);
-								break;
-							}
-						}
-					}else{
-						DescriptionOfAlgorithm algorithmCandidate = AlgorithmManager.getInstance()
-								.getDescriptionOfAlgorithm(algo);
-						String[] inputTypes = algorithmCandidate.getInputFileTypes();
-						if (inputTypes == null) {
-							comboBoxRenderer.suggested.set(i, cardinality, false);
-						} else {
-//							String inputMainType = inputTypes[inputTypes.length - 1];
-							if (!hasCommonType(outputTypes, inputTypes)) {
-//							if (!inputMainType.contains(mainOutputType)) {
-								comboBoxRenderer.suggested.set(i, false);
-							}else {
-								comboBoxRenderer.suggested.set(i, true);
-							}
-
-						}
-					}
-
-				}
-			}
-		}
-	}
-
-	/**
-	 * Check if there is something in common between an array of input types and an array of output types
-	 * @param outputTypes the array of output types
-	 * @param inputTypes the array of input types
-	 * @return true if there is something in common
-	 */
-	public boolean hasCommonType(String[] outputTypes, String[] inputTypes) {
-		for (String inputType : inputTypes) {
-			for (String outputType : outputTypes) {
-				if (!"Patterns".equals(outputType) &&  ! "Database of instances".equals(outputType)) {
-					if (outputType.equals(inputType)) {
-						return true;
-					}
-				}
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Uptdate the user interface for a given algorithm
-	 * @param algorithmName the algorithm name
-	 * @param parameters the list of parameters of the algorithm
-	 * @param comboBoxHasChanged Set it to true if the combobbox of algorithms was changed. otherwise false.
-	 */
-	private void updateUserInterfaceForAlgorithm(String algorithmName, String[] parameters,
-			boolean comboBoxHasChanged) {
-		// We need to update the user interface:
-		try {
-			DescriptionOfAlgorithm algorithm = AlgorithmManager.getInstance().getDescriptionOfAlgorithm(algorithmName);
-
-			boolean hasOutput = algorithm != null && algorithm.getOutputFileTypes() != null;
-			boolean hasInput = algorithm != null && algorithm.getInputFileTypes() != null;
-
-			updateComboBoxItems(currentNode.group);
-
-			if (comboBoxHasChanged == false) {
-				if (algorithm == null) {
-					comboBoxAlgorithms.setSelectedIndex(0);
-				} else {
-					comboBoxAlgorithms.setSelectedItem(algorithmName);
-				}
-			}
-
-			updateExampleButton(algorithm);
-			updateParameterPanel(algorithm, parameters);
-			((NodeAlgorithm) currentNode).updateAlgorithmChoice(algorithmName, hasOutput, hasInput);
-			parent.repaint();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Save the information of the current node from the information panel to the node itself.
-	 * @param currentNode2 the current node
-	 */
-	void saveInformation(Node currentNode2) {
-//		boolean isOutputFile = currentNode instanceof NodeFileOutput;
-//		boolean isInputFile = currentNode instanceof NodeFileInput;
-		boolean isAlgorithm = currentNode instanceof NodeAlgorithm;
-
-		if (isAlgorithm) {
-			final String[] parameters = parameterSelectionPanel.getParameterValues();
-			((NodeAlgorithm) currentNode).parameters = parameters;
-		}
-	}
-
-	/**
-	 * Update the parameter panel after an algorithm is selected
-	 * 
-	 * @param algorithm  the algorithm
-	 * @param parameters a list of parameter values to be put in the panel or NULL
-	 *                   if they should not be updated.
-	 */
-	private void updateParameterPanel(DescriptionOfAlgorithm algorithm, String[] parameters) {
-		parameterSelectionPanel.update(algorithm);
-		parameterSelectionPanel.setParameterValues(parameters);
-	}
-
-	@Override
-	public void notifyHasOutputNode(boolean hasOutput) {
-	
-	}
-
-	@Override
-	public void notifyOfListOfGroups(List<GroupOfNodes> allGroups) {
-		this.allGroups = allGroups;
-	}
 
+    /** The parent frame (the workflow editor window). */
+    JFrame parent;
+
+    /** Reference to the draw panel, used to trigger relayout when node data changes. */
+    private final DrawPanel drawPanel;
+
+    /** All root branch nodes, used for algorithm suggestion filtering. */
+    List<BranchNode> allRoots = null;
+
+    /** The node currently displayed in the panel. */
+    Node currentNode = null;
+
+    // -----------------------------------------------------------------------
+    // Output file sub-panel
+    // -----------------------------------------------------------------------
+
+    /** Text field showing the selected output file name. */
+    private JTextField textFieldFileNameOutput;
+
+    /** Sub-panel shown when an output-file node is selected. */
+    private JPanel nodeFileOutputPanel;
+
+    /** Button to open the file chooser for the output file. */
+    private JButton buttonOutput;
+
+    /** Button to show the recent output files popup. */
+    private JButton buttonRecentOutput;
+
+    // -----------------------------------------------------------------------
+    // Input file sub-panel
+    // -----------------------------------------------------------------------
+
+    /** Text field showing the selected input file name. */
+    private JTextField textFieldFileNameInput;
+
+    /** Sub-panel shown when an input-file node is selected. */
+    private JPanel nodeFileInputPanel;
+
+    /** Button to open the file chooser for the input file. */
+    private JButton buttonInput;
+
+    /** Button to show the recent input files popup. */
+    private JButton buttonRecentInput;
+
+    /** Button to open the input file in a viewer. */
+    JButton buttonViewInput;
+
+    // -----------------------------------------------------------------------
+    // Algorithm sub-panel
+    // -----------------------------------------------------------------------
+
+    /** Sub-panel shown when an algorithm node is selected. */
+    private JPanel nodeAlgorithmPanel;
+
+    /** Panel for selecting algorithm parameters. */
+    private ParameterSelectionPanel parameterSelectionPanel;
+
+    /** Read-only text field showing the selected algorithm name. */
+    private JTextField textFieldAlgorithmName;
+
+    /** Button to open the algorithm selector dialog. */
+    private JButton buttonSelectAlgorithm;
+
+    /** Button to show the recently used algorithms popup, filtered to valid suggestions. */
+    private JButton buttonRecentAlgorithm;
+
+    /** Button to open the documentation for the selected algorithm. */
+    private JButton buttonExample;
+
+    // -----------------------------------------------------------------------
+    // Constructor
+    // -----------------------------------------------------------------------
+
+    /**
+     * Creates a new information panel linked to the given draw panel.
+     *
+     * @param parent    the owner frame.
+     * @param drawPanel the draw panel to refresh when node data changes.
+     * @throws Exception if algorithm manager initialisation fails.
+     */
+    InformationPanel(JFrame parent, DrawPanel drawPanel) throws Exception {
+        super();
+        this.parent    = parent;
+        this.drawPanel = drawPanel;
+
+        createNodeInputFilePanel();
+        add(nodeFileInputPanel);
+        nodeFileInputPanel.setVisible(false);
+
+        createNodeOutputFilePanel();
+        add(nodeFileOutputPanel);
+        nodeFileOutputPanel.setVisible(false);
+
+        createNodeAlgorithmPanel();
+        add(nodeAlgorithmPanel);
+        nodeAlgorithmPanel.setVisible(false);
+    }
+
+    // -----------------------------------------------------------------------
+    // Sub-panel builders
+    // -----------------------------------------------------------------------
+
+    /**
+     * Builds the sub-panel shown when an output-file node is selected.
+     */
+    private void createNodeOutputFilePanel() {
+        nodeFileOutputPanel = new JPanel();
+        nodeFileOutputPanel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        JLabel labelFileName = new JLabel("File:");
+        textFieldFileNameOutput = new JTextField(30);
+        textFieldFileNameOutput.setEditable(false);
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST; gbc.weighty = 0;
+        nodeFileOutputPanel.add(labelFileName, gbc);
+
+        gbc.gridx = 1; gbc.gridy = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1;
+        nodeFileOutputPanel.add(textFieldFileNameOutput, gbc);
+
+        buttonOutput = new JButton("Select");
+        buttonOutput.setToolTipText("Select an output file");
+        gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.gridx = 2; gbc.gridy = 1;
+        nodeFileOutputPanel.add(buttonOutput, gbc);
+
+        buttonRecentOutput = new JButton("Recent \u25BC");
+        buttonRecentOutput.setToolTipText("Show recently used output files");
+        gbc.gridx = 3; gbc.gridy = 1;
+        nodeFileOutputPanel.add(buttonRecentOutput, gbc);
+
+        gbc.gridx = 0; gbc.gridy = GridBagConstraints.RELATIVE;
+        gbc.weighty = 1;
+        nodeFileOutputPanel.add(Box.createVerticalGlue(), gbc);
+
+        buttonOutput.addActionListener(e -> {
+            ((NodeFileOutput) currentNode).askUserToReplaceFile(parent);
+            notifyNodeSelected(currentNode);
+            textFieldFileNameOutput.setText(currentNode.name);
+            saveRecentOutputFile(((NodeFileOutput) currentNode).outputFile);
+            drawPanel.relayoutAndRepaint();
+            parent.repaint();
+        });
+
+        buttonRecentOutput.addActionListener(e -> {
+            List<String> recent = PreferencesManager.getInstance().getRecentOutputFiles();
+            RecentFilesPopup.show(buttonRecentOutput, recent, path -> {
+                NodeFileOutput outNode = (NodeFileOutput) currentNode;
+                java.io.File f = new java.io.File(path);
+                outNode.name       = f.getName();
+                outNode.outputFile = path;
+                outNode.rectangle  = null;
+                textFieldFileNameOutput.setText(outNode.name);
+                drawPanel.relayoutAndRepaint();
+                parent.repaint();
+            });
+        });
+    }
+
+    /**
+     * Builds the sub-panel shown when an input-file node is selected.
+     */
+    private void createNodeInputFilePanel() {
+        nodeFileInputPanel = new JPanel();
+        nodeFileInputPanel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        JLabel labelFileName = new JLabel("File:");
+        textFieldFileNameInput = new JTextField(30);
+        textFieldFileNameInput.setEditable(false);
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST; gbc.weighty = 0;
+        nodeFileInputPanel.add(labelFileName, gbc);
+
+        gbc.gridx = 1; gbc.gridy = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1;
+        nodeFileInputPanel.add(textFieldFileNameInput, gbc);
+
+        buttonInput = new JButton("Select");
+        buttonInput.setToolTipText("Choose an input file");
+        gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.gridx = 2; gbc.gridy = 1;
+        nodeFileInputPanel.add(buttonInput, gbc);
+
+        buttonRecentInput = new JButton("Recent \u25BC");
+        buttonRecentInput.setToolTipText("Show recently used input files");
+        gbc.gridx = 3; gbc.gridy = 1;
+        nodeFileInputPanel.add(buttonRecentInput, gbc);
+
+        buttonViewInput = new JButton("View");
+        buttonViewInput.setToolTipText("View the input file");
+        buttonViewInput.setEnabled(false);
+        gbc.gridx = 4; gbc.gridy = 1;
+        nodeFileInputPanel.add(buttonViewInput, gbc);
+
+        gbc.gridx = 0; gbc.gridy = GridBagConstraints.RELATIVE;
+        gbc.weighty = 1;
+        nodeFileInputPanel.add(Box.createVerticalGlue(), gbc);
+
+        buttonInput.addActionListener(e -> {
+            ((NodeFileInput) currentNode).askUserToChooseFile(parent);
+            notifyNodeSelected(currentNode);
+            textFieldFileNameInput.setText(currentNode.name);
+            if (currentNode.name != null && !currentNode.name.isEmpty()) {
+                buttonViewInput.setEnabled(true);
+                saveRecentInputFile(((NodeFileInput) currentNode).inputFile);
+            }
+            drawPanel.relayoutAndRepaint();
+            parent.repaint();
+        });
+
+        buttonRecentInput.addActionListener(e -> {
+            List<String> recent = PreferencesManager.getInstance().getRecentInputFiles();
+            RecentFilesPopup.show(buttonRecentInput, recent, path -> {
+                NodeFileInput inNode = (NodeFileInput) currentNode;
+                java.io.File f = new java.io.File(path);
+                inNode.name      = f.getName();
+                inNode.inputFile = path;
+                inNode.rectangle = null;
+                textFieldFileNameInput.setText(inNode.name);
+                buttonViewInput.setEnabled(true);
+                drawPanel.relayoutAndRepaint();
+                parent.repaint();
+            });
+        });
+
+        buttonViewInput.addActionListener(e ->
+                openInputFileWithViewer(((NodeFileInput) currentNode).inputFile));
+    }
+
+    /**
+     * Builds the sub-panel shown when an algorithm node is selected.
+     *
+     * @throws Exception if the algorithm manager cannot be accessed.
+     */
+    private void createNodeAlgorithmPanel() throws Exception {
+        nodeAlgorithmPanel = new JPanel();
+        nodeAlgorithmPanel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST; gbc.weighty = 0;
+        nodeAlgorithmPanel.add(new JLabel("Algorithm:"), gbc);
+
+        // Build algorithm row panel (text field + Select + Recent + Guide buttons)
+        JPanel algorithmRowPanel = new JPanel(new GridBagLayout());
+        algorithmRowPanel.setOpaque(false);
+
+        textFieldAlgorithmName = new JTextField(15);
+        textFieldAlgorithmName.setEditable(false);
+        textFieldAlgorithmName.setToolTipText("Currently selected algorithm");
+
+        GridBagConstraints rowGbc = new GridBagConstraints();
+        rowGbc.gridx = 0; rowGbc.gridy = 0;
+        rowGbc.fill = GridBagConstraints.HORIZONTAL; rowGbc.weightx = 1;
+        rowGbc.anchor = GridBagConstraints.WEST;
+        algorithmRowPanel.add(textFieldAlgorithmName, rowGbc);
+
+        buttonSelectAlgorithm = new JButton("Select");
+        buttonSelectAlgorithm.setToolTipText("Open the algorithm browser");
+        rowGbc.gridx = 1; rowGbc.weightx = 0;
+        rowGbc.fill = GridBagConstraints.NONE;
+        rowGbc.insets = new java.awt.Insets(0, 4, 0, 0);
+        algorithmRowPanel.add(buttonSelectAlgorithm, rowGbc);
+
+        buttonRecentAlgorithm = new JButton("Recent \u25BC");
+        buttonRecentAlgorithm.setToolTipText("Show recently used algorithms valid for this position");
+        rowGbc.gridx = 2;
+        rowGbc.insets = new java.awt.Insets(0, 4, 0, 0);
+        algorithmRowPanel.add(buttonRecentAlgorithm, rowGbc);
+
+        buttonExample = new JButton("Guide");
+        buttonExample.setEnabled(false);
+        buttonExample.setToolTipText("Open documentation for this algorithm");
+        rowGbc.gridx = 3;
+        rowGbc.insets = new java.awt.Insets(0, 4, 0, 0);
+        algorithmRowPanel.add(buttonExample, rowGbc);
+
+        // Add algorithm row panel to main panel
+        gbc.gridx = 1; gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        nodeAlgorithmPanel.add(algorithmRowPanel, gbc);
+
+        // Parameters label
+        gbc.gridx = 0; gbc.gridy = 1; gbc.weighty = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
+        nodeAlgorithmPanel.add(new JLabel("Parameters:"), gbc);
+
+        // Parameters panel
+        parameterSelectionPanel = new ParameterSelectionPanel(null);
+        gbc.gridx = 1; gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.BOTH; gbc.weightx = 1; gbc.weighty = 1;
+        nodeAlgorithmPanel.add(parameterSelectionPanel, gbc);
+
+        buttonSelectAlgorithm.addActionListener(e -> openAlgorithmSelectorDialog());
+
+        buttonRecentAlgorithm.addActionListener(e -> {
+            try {
+                List<String> filtered = buildFilteredRecentAlgorithms();
+                if (filtered.isEmpty()) {
+                    JOptionPane.showMessageDialog(parent,
+                            "No recently used algorithms are valid for this position in the workflow.",
+                            "Recent Algorithms", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+                RecentFilesPopup.show(buttonRecentAlgorithm, filtered, algorithmName -> {
+                    if (algorithmName != null && !algorithmName.isEmpty()) {
+                        updateUserInterfaceForAlgorithm(algorithmName, null, false);
+                        saveRecentAlgorithm(algorithmName);
+                    }
+                });
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        buttonExample.addActionListener(e -> {
+            try {
+                openHelpWebPageForAlgorithm(textFieldAlgorithmName.getText());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Algorithm selector dialog
+    // -----------------------------------------------------------------------
+
+    /**
+     * Opens the algorithm selector dialog, pre-filtering suggestions based on the parent node's output type.
+     */
+    private void openAlgorithmSelectorDialog() {
+        try {
+            Set<String> suggested = buildSuggestedSet();
+            Set<String> highlightSet = (suggested == null) ? null : suggested;
+
+            AlgorithmSelectorDialog dialog = new AlgorithmSelectorDialog(
+                    (Frame) javax.swing.SwingUtilities.getWindowAncestor(this),
+                    true, true, true, true, true,
+                    highlightSet);
+            dialog.setVisible(true);
+
+            String chosen = dialog.getSelectedAlgorithm();
+            if (chosen != null && !chosen.isEmpty()) {
+                updateUserInterfaceForAlgorithm(chosen, null, false);
+                saveRecentAlgorithm(chosen);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Builds the set of suggested algorithm names based on the parent node's output type, or null if all are suggested.
+     *
+     * @return set of suggested names, or null if no filtering should be applied.
+     * @throws Exception if the algorithm manager cannot be accessed.
+     */
+    private Set<String> buildSuggestedSet() throws Exception {
+        if (!(currentNode instanceof NodeAlgorithm)) return null;
+
+        BranchNode owningBranchNode = findBranchNodeForGroup(currentNode.group);
+        if (owningBranchNode == null || owningBranchNode.isRoot()) return null;
+
+        BranchNode parentBranchNode = owningBranchNode.parent;
+        DescriptionOfAlgorithm parentAlgorithm =
+                AlgorithmManager.getInstance().getDescriptionOfAlgorithm(
+                        parentBranchNode.group.nodeAlgorithm.name);
+        if (parentAlgorithm == null) return new HashSet<>();
+
+        String[] outputTypes = parentAlgorithm.getOutputFileTypes();
+        if (outputTypes == null) return new HashSet<>();
+
+        List<String> allNames = AlgorithmManager.getInstance()
+                .getListOfAlgorithmsAsString(true, true, true, true, true);
+
+        Set<String> suggested = new HashSet<>();
+        for (String name : allNames) {
+            if (name == null || name.trim().isEmpty() || name.trim().startsWith("--")) continue;
+
+            if ("Open_text_file_with_SPMF_text_editor".equals(name)
+                    || "Open_text_file_with_system_text_editor".equals(name)
+                    || "Open_text_file_with_pattern_viewer".equals(name)
+                    || "Visualize_With_ItemItemset_Matrix".equals(name)) {
+                suggested.add(name);
+                continue;
+            }
+
+            DescriptionOfAlgorithm candidate =
+                    AlgorithmManager.getInstance().getDescriptionOfAlgorithm(name);
+            if (candidate == null) continue;
+
+            String[] inputTypes = candidate.getInputFileTypes();
+            if (inputTypes != null && hasCommonType(outputTypes, inputTypes)) {
+                suggested.add(name);
+            }
+        }
+        return suggested;
+    }
+
+    /**
+     * Returns the recent algorithms list filtered to only those valid for the current workflow position.
+     * When the current node is a root, all recent algorithms are returned unchanged.
+     * When the current node is a non-root, only entries present in the suggested set are kept, in recency order.
+     *
+     * @return the filtered list of recent algorithm names, never null but may be empty.
+     * @throws Exception if the algorithm manager cannot be accessed.
+     */
+    private List<String> buildFilteredRecentAlgorithms() throws Exception {
+        List<String> recent = PreferencesManager.getInstance().getRecentAlgorithms();
+        Set<String> suggested = buildSuggestedSet();
+
+        // null means root node: no type-based filtering applies, return all recent entries
+        if (suggested == null) {
+            return new ArrayList<>(recent);
+        }
+
+        // non-root node: keep only recent entries that are in the suggested set
+        List<String> filtered = new ArrayList<>();
+        for (String name : recent) {
+            if (suggested.contains(name)) {
+                filtered.add(name);
+            }
+        }
+        return filtered;
+    }
+
+    // -----------------------------------------------------------------------
+    // BranchingDrawPanelListener callbacks
+    // -----------------------------------------------------------------------
+
+    /**
+     * Saves any unsaved edits for the previously displayed node, then loads the data of the newly selected node.
+     *
+     * @param node the newly selected node, or null if the selection was cleared.
+     */
+    @Override
+    public void notifyNodeSelected(Node node) {
+        if (node == currentNode) return;
+        saveInformation(currentNode);
+        currentNode = node;
+
+        boolean isOutput    = node instanceof NodeFileOutput;
+        boolean isInput     = node instanceof NodeFileInput;
+        boolean isAlgorithm = node instanceof NodeAlgorithm;
+
+        nodeFileOutputPanel.setVisible(isOutput);
+        nodeFileInputPanel.setVisible(isInput);
+
+        if (isAlgorithm) {
+            nodeAlgorithmPanel.setVisible(true);
+            updateUserInterfaceForAlgorithm(node.name,
+                    ((NodeAlgorithm) node).parameters, false);
+        } else {
+            nodeAlgorithmPanel.setVisible(false);
+        }
+
+        if (isOutput) textFieldFileNameOutput.setText(currentNode.name);
+        if (isInput)  textFieldFileNameInput.setText(currentNode.name);
+
+        if (node == null) {
+            setBorder(BorderFactory.createTitledBorder(""));
+        } else {
+            setBorder(BorderFactory.createTitledBorder(node.getType()));
+        }
+    }
+
+    /**
+     * Stores the updated list of root nodes for use in algorithm suggestion filtering.
+     *
+     * @param roots the current list of root BranchNodes.
+     */
+    @Override
+    public void notifyOfListOfRootNodes(List<BranchNode> roots) {
+        this.allRoots = roots;
+    }
+
+    /**
+     * Called when the add-algorithm button enabledness changes; not used by this panel.
+     *
+     * @param hasOutput true if adding an algorithm is currently allowed.
+     */
+    @Override
+    public void notifyHasOutputNode(boolean hasOutput) {
+        // nothing to do
+    }
+
+    /**
+     * Called when the remove-algorithm button enabledness changes; not used by this panel.
+     *
+     * @param canRemove true if the selected node may be removed.
+     */
+    @Override
+    public void notifyCanRemoveSelectedNode(boolean canRemove) {
+        // nothing to do
+    }
+
+    // -----------------------------------------------------------------------
+    // Algorithm UI update
+    // -----------------------------------------------------------------------
+
+    /**
+     * Updates all UI elements for the given algorithm name and triggers a draw-panel relayout.
+     *
+     * @param algorithmName      the algorithm name to display.
+     * @param parameters         existing parameter values to populate, or null.
+     * @param comboBoxHasChanged unused; kept for internal consistency.
+     */
+    private void updateUserInterfaceForAlgorithm(String algorithmName,
+                                                  String[] parameters,
+                                                  boolean comboBoxHasChanged) {
+        try {
+            DescriptionOfAlgorithm algorithm =
+                    AlgorithmManager.getInstance().getDescriptionOfAlgorithm(algorithmName);
+
+            boolean hasOutput = algorithm != null && algorithm.getOutputFileTypes() != null;
+            boolean hasInput  = algorithm != null && algorithm.getInputFileTypes()  != null;
+
+            textFieldAlgorithmName.setText(algorithmName != null ? algorithmName : "");
+
+            updateExampleButton(algorithm);
+            updateParameterPanel(algorithm, parameters);
+            ((NodeAlgorithm) currentNode).updateAlgorithmChoice(algorithmName, hasOutput, hasInput);
+
+            drawPanel.relayoutAndRepaint();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Enables or disables the example button depending on whether an algorithm is selected.
+     *
+     * @param algorithm the selected algorithm description, or null.
+     */
+    private void updateExampleButton(DescriptionOfAlgorithm algorithm) {
+        buttonExample.setEnabled(algorithm != null);
+    }
+
+    /**
+     * Populates the parameter selection panel for the given algorithm and optional existing values.
+     *
+     * @param algorithm  the algorithm whose parameters should be shown.
+     * @param parameters existing parameter values, or null.
+     */
+    private void updateParameterPanel(DescriptionOfAlgorithm algorithm, String[] parameters) {
+        parameterSelectionPanel.update(algorithm);
+        parameterSelectionPanel.setParameterValues(parameters);
+    }
+
+    /**
+     * Opens the documentation web page for the given algorithm in the default browser.
+     *
+     * @param algorithmName the algorithm name whose documentation should be opened.
+     * @throws Exception if the algorithm is not found in the manager.
+     */
+    private void openHelpWebPageForAlgorithm(String algorithmName) throws Exception {
+        DescriptionOfAlgorithm algorithm =
+                AlgorithmManager.getInstance().getDescriptionOfAlgorithm(algorithmName);
+        if (algorithm != null) {
+            try {
+                java.awt.Desktop.getDesktop().browse(
+                        java.net.URI.create(algorithm.getURLOfDocumentation()));
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Opens the given input file with the viewer appropriate for the current algorithm's input type.
+     *
+     * @param inputFile the path of the input file to view.
+     */
+    protected void openInputFileWithViewer(String inputFile) {
+        try {
+            if (inputFile == null || inputFile.isEmpty()) {
+                JOptionPane.showMessageDialog(null,
+                        "No input file is selected. Please click \"...\" to select one.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            String algorithmName = currentNode.group.nodeAlgorithm.name;
+            DescriptionOfAlgorithm algorithm =
+                    AlgorithmManager.getInstance().getDescriptionOfAlgorithm(algorithmName);
+            DescriptionOfAlgorithm viewer =
+                    AlgorithmManager.getInstance().getViewerFor(algorithm.getInputFileTypes());
+
+            String[] params;
+            if (viewer.getParametersDescription().length > 0) {
+                params = new String[viewer.getParametersDescription().length];
+                for (int i = 0; i < viewer.getParametersDescription().length; i++) {
+                    params[i] = askUserValueForParameter(viewer.getParametersDescription()[i]);
+                }
+            } else {
+                params = new String[]{};
+            }
+            viewer.runAlgorithm(params, inputFile, null);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null,
+                    "An error occurred while opening the file. ERROR = " + e.toString(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Asks the user to enter a value for a single parameter via a dialog.
+     *
+     * @param paramDescription the description of the parameter to request.
+     * @return the string value entered by the user.
+     */
+    private String askUserValueForParameter(DescriptionOfParameter paramDescription) {
+        DialogSelectAlgorithmParameter dialog =
+                new DialogSelectAlgorithmParameter(paramDescription, parent);
+        return dialog.getUserInput();
+    }
+
+    // -----------------------------------------------------------------------
+    // Suggestion helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Walks the entire tree to find the BranchNode whose GroupOfNodes is the same object as the given group.
+     *
+     * @param group the group to search for.
+     * @return the matching BranchNode, or null if not found.
+     */
+    private BranchNode findBranchNodeForGroup(GroupOfNodes group) {
+        if (allRoots == null) return null;
+        for (BranchNode root : allRoots) {
+            BranchNode found = findBranchNodeForGroupDFS(root, group);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    /**
+     * DFS helper that searches the subtree rooted at bn for a node owning the given group.
+     *
+     * @param bn    the subtree root to search.
+     * @param group the group to locate.
+     * @return the matching BranchNode, or null if not found.
+     */
+    private BranchNode findBranchNodeForGroupDFS(BranchNode bn, GroupOfNodes group) {
+        if (bn.group == group) return bn;
+        for (BranchNode child : bn.children) {
+            BranchNode result = findBranchNodeForGroupDFS(child, group);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    /**
+     * Returns true if the two type arrays share at least one compatible element.
+     *
+     * @param outputTypes the output types of the parent algorithm.
+     * @param inputTypes  the input types of the candidate algorithm.
+     * @return true if there is a compatible type pair.
+     */
+    public boolean hasCommonType(String[] outputTypes, String[] inputTypes) {
+        for (String inputType : inputTypes) {
+            for (String outputType : outputTypes) {
+                if (!"Patterns".equals(outputType)
+                        && !"Database of instances".equals(outputType)) {
+                    if (outputType.equals(inputType)) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // -----------------------------------------------------------------------
+    // Recent file helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Saves the given path to the recent input files list in preferences.
+     *
+     * @param path the full path to record.
+     */
+    private void saveRecentInputFile(String path) {
+        if (path == null || path.isEmpty()) return;
+        PreferencesManager.getInstance().addRecentInputFile(path);
+    }
+
+    /**
+     * Saves the given path to the recent output files list in preferences.
+     *
+     * @param path the full path to record.
+     */
+    private void saveRecentOutputFile(String path) {
+        if (path == null || path.isEmpty()) return;
+        PreferencesManager.getInstance().addRecentOutputFile(path);
+    }
+
+    /**
+     * Saves the given algorithm name to the recent algorithms list in preferences.
+     *
+     * @param algorithmName the algorithm name to record.
+     */
+    private void saveRecentAlgorithm(String algorithmName) {
+        if (algorithmName == null || algorithmName.isEmpty()) return;
+        PreferencesManager.getInstance().addRecentAlgorithm(algorithmName);
+    }
+
+    // -----------------------------------------------------------------------
+    // Save helper
+    // -----------------------------------------------------------------------
+
+    /**
+     * Reads the current parameter values from the UI and writes them back to the given node.
+     *
+     * @param node the node whose parameters should be saved, may be null.
+     */
+    void saveInformation(Node node) {
+        if (node instanceof NodeAlgorithm) {
+            ((NodeAlgorithm) node).parameters = parameterSelectionPanel.getParameterValues();
+        }
+    }
 }

@@ -22,6 +22,7 @@ import ca.pfv.spmf.algorithms.frequentpatterns.hmine.AlgoHMine;
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
 */
+import ca.pfv.spmf.algorithms.frequentpatterns.hmine_fast.AlgoHMine_FAST;
 
 /**
  * This class describes the HMine algorithm parameters. 
@@ -56,7 +57,7 @@ public class DescriptionAlgoHMine extends DescriptionOfAlgorithm {
 	@Override
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
 		double minsup = getParamAsDouble(parameters[0]);
-		AlgoHMine algorithm = new AlgoHMine();
+		AlgoHMine_FAST algorithm = new AlgoHMine_FAST();
 		
 		if (parameters.length >=2 && "".equals(parameters[1]) == false) {
 			algorithm.setMaximumPatternLength(getParamAsInteger(parameters[1]));

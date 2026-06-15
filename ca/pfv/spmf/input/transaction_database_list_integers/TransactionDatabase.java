@@ -16,6 +16,8 @@ package ca.pfv.spmf.input.transaction_database_list_integers;
 * 
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove the copyright and license information.
 */
 import java.io.BufferedReader;
 import java.io.File;
