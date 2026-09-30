@@ -540,6 +540,11 @@ public class AlgoZart {
 	public void saveResultsToFile(String output) throws IOException {
 		//prepare the output file
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Frequent closed and generator itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+		
 		writer.write("======= List of closed itemsets and their generators ============");
 		writer.newLine();
 		

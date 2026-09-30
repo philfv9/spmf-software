@@ -76,12 +76,12 @@ public class DescriptionAlgoResizeADatabase extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getInputFileTypes() {
-		return new String[]{"Database of instances"};
+		return new String[]{"Text file"};
 	}
 
 	@Override
 	public String[] getOutputFileTypes() {
-		return new String[]{"Database of instances"};
+		return new String[]{"Text file"};
 	}
 //
 //	@Override

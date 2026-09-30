@@ -284,11 +284,6 @@ public class AlgoCGSPANMNI extends AlgoCGSPANAbstract {
      */
     protected void cgSpanDFS(DFSCode c, List<DatabaseGraph> graphDB, Set<Integer> graphIds, ProjectedCompact projected, IEarlyTerminationFailureHandler earlyTerminationFailureHandler)
             throws IOException, ClassNotFoundException, InterruptedException {
-        // If we have reached the maximum size, we do not need to extend this graph
-        if (c.size() == maxNumberOfEdges - 1) {
-            return;
-        }
-
         // check if DFS tree should not be further extended
         EarlyTerminationResult earlyTerminationResult = earlyTermination(graphIds, projected, earlyTerminationFailureHandler);
         if (earlyTerminationResult.isEarlyTerminationFailure()) {
@@ -300,11 +295,19 @@ public class AlgoCGSPANMNI extends AlgoCGSPANAbstract {
             return;
         }
 
+        // If we have reached the maximum size, we do not extend this graph any further, but we still evaluate and
+        // save the current graph below (it is a valid frequent subgraph of the maximum allowed size).
+        boolean atMaximumSize = (c.size() == maxNumberOfEdges - 1);
+
         // Find all the extensions of this graph, with their support values
         // They are stored in a map where the key is an extended edge, and the value is
         // the
         // is the list of graph ids where this edge extends the current subgraph c.
-        Map<ExtendedEdge, ProjectedCompact> extensions = rightMostPathExtensions(c, graphDB, projected);
+        Map<ExtendedEdge, ProjectedCompact> extensions = atMaximumSize ? null : rightMostPathExtensions(c, graphDB, projected);
+
+        // remember how many closed subgraphs were already found before extending "c";
+        // every closed subgraph discovered by the recursive calls below is a supergraph of "c"
+        int closedCountBeforeExtensions = closedSubgraphs.size();
 
         // For each extension
         if (extensions != null) {
@@ -336,7 +339,8 @@ public class AlgoCGSPANMNI extends AlgoCGSPANAbstract {
 
         if (c.size() > 0) {
             // analyze current DFS code for early termination failure conditions
-            if (detectEarlyTerminationFailure) {
+            // (only when the graph was actually extended; at the maximum size there are no extensions to analyze)
+            if (detectEarlyTerminationFailure && !atMaximumSize) {
                 earlyTerminationFailureHandler.analyze(c, projected, extensions);
             }
 
@@ -358,8 +362,38 @@ public class AlgoCGSPANMNI extends AlgoCGSPANAbstract {
             }
 
             if (!hasEquivalentOccurrence) {
+                // MNI of the current (cgSpan closed) subgraph
+                int mni = projected.MNI();
+
                 // Save the graph
-                ClosedSubgraph subgraph = new ClosedSubgraph(c, graphIds, graphIds.size(), projected, projected.MNI());
+                ClosedSubgraph subgraph = new ClosedSubgraph(c, graphIds, graphIds.size(), projected, mni);
+
+                // Determine whether this cgSpan closed subgraph is also closed by the threshold based (CloGraMi)
+                // definition, but only when the output is restricted to threshold based closed subgraphs. When the
+                // restriction is disabled, the flag is not computed (it stays true) and every cgSpan closed subgraph
+                // is output.
+                if (closedByThreshold) {
+                    // Case 1: if a supergraph with the same MNI was already discovered by the recursive extension above,
+                    // then "c" is not closed by threshold. Every closed subgraph added since closedCountBeforeExtensions
+                    // is a supergraph of "c", and MNI is anti-monotone, so an equal MNI value breaks the closure of "c".
+                    boolean subgraphClosedByThreshold = true;
+                    for (int i = closedCountBeforeExtensions; i < closedSubgraphs.size(); i++) {
+                        if (closedSubgraphs.get(i).getThresholdValue() == mni) {
+                            subgraphClosedByThreshold = false;
+                            break;
+                        }
+                    }
+
+                    // Case 2: otherwise, examine all one edge extensions from every vertex and check whether any of them
+                    // yields an extended graph with the same MNI as "c". This is skipped when "c" already has the
+                    // maximum number of edges, because a supergraph would exceed the size limit and is therefore not
+                    // part of the frequent set.
+                    if (subgraphClosedByThreshold && !atMaximumSize) {
+                        subgraphClosedByThreshold = isClosedByThreshold(c, projected, graphIds);
+                    }
+                    subgraph.setClosedByThreshold(subgraphClosedByThreshold);
+                }
+
                 closedSubgraphs.add(subgraph);
                 updateClosedSubgraphsHashTable(subgraph);
             }
@@ -367,6 +401,145 @@ public class AlgoCGSPANMNI extends AlgoCGSPANAbstract {
 
         // check the memory usage
         MemoryLogger.getInstance().checkMemory();
+    }
+
+    /**
+     * Determines whether a cgSpan closed subgraph is also closed according to the threshold based definition for the
+     * single large graph (MNI) setting, i.e. the CloGraMi definition: "c" is closed when no proper supergraph has the
+     * same MNI.
+     * <p>
+     * Unlike the support setting (see {@link AlgoCGSPANAbstract#isClosedByThreshold(DFSCode, ProjectedCompact, Set)}),
+     * the MNI of a one edge supergraph cannot be decided by intersecting per graph extension sets, because MNI is not
+     * a count of database graphs but the minimum, over the subgraph vertices, of the number of distinct database
+     * vertices onto which the vertex is projected. Therefore, for every candidate one edge extension we accumulate,
+     * per subgraph vertex, the set of distinct database vertices covered by the isomorphisms of "c" that support the
+     * extension (and, for a forward extension, the distinct database vertices of the newly added vertex). The MNI of
+     * the extended graph is then the minimum of these set sizes.
+     * <p>
+     * By the anti-monotonicity of MNI, a one edge supergraph never has an MNI greater than the MNI of "c". If some one
+     * edge extension yields an extended graph with an MNI equal to the MNI of "c", then "c" has a proper supergraph
+     * with the same MNI and is NOT closed by threshold; otherwise "c" is closed by threshold. Checking only one edge
+     * extensions is sufficient because if a larger supergraph had equal MNI, every intermediate one edge supergraph
+     * would have equal MNI as well.
+     * <p>
+     * The isomorphisms of "c" are not recomputed from scratch: the already available projections of "c" are streamed
+     * with the same consumer/producer machinery used by {@link RightPathExtender}. The automorphism optimization
+     * callback is deliberately not installed here, so that every isomorphism is enumerated and the distinct database
+     * vertices are counted correctly. Extensions from <b>every</b> vertex are considered (not only the rightmost
+     * path), as required to test the closure condition.
+     *
+     * @param c         the DFS code of the cgSpan closed subgraph
+     * @param projected the projections of "c" into the graph database
+     * @param graphIds  the ids of the database graphs in the support of "c"
+     * @return true if "c" is also closed according to the CloGraMi (MNI) definition, false otherwise
+     */
+    protected boolean isClosedByThreshold(DFSCode c, ProjectedCompact projected, Set<Integer> graphIds) {
+        // MNI of "c": a one edge supergraph breaks the closure of "c" only if it has this exact MNI value
+        int targetMNI = projected.MNI();
+
+        // for each candidate one edge extension, the distinct database vertices covered by each subgraph vertex
+        // (key: DFS vertex index of the extended graph, value: set of database vertex ids)
+        Map<ExtendedEdge, Map<Integer, Set<Integer>>> extensionVertexImages = new HashMap<ExtendedEdge, Map<Integer, Set<Integer>>>();
+
+        // index used for the new vertex of a forward extension (next free DFS vertex index)
+        int newVertexIndex = c.getAllVLabels().size();
+
+        // stream all projections (isomorphisms) of "c" using the consumer/producer iterator, without the automorphism
+        // optimization callback, so that every isomorphism is enumerated
+        ThreadPool threadPool = ThreadPool.getProjectedIteratorProducersInstance();
+        ProjectedIteratorConsumer iterator = projected.iterator(threadPool.getThreadCount() * 10, threadPool.getThreadCount());
+
+        while (iterator.hasNext()) {
+            PDFSCompact pdfs = iterator.next();
+            if (pdfs == null) {
+                break;
+            }
+
+            DatabaseGraph g = pdfs.getDatabaseGraph();
+            if (!graphIds.contains(g.getId())) {
+                // projection from a graph outside the support (should not happen)
+                continue;
+            }
+
+            // isomorphism of "c" for this projection, obtained from the projection itself (no recomputation)
+            Map<Integer, Integer> isom = pdfs.subgraphIsomorphism(c);
+            Map<Integer, Integer> invertedISOM = new HashMap<Integer, Integer>();
+            for (Map.Entry<Integer, Integer> entry : isom.entrySet()) {
+                invertedISOM.put(entry.getValue(), entry.getKey());
+            }
+
+            // for each vertex of the subgraph
+            for (Map.Entry<Integer, Integer> entry : isom.entrySet()) {
+                int v = entry.getKey();
+                int mappedV = entry.getValue();
+                int mappedVlabel = g.getVLabel(mappedV);
+
+                // for each neighbor of the vertex corresponding to v in g
+                for (Vertex x : g.getAllNeighbors(mappedV)) {
+                    int edgeLabel = g.getEdgeLabel(mappedV, x.getId());
+                    Integer mappedNeighborIndex = invertedISOM.get(x.getId());
+
+                    ExtendedEdge ee;
+                    boolean forward;
+                    if (mappedNeighborIndex == null) {
+                        // forward extension: x is a vertex not belonging to the subgraph projection
+                        ee = new ExtendedEdge(v, newVertexIndex, mappedVlabel, x.getLabel(), edgeLabel);
+                        forward = true;
+                    } else {
+                        // backward extension: both endpoints belong to the subgraph projection
+                        int u = mappedNeighborIndex;
+                        // skip edges that are already part of the subgraph
+                        if (c.containEdge(v, u)) {
+                            continue;
+                        }
+                        int a = Math.min(v, u);
+                        int b = Math.max(v, u);
+                        ee = new ExtendedEdge(a, b, g.getVLabel(isom.get(a)), g.getVLabel(isom.get(b)), edgeLabel);
+                        forward = false;
+                    }
+
+                    // this isomorphism of "c", together with the extension edge, is an isomorphism of the extended
+                    // graph: record the database vertices covered by every vertex of the extended graph
+                    Map<Integer, Set<Integer>> vertexImages = extensionVertexImages.get(ee);
+                    if (vertexImages == null) {
+                        vertexImages = new HashMap<Integer, Set<Integer>>();
+                        extensionVertexImages.put(ee, vertexImages);
+                    }
+                    for (Map.Entry<Integer, Integer> vertexEntry : isom.entrySet()) {
+                        Set<Integer> images = vertexImages.get(vertexEntry.getKey());
+                        if (images == null) {
+                            images = new HashSet<Integer>();
+                            vertexImages.put(vertexEntry.getKey(), images);
+                        }
+                        images.add(vertexEntry.getValue());
+                    }
+                    if (forward) {
+                        Set<Integer> images = vertexImages.get(newVertexIndex);
+                        if (images == null) {
+                            images = new HashSet<Integer>();
+                            vertexImages.put(newVertexIndex, images);
+                        }
+                        images.add(x.getId());
+                    }
+                }
+            }
+        }
+
+        // "c" is NOT closed by threshold if some one edge extension has an extended graph MNI equal to the MNI of "c"
+        for (Map<Integer, Set<Integer>> vertexImages : extensionVertexImages.values()) {
+            int extensionMNI = Integer.MAX_VALUE;
+            for (Set<Integer> images : vertexImages.values()) {
+                if (images.size() < extensionMNI) {
+                    extensionMNI = images.size();
+                }
+            }
+            if (extensionMNI == targetMNI) {
+                return false;
+            }
+        }
+
+        // no one edge extension preserves the MNI of "c", so "c" is closed by threshold
+        return true;
     }
 
     /**
@@ -527,7 +700,27 @@ public class AlgoCGSPANMNI extends AlgoCGSPANAbstract {
                     DFSCode tempD = new DFSCode();
                     tempD.add(new ExtendedEdge(0, 0, label, label, -1));
 
-                    closedSubgraphs.add(new ClosedSubgraph(tempD, tempSupG, tempSupG.size(), new ProjectedCompact(tempD, graphDB),mni));
+                    // Build a properly populated projection for this single-vertex pattern instead of an
+                    // empty ProjectedCompact. Every database vertex carrying "label" (with at least one
+                    // edge) is represented as a self-referencing projected edge (v1 == v2 == vertex id),
+                    // consistent with the DFS code convention used above (v1 == v2 == 0). ClosedSubgraph /
+                    // ProjectedCompact.getProjections()/MNI() require at least one real projection at index 0.
+                    ProjectedCompact tempProjected = new ProjectedCompact(tempD, graphDB);
+                    tempProjected.setGraphIds(new HashSet<Integer>());
+
+                    for (Integer gid : tempSupG) {
+                        DatabaseGraph g = graphDB.get(gid);
+                        for (Vertex v : g.getAllVertices()) {
+                            if (v.getLabel() == label && !v.getEdgeList().isEmpty()) {
+                                Edge selfEdge = new Edge(v.getId(), v.getId(), -1);
+                                EdgeEnumeration edgeEnumeration = new EdgeEnumeration(gid, selfEdge);
+                                ProjectedEdge projectedEdge = new ProjectedEdge(edgeEnumeration, false);
+                                tempProjected.addProjection(projectedEdge);
+                            }
+                        }
+                    }
+
+                    closedSubgraphs.add(new ClosedSubgraph(tempD, tempSupG, tempSupG.size(), tempProjected, mni));
                 }
             }
         }

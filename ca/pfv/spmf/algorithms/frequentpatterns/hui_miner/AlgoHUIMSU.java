@@ -120,6 +120,10 @@ public class AlgoHUIMSU {
 		startTimestamp = System.currentTimeMillis();
 
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		// We create a map to store the TWU of each item
 		mapItemToTWU = new HashMap<Integer, Integer>();

@@ -872,6 +872,11 @@ public class AlgoUP_Span {
 		try {
 			FileWriter fstream = new FileWriter(outputFile);
 			BufferedWriter out = new BufferedWriter(fstream);
+			
+			out.write("@FILETYPE=\"High-Utility episodes\"");
+			out.newLine();
+			out.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			out.newLine();
 
 			// OUTPUT EPISODE WITH A SINGLE EVENT
 			if(outputSingleEvents){

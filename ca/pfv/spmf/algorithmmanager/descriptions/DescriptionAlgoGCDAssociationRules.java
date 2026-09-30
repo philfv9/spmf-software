@@ -5,14 +5,14 @@ import java.util.Calendar;
 import ca.pfv.spmf.algorithmmanager.AlgorithmType;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
-import ca.pfv.spmf.algorithms.associationrules.gcd.GCDAssociationRules;
+import ca.pfv.spmf.algorithms.associationrules.gcd.AlgoGCDAssociationRules;
 
 /**
  * This class describes parameters of the algorithm for generating association rules 
  * with the GCD algorithm. 
  * It is designed to be used by the graphical and command line interface.
  * 
- * @see GCDAssociationRules
+ * @see AlgoGCDAssociationRules
  * @author Philippe Fournier-Viger
  */
 public class DescriptionAlgoGCDAssociationRules extends DescriptionOfAlgorithm {
@@ -44,7 +44,7 @@ public class DescriptionAlgoGCDAssociationRules extends DescriptionOfAlgorithm {
 		double minconf = getParamAsDouble(parameters[1]);
 		int maxcomb = getParamAsInteger(parameters[2]);
 
-		GCDAssociationRules gcdRunner = new GCDAssociationRules(inputFile, outputFile, 
+		AlgoGCDAssociationRules gcdRunner = new AlgoGCDAssociationRules(inputFile, outputFile, 
 				minsup,				minconf, maxcomb);
 
 		long start = Calendar.getInstance().getTimeInMillis();

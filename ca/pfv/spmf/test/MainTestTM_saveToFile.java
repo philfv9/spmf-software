@@ -31,13 +31,13 @@ public class MainTestTM_saveToFile {
     public static void main(String[] args) throws IOException {
         
         // Input file path
-        String input = fileToPath("chess.txt");
+        String input = fileToPath("contextPasquier99.txt");
         
         // Output file path (set to null to keep results in memory)
         String output = "output.txt";
         
         // Minimum support threshold (as a ratio)
-        double minsup = 0.5; // 40%
+        double minsup = 0.4; // 40%
         
         // Create the algorithm object
         AlgoTM algorithm = new AlgoTM();

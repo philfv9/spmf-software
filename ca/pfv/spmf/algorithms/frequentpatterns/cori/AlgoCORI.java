@@ -135,6 +135,10 @@ public class AlgoCORI {
 	    }else{ // if the user want to save the result to a file
 	    	frequentItemsets = null;
 			writer = new BufferedWriter(new FileWriter(output)); 
+			writer.write("@FILETYPE=\"Rare correlated itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 		}
 
 		// reset the number of itemset found to 0

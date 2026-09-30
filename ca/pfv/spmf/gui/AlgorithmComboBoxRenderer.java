@@ -1,7 +1,7 @@
 package ca.pfv.spmf.gui;
 
 /*
- * Copyright (c) 2022 Philippe Fournier-Viger
+ * Copyright (c) 2008-2026 Philippe Fournier-Viger
  *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
@@ -17,151 +17,89 @@ package ca.pfv.spmf.gui;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
- *
- * Do not remove copyright or license information.
+ * 
+ * Do not remove copyright and license
  */
 
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 
-import javax.swing.JLabel;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JComboBox;
 import javax.swing.JList;
-import javax.swing.ListCellRenderer;
-import javax.swing.border.EmptyBorder;
+import javax.swing.border.Border;
 
 /**
- * This class provides a custom cell renderer for the algorithm-selection
- * combo box in the SPMF GUI. It visually distinguishes between category
- * headers (rendered in bold red) and individual algorithm names (rendered
- * in regular black with indentation).
- *
- * <p>Category headers are identified by a {@code " --"} prefix in the
- * string value. Algorithm names are indented with three leading spaces.
- * Empty strings are rendered as blank rows.</p>
- *
- * <p>Non-selected items are rendered with a white background regardless of
- * the Look and Feel, matching the original SPMF design. Selected items use
- * the standard selection colors from the JList.</p>
- *
- * <p>The renderer reuses a single {@link JLabel} instance across all
- * render calls for efficiency, updating only the text, font, and colors
- * as needed.</p>
+ * Cell renderer for algorithm combo boxes. Category headers (values starting
+ * with {@code " --"}) are shown as bold, tinted section rows; algorithm names
+ * are indented beneath them. Selection, disabled and Look-and-Feel colours are
+ * inherited from {@link DefaultListCellRenderer}.
  *
  * @author Philippe Fournier-Viger
  */
-public class AlgorithmComboBoxRenderer implements ListCellRenderer<Object> {
+public class AlgorithmComboBoxRenderer extends DefaultListCellRenderer {
 
-    /** Serial UID */
     private static final long serialVersionUID = 234234235L;
 
-    /** The prefix that identifies a category header in the combo box model */
+    /** Prefix identifying a category header in the model. */
     private static final String CATEGORY_PREFIX = " --";
 
-    /** The indentation applied to algorithm names (not categories) */
-    private static final String ALGORITHM_INDENT = "   ";
+    private static final Color CATEGORY_FOREGROUND = new Color(160, 24, 24);
+    private static final Color CATEGORY_BACKGROUND = new Color(244, 246, 248);
 
-    /** The background color for non-selected items (forced white) */
-    private static final Color BACKGROUND_COLOR = Color.WHITE;
+    private static final Border BORDER_ALGORITHM = BorderFactory.createEmptyBorder(2, 18, 2, 6);
+    private static final Border BORDER_CATEGORY  = BorderFactory.createEmptyBorder(5, 6, 3, 6);
+    private static final Border BORDER_PLAIN     = BorderFactory.createEmptyBorder(2, 6, 2, 6);
 
-    /** The color used for category headers */
-    private static final Color CATEGORY_COLOR = new Color(180, 0, 0);
-
-    /** The color used for algorithm names */
-    private static final Color ALGORITHM_COLOR = Color.BLACK;
-
-    /** Reusable label component that is returned on every render call */
-    private final JLabel label;
-
-    /** The base font from the combo box, cached on construction */
-    private final Font baseFont;
-
-    /** The bold variant of the base font, derived once and cached */
-    private final Font boldFont;
+    private Font plainFont;
+    private Font boldFont;
 
     /**
-     * Constructs a renderer for the given combo box. The base font is
-     * extracted from the combo box at construction time and cached so that
-     * font derivation does not occur on every render.
-     *
-     * @param combo the {@link javax.swing.JComboBox} whose font and style
-     *              are used as the base for rendering
+     * @param combo the combo box this renderer is installed on (kept for API
+     *              compatibility; fonts are read from the list at render time so
+     *              that font changes are honoured)
      */
-    public AlgorithmComboBoxRenderer(javax.swing.JComboBox<?> combo) {
-        label = new JLabel();
-        label.setOpaque(true);
-        // Add a small horizontal border so text is not flush against the edge
-        label.setBorder(new EmptyBorder(2, 4, 2, 4));
-
-        // Cache the base font and pre-derive the bold variant once
-        baseFont = combo.getFont();
-        boldFont = baseFont.deriveFont(baseFont.getStyle() | Font.BOLD);
-
-        // Set the initial font to the base font
-        label.setFont(baseFont);
+    public AlgorithmComboBoxRenderer(JComboBox<?> combo) {
+        // nothing to cache: fonts and colours come from the list when rendering
     }
 
-    /**
-     * Returns a component configured to render the given value at the
-     * specified index in the list. Category headers (identified by a
-     * {@code " --"} prefix) are rendered in bold red. Algorithm names are
-     * rendered in regular black with three-space indentation. Empty strings
-     * are rendered as blank rows.
-     *
-     * <p>The background color is always white for non-selected items,
-     * regardless of the Look and Feel. Selected items use the standard
-     * selection background color from the JList.</p>
-     *
-     * @param list         the JList being rendered
-     * @param value        the value to render (expected to be a String)
-     * @param index        the cell index (0-based; -1 when rendering the
-     *                     selected item in the combo box's button area)
-     * @param isSelected   true if the cell is selected
-     * @param cellHasFocus true if the cell has focus
-     * @return the configured label component
-     */
     @Override
-    public Component getListCellRendererComponent(JList<?> list,
-                                                  Object value,
-                                                  int index,
-                                                  boolean isSelected,
-                                                  boolean cellHasFocus) {
+    public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                  boolean isSelected, boolean cellHasFocus) {
+        super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
-        // Set background color: white for non-selected, selection color for selected
-        if (isSelected) {
-            label.setBackground(list.getSelectionBackground());
-            label.setForeground(list.getSelectionForeground());
-        } else {
-            label.setBackground(BACKGROUND_COLOR);
-            label.setForeground(ALGORITHM_COLOR);
+        Font base = list.getFont();
+        if (plainFont == null || !plainFont.equals(base)) {
+            plainFont = base;
+            boldFont = base.deriveFont(base.getStyle() | Font.BOLD);
         }
 
-        // Convert the value to a string
         String text = (value == null) ? "" : value.toString();
+        boolean inDropDown = index >= 0; // -1 = the combo box's own display area
 
-        // Determine the rendering style based on the text content
         if (text.isEmpty()) {
-            // Empty string: render as a blank row
-            label.setText(" ");
-            label.setFont(baseFont);
-            // Keep the default foreground color (black or selection color)
-
-        } else if (index > 0 && text.startsWith(CATEGORY_PREFIX)) {
-            // Category header: bold red text, no indentation
-            label.setText(text);
-            label.setFont(boldFont);
-            // Override foreground color to red only if not selected
-            if (!isSelected) {
-                label.setForeground(CATEGORY_COLOR);
+            setText(" ");
+            setFont(plainFont);
+            setBorder(BORDER_PLAIN);
+            setToolTipText(null);
+        } else if (text.startsWith(CATEGORY_PREFIX)) {
+            String name = text.replaceAll("^[\\s-]+|[\\s-]+$", "");
+            setText(name.isEmpty() ? text.trim() : name);
+            setFont(boldFont);
+            setBorder(inDropDown ? BORDER_CATEGORY : BORDER_PLAIN);
+            setToolTipText(null);
+            if (inDropDown && !isSelected && list.isEnabled()) {
+                setForeground(CATEGORY_FOREGROUND);
+                setBackground(CATEGORY_BACKGROUND);
             }
-
         } else {
-            // Algorithm name: regular font, black text, indented
-            label.setText(ALGORITHM_INDENT + text);
-            label.setFont(baseFont);
-            // Foreground is already set to black or selection color above
+            setText(text);
+            setFont(plainFont);
+            setBorder(inDropDown ? BORDER_ALGORITHM : BORDER_PLAIN);
+            setToolTipText(text);
         }
-
-        return label;
+        return this;
     }
 }

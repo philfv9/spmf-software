@@ -46,6 +46,8 @@ import ca.pfv.spmf.tools.MemoryLogger;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 /**
  * Implementation of the MAPD algorithm. It was converted from C++ to Java.
@@ -235,37 +237,44 @@ public class AlgoMAPD {
 	 * @param fileName the input file
 	 */
 	public String readData(String fileName) {
-		String s = null;
-		StringBuffer buff = new StringBuffer();
-		BufferedReader br = null;
-		try {
-			br = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
-			s = br.readLine();
-			String strs[];
-			while (s != null) {
-				s = s.trim();
-				strs = s.split("\\s+");
-				for (int i = 0; i < strs.length; i++) {
-					buff.append(strs[i]);
-					strs[i] = null;
-				}
-				s = br.readLine();
-			}
-			s = buff.toString();
-			strs = null;
-			buff.delete(0, s.length());
-			br.close();
-			br = null;
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-			System.out.println("/n The file is not found!");
-		} catch (IOException e2) {
-			e2.printStackTrace();
-			System.out.println("read or write makes an error!");
-		} catch (Exception e3) {
-			e3.printStackTrace();
-		}
-		return s;
+	    String s = null;
+	    StringBuffer buff = new StringBuffer();
+	    BufferedReader br = null;
+	    try {
+	        br = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
+	        s = br.readLine();
+	        String strs[];
+	        while (s != null) {
+	            s = s.trim();
+
+	            // skip empty lines and metadata/comment lines
+	            if (s.isEmpty() || s.charAt(0) == '@' || s.charAt(0) == '#' || s.charAt(0) == '%') {
+	                s = br.readLine();
+	                continue;
+	            }
+
+	            strs = s.split("\\s+");
+	            for (int i = 0; i < strs.length; i++) {
+	                buff.append(strs[i]);
+	                strs[i] = null;
+	            }
+	            s = br.readLine();
+	        }
+	        s = buff.toString();
+	        strs = null;
+	        buff.delete(0, s.length());
+	        br.close();
+	        br = null;
+	    } catch (FileNotFoundException e1) {
+	        e1.printStackTrace();
+	        System.out.println("/n The file is not found!");
+	    } catch (IOException e2) {
+	        e2.printStackTrace();
+	        System.out.println("read or write makes an error!");
+	    } catch (Exception e3) {
+	        e3.printStackTrace();
+	    }
+	    return s;
 	}
 
 	/**
@@ -375,6 +384,11 @@ public class AlgoMAPD {
 		// Initialization
 		patternCount = 0;
 		writer = new BufferedWriter(new FileWriter(outputFile));
+		writer.write("@FILETYPE=\"Sequential patterns with periodic wilcard gaps\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		ofsIndex = new HashMap<Integer, Long>();
 		frequentPatterns = new LinkedList<QPattern>();
 

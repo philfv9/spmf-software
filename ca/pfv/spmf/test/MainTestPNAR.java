@@ -23,8 +23,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
 import ca.pfv.spmf.algorithms.associationrules.pnar.AlgoPNAR;
-import ca.pfv.spmf.algorithms.associationrules.pnar.RulesPNAR;
 import ca.pfv.spmf.algorithms.associationrules.pnar.AlgoPNAR.MiningAlgorithm;
+import ca.pfv.spmf.algorithms.associationrules.pnar.RulesPNAR;
 
 /**
  * Example of how to use the PNAR algorithm from source code.

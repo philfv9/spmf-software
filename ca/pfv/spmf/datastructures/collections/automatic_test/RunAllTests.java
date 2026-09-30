@@ -17,6 +17,8 @@ package ca.pfv.spmf.datastructures.collections.automatic_test;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove the copyright and license information.
  */
 /**
  * Class to automatically run some tests from this package for testing the

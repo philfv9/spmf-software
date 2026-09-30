@@ -1,0 +1,8 @@
+@FILETYPE="Sequential patterns with periodic wilcard gaps"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+c #SUP: 0.5
+t #SUP: 0.3
+g #SUP: 0.2
+cc #SUP: 0.8
+cg #SUP: 0.6
+tc #SUP: 0.8

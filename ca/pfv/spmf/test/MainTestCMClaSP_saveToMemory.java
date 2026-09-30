@@ -4,12 +4,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.AlgoCM_ClaSP;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.dataStructures.creators.AbstractionCreator;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.dataStructures.creators.AbstractionCreator_Qualitative;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.dataStructures.database.SequenceDatabase;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.idlists.creators.IdListCreator;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.idlists.creators.IdListCreatorStandard_Map;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.AlgoCMClaSP_bitset;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.AlgoClaSP_bitset;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.SequenceDatabase;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.idLists.creators.IdListCreator;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.idLists.creators.IdListCreator_Bitmap;
 
 /**
  * Example of how to use the algorithm ClaSP, saving the results in the
@@ -33,17 +32,16 @@ public class MainTestCMClaSP_saveToMemory {
         boolean executePruningMethods = true;
         // if you set the following parameter to true, the sequence ids of the sequences where
         // each pattern appears will be shown in the result
-        boolean outputSequenceIdentifiers = false; 
-        
-        AbstractionCreator abstractionCreator = AbstractionCreator_Qualitative.getInstance();
-        IdListCreator idListCreator = IdListCreatorStandard_Map.getInstance();
+        boolean outputSequenceIdentifiers = false;
 
-        SequenceDatabase sequenceDatabase = new SequenceDatabase(abstractionCreator, idListCreator);
+        IdListCreator idListCreator = IdListCreator_Bitmap.getInstance();
+
+        SequenceDatabase sequenceDatabase = new SequenceDatabase(idListCreator);
 
         //double relativeSupport = sequenceDatabase.loadFile(fileToPath("contextClaSP.txt"), support);
-        double relativeSupport = sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"), support);
+        sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"), support);
 
-        AlgoCM_ClaSP algorithm = new AlgoCM_ClaSP(relativeSupport, abstractionCreator, findClosedPatterns, executePruningMethods);
+        AlgoCMClaSP_bitset algorithm = new AlgoCMClaSP_bitset(support, findClosedPatterns, executePruningMethods, false);
 
 
         //System.out.println(sequenceDatabase.toString());

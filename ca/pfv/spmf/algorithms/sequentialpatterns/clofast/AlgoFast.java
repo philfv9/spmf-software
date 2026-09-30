@@ -37,6 +37,8 @@ import ca.pfv.spmf.tools.MemoryLogger;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 /**
@@ -223,6 +225,10 @@ public class AlgoFast {
     private void writePatterns(Path outputFile) throws IOException {
 
         final BufferedWriter out = Files.newBufferedWriter(outputFile);
+		out.write("@FILETYPE=\"Frequent sequential patterns\"");
+		out.newLine();
+		out.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		out.newLine();
 
         List<SequenceNode> nodes = getFrequentSequences();
 

@@ -15,13 +15,14 @@ public class MainTestConvertTransactionDatabaseCSVtoSPMF {
 	
 	public static void main(String [] arg) throws IOException{
 		
-		String inputFile = fileToPath("contextCSV.txt");
+		String inputFile = fileToPath("contextCSVTrans.csv");
 		String outputFile = ".//output.txt";
 		Formats inputFileformat = Formats.CSV_INTEGER;
 		int sequenceCount = Integer.MAX_VALUE;
 		
 		TransactionDatabaseConverter converter = new TransactionDatabaseConverter();
 		converter.convert(inputFile, outputFile, inputFileformat, sequenceCount);
+	
 	}
 
 	

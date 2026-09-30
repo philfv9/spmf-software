@@ -171,7 +171,10 @@ public class WorkflowEditorWindow extends JFrame
         JScrollPane scrollDraw = new JScrollPane(drawPanel);
         scrollDraw.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollDraw.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-
+        // Make sure any area not covered by the draw panel is white, not gray
+        scrollDraw.getViewport().setBackground(java.awt.Color.WHITE);
+        scrollDraw.setBackground(java.awt.Color.WHITE);
+        
         JScrollPane scrollInfo = new JScrollPane(infoPanel);
 
         // Horizontal split: draw panel on the left, info panel on the right

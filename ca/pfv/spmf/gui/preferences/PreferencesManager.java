@@ -77,6 +77,8 @@ public class PreferencesManager {
     public static final String TextEditorY = "ca.pfv.spmf.gui.texteditor.y";
     public static final String ShouldUseSystemTextEditor = "ca.pfv.spmf.system_text_editor";
     public static final String ConsoleFontSize = "ca.pfv.spmf.gui.console.fontsize";
+    /** Registry key for the "Beep on completion" checkbox preference in the Algorithm Runner panel */
+    public static final String BeepOnCompletion = "ca.pfv.spmf.gui.beeponcompletion";
 
     /** Registry key prefix for recent input files (private — no public getter via reflection) */
     private static final String RECENT_INPUT_PREFIX = "ca.pfv.spmf.gui.recent.input.";
@@ -638,6 +640,34 @@ public class PreferencesManager {
         p.put(ConsoleFontSize, Integer.toString(size));
     }
 
+    /**
+     * Get the preference about whether a system beep should be played when an
+     * algorithm run completes in the Algorithm Runner panel (this is stored in
+     * a registry key). This lets the user re-open SPMF and have the checkbox
+     * restored to whatever state they last left it in.
+     *
+     * @return true if beep-on-completion is enabled, false otherwise (default:
+     *         false, i.e. off, if the user has never set this preference before)
+     */
+    public boolean getBeepOnCompletion() {
+        Preferences p = Preferences.userRoot();
+        String value = p.get(BeepOnCompletion, null);
+        return (value == null) ? false : Boolean.parseBoolean(value);
+    }
+
+    /**
+     * Store the preference about whether a system beep should be played when an
+     * algorithm run completes. Called every time the user toggles the "Beep on
+     * completion" checkbox in the Algorithm Runner panel, so the choice is
+     * persisted immediately and survives application restarts.
+     *
+     * @param value true to enable the completion beep, false to disable it
+     */
+    public void setBeepOnCompletion(boolean value) {
+        Preferences p = Preferences.userRoot();
+        p.put(BeepOnCompletion, Boolean.toString(value));
+    }
+
     // =========================================================================
     // Recent files and algorithms — persisted via private prefix keys so that
     // the PreferencesViewer reflection loop does not try to call getters for them
@@ -822,6 +852,7 @@ public class PreferencesManager {
         setShouldUseSystemTextEditor(true);
         setRunAsExternalProgram(false);
         setNightMode(false);
+        setBeepOnCompletion(false);
         // Clear all recent lists
         saveRecentList(RECENT_INPUT_PREFIX,     new ArrayList<>());
         saveRecentList(RECENT_OUTPUT_PREFIX,    new ArrayList<>());

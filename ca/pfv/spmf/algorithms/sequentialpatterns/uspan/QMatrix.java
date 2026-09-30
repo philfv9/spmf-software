@@ -17,6 +17,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.uspan;
 * 
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 /**
  * This class represents a QMatrix as described in the paper describing USPan

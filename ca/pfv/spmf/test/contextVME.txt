@@ -1,3 +1,5 @@
+@FILETYPE="Transaction database with profit information"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
 50 2 3 4 6
 20 2 5 7
 50 1 2 3 5

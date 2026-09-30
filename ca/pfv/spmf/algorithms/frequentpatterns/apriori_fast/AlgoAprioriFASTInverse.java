@@ -238,6 +238,10 @@ public class AlgoAprioriFASTInverse {
 		} else {
 			// prepare object for writing the file
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Perfectly rare itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 			patterns = null;
 		}
 

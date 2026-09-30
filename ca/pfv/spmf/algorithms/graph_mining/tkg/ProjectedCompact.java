@@ -513,6 +513,12 @@ public class ProjectedCompact {
 
     public Set<ProjectedEdge> getProjections(int index) {
         Set<ProjectedEdge> projectedEdges = new HashSet<ProjectedEdge>();
+
+        // Defensive guard: an empty/uninitialized projection must not crash the caller.
+        if (index < 0 || index >= projected.size()) {
+            return projectedEdges;
+        }
+
         for (Map<Integer, Set<ProjectedEdge>> vertexEdges: projected.get(index).values()) {
             for (Set<ProjectedEdge> edges: vertexEdges.values()) {
                 projectedEdges.addAll(edges);

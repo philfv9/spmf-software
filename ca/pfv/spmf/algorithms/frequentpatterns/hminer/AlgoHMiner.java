@@ -446,6 +446,10 @@ public class AlgoHMiner {
 		
 
 		writer = new BufferedWriter(new FileWriter(outputFile));
+		writer.write("@FILETYPE=\"High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		Explore_search_tree(new int[0], listOfCULLists, minUtility);
 		

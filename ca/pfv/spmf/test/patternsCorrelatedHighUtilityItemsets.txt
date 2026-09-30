@@ -1,0 +1,6 @@
+@FILETYPE="Correlated High-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+4 2 #UTIL: 30 #ALLCONF: 0.6666666666666666
+4 2 5 #UTIL: 36 #ALLCONF: 0.5
+2 5 #UTIL: 31 #ALLCONF: 0.75
+2 5 3 #UTIL: 37 #ALLCONF: 0.6

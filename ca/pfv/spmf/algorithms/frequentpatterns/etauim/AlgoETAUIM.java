@@ -61,6 +61,11 @@ public class AlgoETAUIM {
 		maxMemory = 0;
 		startTimestamp = System.currentTimeMillis();
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High average-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		// We create a map to store the TWU of each item
 		mapItemToAUUB = new HashMap<Integer, Integer>();
 		maxUtilities = new ArrayList<>();
@@ -137,6 +142,13 @@ public class AlgoETAUIM {
 			myInput = new BufferedReader(new InputStreamReader(new FileInputStream(new File(input))));
 			// for each line (transaction) until the end of file
 			while ((thisLine = myInput.readLine()) != null) {
+				// if the line is a comment, is empty or is a
+				// kind of metadata
+				if (thisLine.isEmpty() == true || thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%'
+						|| thisLine.charAt(0) == '@') {
+					continue;
+				}
+				
 				// split the line according to the separator
 				tid++;
 				String split[] = thisLine.split(":");
@@ -408,7 +420,7 @@ public class AlgoETAUIM {
 	 * @throws IOException if an exception for reading/writing to file
 	 */
 	public void writeOut(String path) throws IOException {
-		BufferedWriter writer = new BufferedWriter(new FileWriter(path));
+//		BufferedWriter writer = new BufferedWriter(new FileWriter(path));
 		Iterator<Itemset> iter = kItemsets.iterator();
 		while (iter.hasNext()) {
 			StringBuffer buffer = new StringBuffer();

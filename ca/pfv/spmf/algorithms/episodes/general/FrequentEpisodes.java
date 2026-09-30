@@ -72,6 +72,11 @@ public class FrequentEpisodes {
 	public void saveToFile(String output) throws IOException {
 		// Create a string buffer
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Frequent episodes\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+		
 		StringBuilder buffer = new StringBuilder();
 		for (Level l : levels) {
 			for (AbstractEpisode episode : l.getKFrequentEpisodes()) {

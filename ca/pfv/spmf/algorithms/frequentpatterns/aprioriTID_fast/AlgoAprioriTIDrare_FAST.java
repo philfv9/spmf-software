@@ -137,6 +137,10 @@ public class AlgoAprioriTIDrare_FAST {
 		itemsetCount = 0;
 
 		writer = new BufferedWriter(new FileWriter(output), 65536);
+		writer.write("@FILETYPE=\"Minimal rare itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		// PHASE 1: Single-pass database scan
 		List<ItemsetWithTID> level = scanDatabaseAndBuildLevel1(input, minsup);

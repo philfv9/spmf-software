@@ -1,30 +1,43 @@
 package ca.pfv.spmf.gui.visual_pattern_viewer;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
-import java.awt.event.MouseEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.InputMap;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -32,9 +45,17 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
+import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import ca.pfv.spmf.gui.Main;
 
@@ -56,946 +77,1089 @@ import ca.pfv.spmf.gui.Main;
  *
  * You should have received a copy of the GNU General Public License
  * along with SPMF. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Do not remove copyright and license information
  */
 /**
- * This class implements a GUI Window (a viewer) for viewing patterns found by
- * data mining algorithms.
+ * A GUI window (a viewer) for viewing patterns found by data mining
+ * algorithms.
  * <p>
- * A left sidebar contains summary statistics, a size distribution histogram,
- * a search panel, and a separate filter panel for numeric measure filtering.
- * Each measure slider is backed by a {@link MeasureDistributionBar} that shows
- * where values cluster across all visible patterns.
- * <p>
- * A pagination toolbar at the bottom allows the user to navigate through pages
- * of patterns or switch to "show all" mode.
+ * Layout: a toolbar (layout / sort / active-filter indicator) on top, a
+ * resizable left sidebar (search, filters, statistics, size histogram) with
+ * collapsible sections, the pattern cards in the center, and a pagination bar
+ * and status bar at the bottom.
  *
  * @author Philippe Fournier-Viger 2025
  */
 public class VisualPatternViewer extends JFrame {
 
-    /** Serial UID */
-    private static final long serialVersionUID = 3545413603350311234L;
-
-    /** Window title */
-    private static final String WINDOW_TITLE = "SPMF Visual Pattern Viewer ";
-
-    /** Default filename suggested in the export dialog */
-    static final String DEFAULT_EXPORT_FILENAME = "patterns_visualization.png";
-
-    /** Preferred width for the left sidebar */
-    static final int SIDEBAR_WIDTH = 400;
-
-    /**
-     * Datasets larger than this threshold automatically activate pagination.
-     */
-    private static final int LARGE_DATASET_THRESHOLD = 200;
-
-    /** Default page size used when pagination is activated automatically. */
-    private static final int DEFAULT_PAGE_SIZE = 50;
-
-    /** Path to the original pattern file */
-    private final String filePath;
-
-    /** Selected layout mode */
-    LayoutMode mode = LayoutMode.GRID;
-
-    /** Panel for showing patterns */
-    private PatternsPanel patternsPanel;
-
-    /** Left sidebar */
-    private JPanel sidebarPanel;
-
-    /** Panel for text search only */
-    private JPanel searchPanel;
-
-    /** Panel for numeric measure filtering */
-    private JPanel filterPanel;
-
-    /** Panel for summary statistics */
-    private JPanel summaryPanel;
-
-    /** Histogram panel for size distribution */
-    private SizeDistributionHistogram histogramPanel;
-
-    /** Label for displaying pattern count */
-    private JLabel countLabel;
-
-    /** Status bar at the bottom */
-    private JPanel statusBar;
-
-    /** Status bar label */
-    private JLabel statusLabel;
-
-    // --- Pagination toolbar ---
-    private JPanel paginationBar;
-    private JButton btnFirst;
-    private JButton btnPrev;
-    private JButton btnNext;
-    private JButton btnLast;
-    private JLabel  pageInfoLabel;
-    private JComboBox<String> pageSizeCombo;
-
-    /** Scroll pane that wraps the patterns panel */
-    private JScrollPane patternScrollPane;
-
-    /**
-     * Shared "Clear All" button referenced by both search and filter panels.
-     */
-    private JButton clearAllButton;
-
-    /**
-     * All measure distribution bars, keyed by measure name. Updated whenever
-     * the visible pattern set changes.
-     */
-    private final Map<String, MeasureDistributionBar> distributionBars =
-            new LinkedHashMap<>();
-
-	private JTextField searchField;
-
-    // ---------------------------------------------------------------
-    // Constructor
-    // ---------------------------------------------------------------
-
-    /**
-     * Constructor
-     *
-     * @param runAsStandaloneProgram if true, closing the window exits the JVM
-     * @param filePath               path to the pattern file to visualize
-     * @param patternType            type of pattern to display
-     * @throws IOException if error reading the input file
-     */
-    public VisualPatternViewer(boolean runAsStandaloneProgram, String filePath,
-            PatternType patternType) throws IOException {
-        super(WINDOW_TITLE + Main.SPMF_VERSION);
-        if (runAsStandaloneProgram) {
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        }
-
-        this.filePath = filePath;
-
-        patternsPanel = PatternPanelFactory.getPatternPanel(filePath, patternType, mode);
-
-        // Auto-activate pagination for large datasets
-        if (patternsPanel.getTotalPatternCount() > LARGE_DATASET_THRESHOLD) {
-            patternsPanel.setPageSize(DEFAULT_PAGE_SIZE);
-        }
-
-        // Retrieve all measures and compute min/max
-        Set<String> measures = patternsPanel.getAllMeasures();
-        Map<String, Double> minMap = new LinkedHashMap<>();
-        Map<String, Double> maxMap = new LinkedHashMap<>();
-        for (String measure : measures) {
-            Double minVal = patternsPanel.getMinForMeasureOriginal(measure);
-            Double maxVal = patternsPanel.getMaxForMeasureOriginal(measure);
-            if (minVal != null && maxVal != null) {
-                minMap.put(measure, minVal);
-                maxMap.put(measure, maxVal);
-            }
-        }
-
-        // === Build the left sidebar ===
-        sidebarPanel = new JPanel();
-        sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
-        sidebarPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(200, 200, 200)),
-                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
-
-        // Shared sliders and operator combos
-        Map<String, MeasureDistributionBar> sliders     = new LinkedHashMap<>();
-        Map<String, JComboBox<String>>      operatorCombos = new LinkedHashMap<>();
-
-        // Search panel (text only)
-        searchPanel = buildSearchPanel(minMap, maxMap, sliders, operatorCombos);
-        sidebarPanel.add(wrapForSidebar(searchPanel));
-        sidebarPanel.add(Box.createVerticalStrut(6));
-
-        // Filter panel (distribution sliders)
-        filterPanel = buildFilterPanel(minMap, maxMap, sliders, operatorCombos);
-        sidebarPanel.add(wrapForSidebar(filterPanel));
-        sidebarPanel.add(Box.createVerticalStrut(6));
-
-        // Summary statistics
-        summaryPanel = buildSummaryPanel(minMap, maxMap);
-        sidebarPanel.add(wrapForSidebar(summaryPanel));
-        sidebarPanel.add(Box.createVerticalStrut(6));
-
-        // Size distribution histogram
-        histogramPanel = new SizeDistributionHistogram();
-        histogramPanel.updateData(patternsPanel);
-        sidebarPanel.add(wrapForSidebar(histogramPanel));
-
-        sidebarPanel.add(Box.createVerticalGlue());
-
-        // Populate distribution bars with initial data
-        updateDistributionBars();
-
-        // === Pagination toolbar ===
-        paginationBar = buildPaginationBar();
-
-        // === Status bar ===
-        statusBar = new JPanel(new BorderLayout());
-        statusBar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(200, 200, 200)),
-                BorderFactory.createEmptyBorder(3, 8, 3, 8)));
-        statusLabel = new JLabel(buildStatusText());
-        statusLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        statusLabel.setForeground(new Color(80, 80, 80));
-        statusBar.add(statusLabel, BorderLayout.WEST);
-
-        countLabel = new JLabel();
-        countLabel.setFont(new Font("SansSerif", Font.BOLD, 11));
-        countLabel.setForeground(new Color(60, 60, 60));
-        updateCountLabel();
-        statusBar.add(countLabel, BorderLayout.EAST);
-
-        // === Layout assembly ===
-        getContentPane().setLayout(new BorderLayout());
-
-        patternScrollPane = new JScrollPane((JPanel) patternsPanel);
-        getContentPane().add(patternScrollPane, BorderLayout.CENTER);
-
-        JScrollPane sidebarScroll = new JScrollPane(sidebarPanel);
-        sidebarScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        sidebarScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        sidebarScroll.setPreferredSize(new Dimension(SIDEBAR_WIDTH + 30, 0));
-        sidebarScroll.setMinimumSize(new Dimension(SIDEBAR_WIDTH + 30, 200));
-        sidebarScroll.setBorder(null);
-        getContentPane().add(sidebarScroll, BorderLayout.WEST);
-
-        JPanel southPanel = new JPanel(new BorderLayout());
-        southPanel.add(paginationBar, BorderLayout.NORTH);
-        southPanel.add(statusBar, BorderLayout.SOUTH);
-        getContentPane().add(southPanel, BorderLayout.SOUTH);
-
-        // === Menu bar ===
-        this.setJMenuBar(createMenuBar(this, patternsPanel, this.filePath));
-
-        // === Window title ===
-        String fileName = new java.io.File(filePath).getName();
-        this.setTitle(WINDOW_TITLE + Main.SPMF_VERSION + " - " + fileName);
-
-        configureFrameSize(this, patternsPanel);
-        refreshPaginationBar();
-    }
-
-    // ---------------------------------------------------------------
-    // Distribution bar update
-    // ---------------------------------------------------------------
-
-    /**
-     * Recomputes and pushes fresh data into every {@link MeasureDistributionBar}.
-     * Called once on startup and again after every filter / sort change.
-     */
-    private void updateDistributionBars() {
-        if (distributionBars.isEmpty()) return;
-
-        // Build a single measure-values map covering all visible patterns
-        Map<String, List<Double>> measureValuesMap = new LinkedHashMap<>();
-        for (String measure : distributionBars.keySet()) {
-            measureValuesMap.put(measure, new ArrayList<>());
-        }
-        patternsPanel.populateMeasureValues(measureValuesMap);
-
-        for (Map.Entry<String, MeasureDistributionBar> entry : distributionBars.entrySet()) {
-            List<Double> values = measureValuesMap.get(entry.getKey());
-            entry.getValue().updateDistribution(values);
-        }
-    }
-
-    // ---------------------------------------------------------------
-    // Export dialog
-    // ---------------------------------------------------------------
-
-    
-
-    // ---------------------------------------------------------------
-    // Pagination toolbar
-    // ---------------------------------------------------------------
-
-    private JPanel buildPaginationBar() {
-        JPanel bar = new JPanel(new BorderLayout(4, 0));
-        bar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(200, 200, 200)),
-                BorderFactory.createEmptyBorder(3, 8, 3, 8)));
-        bar.setBackground(new Color(245, 245, 245));
-
-        JPanel navPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
-        navPanel.setOpaque(false);
-
-        btnFirst = new JButton("|◀");
-        btnFirst.setToolTipText("First page");
-        btnFirst.setFont(new Font("SansSerif", Font.BOLD, 11));
-        btnFirst.setMargin(new Insets(2, 5, 2, 5));
-        btnFirst.addActionListener(e -> navigateToPage(0));
-
-        btnPrev = new JButton("◀");
-        btnPrev.setToolTipText("Previous page");
-        btnPrev.setFont(new Font("SansSerif", Font.BOLD, 11));
-        btnPrev.setMargin(new Insets(2, 5, 2, 5));
-        btnPrev.addActionListener(e -> navigateToPage(patternsPanel.getCurrentPage() - 1));
-
-        pageInfoLabel = new JLabel("", SwingConstants.CENTER);
-        pageInfoLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        pageInfoLabel.setPreferredSize(new Dimension(130, 22));
-
-        btnNext = new JButton("▶");
-        btnNext.setToolTipText("Next page");
-        btnNext.setFont(new Font("SansSerif", Font.BOLD, 11));
-        btnNext.setMargin(new Insets(2, 5, 2, 5));
-        btnNext.addActionListener(e -> navigateToPage(patternsPanel.getCurrentPage() + 1));
-
-        btnLast = new JButton("▶|");
-        btnLast.setToolTipText("Last page");
-        btnLast.setFont(new Font("SansSerif", Font.BOLD, 11));
-        btnLast.setMargin(new Insets(2, 5, 2, 5));
-        btnLast.addActionListener(e -> navigateToPage(patternsPanel.getTotalPages() - 1));
-
-        navPanel.add(btnFirst); navPanel.add(btnPrev);
-        navPanel.add(pageInfoLabel);
-        navPanel.add(btnNext);  navPanel.add(btnLast);
-
-        JPanel sizePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-        sizePanel.setOpaque(false);
-        JLabel sizeLabel = new JLabel("Patterns per page:");
-        sizeLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
-
-        String[] opts = { "10", "25", "50", "100", "200", "500", "Show All" };
-        pageSizeCombo = new JComboBox<>(opts);
-        pageSizeCombo.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        pageSizeCombo.setPreferredSize(new Dimension(90, 24));
-        syncPageSizeCombo();
-
-        pageSizeCombo.addActionListener(e -> {
-            String sel = (String) pageSizeCombo.getSelectedItem();
-            int newSize = "Show All".equals(sel) ? Integer.MAX_VALUE : Integer.parseInt(sel);
-            patternsPanel.setPageSize(newSize);
-            scrollPatternPanelToTop();
-            refreshPaginationBar();
-            updateStatusBar();
-        });
-
-        sizePanel.add(sizeLabel); sizePanel.add(pageSizeCombo);
-        bar.add(navPanel, BorderLayout.WEST);
-        bar.add(sizePanel, BorderLayout.EAST);
-        return bar;
-    }
-
-    private void syncPageSizeCombo() {
-        if (pageSizeCombo == null) return;
-        int current = patternsPanel.getPageSize();
-        String targetStr = (current == Integer.MAX_VALUE) ? "Show All" : String.valueOf(current);
-        var listeners = pageSizeCombo.getActionListeners();
-        for (var l : listeners) pageSizeCombo.removeActionListener(l);
-        for (int i = 0; i < pageSizeCombo.getItemCount(); i++) {
-            if (targetStr.equals(pageSizeCombo.getItemAt(i))) {
-                pageSizeCombo.setSelectedIndex(i); break;
-            }
-        }
-        for (var l : listeners) pageSizeCombo.addActionListener(l);
-    }
-
-    private void navigateToPage(int page) {
-        patternsPanel.goToPage(page);
-        scrollPatternPanelToTop();
-        refreshPaginationBar();
-        updateStatusBar();
-    }
-
-    void refreshPaginationBar() {
-        if (paginationBar == null) return;
-        boolean paginated = patternsPanel.isPaginated();
-        int cp = patternsPanel.getCurrentPage();
-        int tp = patternsPanel.getTotalPages();
-        paginationBar.setVisible(true);
-        btnFirst.setEnabled(paginated && cp > 0);
-        btnPrev.setEnabled(paginated && cp > 0);
-        btnNext.setEnabled(paginated && cp < tp - 1);
-        btnLast.setEnabled(paginated && cp < tp - 1);
-        pageInfoLabel.setText(paginated
-                ? String.format("Page %d of %d", cp + 1, tp) : "All patterns");
-        syncPageSizeCombo();
-    }
-
-    private void scrollPatternPanelToTop() {
-        if (patternScrollPane != null) {
-            SwingUtilities.invokeLater(() ->
-                    patternScrollPane.getViewport()
-                            .setViewPosition(new java.awt.Point(0, 0)));
-        }
-    }
-
-    // ---------------------------------------------------------------
-    // Sidebar wrapper
-    // ---------------------------------------------------------------
-
-    private static JPanel wrapForSidebar(JPanel content) {
-        JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.setOpaque(false);
-        wrapper.add(content, BorderLayout.CENTER);
-        int h = content.getPreferredSize().height;
-        wrapper.setPreferredSize(new Dimension(SIDEBAR_WIDTH - 20, h));
-        wrapper.setMinimumSize(new Dimension(SIDEBAR_WIDTH - 20, h));
-        wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, h));
-        return wrapper;
-    }
-
-    // ---------------------------------------------------------------
-    // Search panel
-    // ---------------------------------------------------------------
-
-    /**
-     * Builds the text-search panel.
-     *
-     * @param minMap         minimum values per measure
-     * @param maxMap         maximum values per measure
-     * @param sliders        shared distribution-bar sliders (populated by
-     *                       {@link #buildFilterPanel})
-     * @param operatorCombos shared operator combos (populated by
-     *                       {@link #buildFilterPanel})
-     * @return the assembled search panel
-     */
-    private JPanel buildSearchPanel(Map<String, Double> minMap, Map<String, Double> maxMap,
-            Map<String, MeasureDistributionBar> sliders,
-            Map<String, JComboBox<String>> operatorCombos) {
-
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createTitledBorder("Search"));
-
-        JPanel searchRow = new JPanel(new BorderLayout(4, 0));
-        searchRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        JLabel searchLabel = new JLabel(" Text: ");
-        searchField = new JTextField();
-        JButton searchButton = new JButton("Go");
-        searchButton.setMargin(new Insets(2, 6, 2, 6));
-        searchRow.add(searchLabel, BorderLayout.WEST);
-        searchRow.add(searchField, BorderLayout.CENTER);
-        searchRow.add(searchButton, BorderLayout.EAST);
-        panel.add(searchRow);
-        panel.add(Box.createVerticalStrut(6));
-
-        Runnable doSearch = () -> {
-            applySearchAndFilter(searchField.getText().trim(),
-                    sliders, operatorCombos, minMap, maxMap);
-            clearAllButton.setEnabled(true);
-        };
-        searchField.addActionListener(e -> doSearch.run());
-        searchButton.addActionListener(e -> doSearch.run());
-
-        int h = panel.getPreferredSize().height + 10;
-        panel.setPreferredSize(new Dimension(SIDEBAR_WIDTH - 20, h));
-        panel.setMinimumSize(new Dimension(SIDEBAR_WIDTH - 20, h));
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, h));
-        return panel;
-    }
-
-    // ---------------------------------------------------------------
-    // Filter panel
-    // ---------------------------------------------------------------
-
-    /**
-     * Builds the numeric filter panel. Each measure gets a single row containing
-     * the measure label, operator combo, and distribution slider all on one line.
-     *
-     * @param minMap         minimum values per measure
-     * @param maxMap         maximum values per measure
-     * @param sliders        map to populate with measure → distribution-bar slider
-     * @param operatorCombos map to populate with measure → operator combo
-     * @return the assembled filter panel
-     */
-    private JPanel buildFilterPanel(Map<String, Double> minMap, Map<String, Double> maxMap,
-            Map<String, MeasureDistributionBar> sliders,
-            Map<String, JComboBox<String>> operatorCombos) {
-
-        JPanel outerPanel = new JPanel();
-        outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
-        outerPanel.setBorder(BorderFactory.createTitledBorder("Filter"));
-
-        if (minMap.isEmpty()) {
-            JLabel noMeasures = new JLabel("  No numeric measures available");
-            noMeasures.setFont(new Font("SansSerif", Font.ITALIC, 10));
-            noMeasures.setForeground(new Color(150, 150, 150));
-            outerPanel.add(noMeasures);
-            outerPanel.add(Box.createVerticalStrut(4));
-        } else {
-            for (String measure : minMap.keySet()) {
-                double min = minMap.get(measure);
-                double max = maxMap.get(measure);
-
-                // --- Single row: [Label] [Operator Combo] [Distribution Slider] ---
-                JPanel rowPanel = new JPanel(new BorderLayout(4, 0));
-                rowPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
-
-                // Left: Measure label + operator combo in a small fixed-width panel
-                JPanel labelOpPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
-                labelOpPanel.setPreferredSize(new Dimension(95, 42));
-                JLabel label = new JLabel(measure + ":");
-                label.setFont(new Font("SansSerif", Font.BOLD, 11));
-                String[] ops = { "\u2265", "\u2264" };
-                JComboBox<String> combo = new JComboBox<>(ops);
-                combo.setPreferredSize(new Dimension(48, 22));
-                combo.setFont(new Font("SansSerif", Font.PLAIN, 10));
-                labelOpPanel.add(label);
-                labelOpPanel.add(combo);
-                rowPanel.add(labelOpPanel, BorderLayout.WEST);
-
-                // Center/Right: Distribution bar (slider with histogram)
-                MeasureDistributionBar distBar = new MeasureDistributionBar(min, max);
-
-                // Tooltip: show the real value under the cursor
-                distBar.addMouseMotionListener(
-                        new java.awt.event.MouseMotionAdapter() {
-                    @Override
-                    public void mouseMoved(java.awt.event.MouseEvent e) {
-                        double realValue = min
-                                + (distBar.getValue() / 1000.0) * (max - min);
-                        distBar.setToolTipText(String.format(
-                                "Threshold: %.4f  (drag to adjust)", realValue));
-                    }
-                });
-
-                rowPanel.add(distBar, BorderLayout.CENTER);
-
-                outerPanel.add(rowPanel);
-                // Small gap between measure rows
-                outerPanel.add(Box.createVerticalStrut(3));
-
-                // Register in shared maps and in distributionBars
-                sliders.put(measure, distBar);
-                operatorCombos.put(measure, combo);
-                distributionBars.put(measure, distBar);
-            }
-
-            // --- Apply Filter button ---
-            outerPanel.add(Box.createVerticalStrut(4));
-            JPanel applyRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-            applyRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-//            JButton applyButton = new JButton("Apply Filter");
-//            applyButton.setToolTipText(
-//                    "Apply measure filters (combined with any active text search)");
-//            applyButton.setMargin(new Insets(2, 8, 2, 8));
-            
-            
-
-//            JPanel clearRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-//            clearRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-            clearAllButton = new JButton("Clear filter(s)");
-            clearAllButton.setEnabled(false);
-            clearAllButton.setToolTipText("Clear both text search and all measure filters");
-
-            clearAllButton.addActionListener(e -> {
-                searchField.setText("");
-                for (MeasureDistributionBar bar : sliders.values()) bar.setValue(0);
-                for (JComboBox<String> c : operatorCombos.values()) c.setSelectedItem("\u2265");
-                patternsPanel.clearSearchAndFilters();
-                clearAllButton.setEnabled(false);
-                scrollPatternPanelToTop();
-                refreshPaginationBar();
-                updateStatusBar();
-            });
-
-            
-//            clearRow.add(clearAllButton);
-//            applyRow.add(applyButton);
-            applyRow.add(clearAllButton);
-            outerPanel.add(applyRow);
-
-            // Auto-apply when the user releases the slider thumb
-            for (Map.Entry<String, MeasureDistributionBar> entry : sliders.entrySet()) {
-                MeasureDistributionBar bar = entry.getValue();
-                bar.addChangeListener(e -> {
-                    if (!bar.getValueIsAdjusting()) {
-                        boolean anyMoved = sliders.values().stream()
-                                .anyMatch(s -> s.getValue() > 0);
-                        if (anyMoved) {
-                            applySearchAndFilter("", sliders, operatorCombos,
-                                    minMap, maxMap);
-                            if (clearAllButton != null) clearAllButton.setEnabled(true);
-                        } else {
-                            patternsPanel.clearSearchAndFilters();
-                            if (clearAllButton != null) clearAllButton.setEnabled(false);
-                            scrollPatternPanelToTop();
-                            refreshPaginationBar();
-                            updateStatusBar();
-                        }
-                    }
-                });
-            }
-
-            // Auto-apply when operator changes (only if a slider is active)
-            for (Map.Entry<String, JComboBox<String>> entry : operatorCombos.entrySet()) {
-                JComboBox<String> combo = entry.getValue();
-                combo.addActionListener(e -> {
-                    boolean anyMoved = sliders.values().stream()
-                            .anyMatch(s -> s.getValue() > 0);
-                    if (anyMoved) {
-                        applySearchAndFilter("", sliders, operatorCombos,
-                                minMap, maxMap);
-                        if (clearAllButton != null) clearAllButton.setEnabled(true);
-                    }
-                });
-            }
-
-//            // Apply Filter button
-//            applyButton.addActionListener(e -> {
-//                boolean anyMoved = sliders.values().stream()
-//                        .anyMatch(s -> s.getValue() > 0);
-//                if (anyMoved) {
-//                    applySearchAndFilter("", sliders, operatorCombos, minMap, maxMap);
-//                    if (clearAllButton != null) clearAllButton.setEnabled(true);
-//                }
-//            });
-        }
-
-        int filterH = outerPanel.getPreferredSize().height + 10;
-        outerPanel.setPreferredSize(new Dimension(SIDEBAR_WIDTH - 20, filterH));
-        outerPanel.setMinimumSize(new Dimension(SIDEBAR_WIDTH - 20, filterH));
-        outerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, filterH));
-        return outerPanel;
-    }
-
-    // ---------------------------------------------------------------
-    // Summary statistics panel
-    // ---------------------------------------------------------------
-
-    private JPanel buildSummaryPanel(Map<String, Double> minMap, Map<String, Double> maxMap) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createTitledBorder("Statistics"));
-
-        int total = patternsPanel.getTotalPatternCount();
-        JLabel totalLabel = new JLabel(String.format(" %d patterns total", total));
-        totalLabel.setFont(new Font("SansSerif", Font.BOLD, 11));
-        panel.add(totalLabel);
-        panel.add(Box.createVerticalStrut(6));
-
-        Set<String> measures = patternsPanel.getAllMeasures();
-        if (!measures.isEmpty()) {
-            JLabel mLabel = new JLabel(String.format(" %d measures", measures.size()));
-            mLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            mLabel.setForeground(new Color(100, 100, 100));
-            panel.add(mLabel);
-            panel.add(Box.createVerticalStrut(6));
-        }
-
-        if (!minMap.isEmpty()) {
-            for (Map.Entry<String, Double> entry : minMap.entrySet()) {
-                String measure = entry.getKey();
-                double min     = entry.getValue();
-                double max     = maxMap.getOrDefault(measure, min);
-
-                JPanel row = new JPanel(new BorderLayout(4, 0));
-                row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
-
-                JLabel nameLabel = new JLabel("  " + measure + ":");
-                nameLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
-                nameLabel.setForeground(new Color(70, 70, 70));
-                row.add(nameLabel, BorderLayout.WEST);
-
-                JLabel rangeLabel = new JLabel(
-                        String.format("%.4f \u2013 %.4f  ", min, max));
-                rangeLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
-                rangeLabel.setForeground(new Color(46, 134, 193));
-                rangeLabel.setHorizontalAlignment(JLabel.RIGHT);
-                row.add(rangeLabel, BorderLayout.EAST);
-
-                panel.add(row);
-                panel.add(Box.createVerticalStrut(2));
-            }
-        } else {
-            JLabel noM = new JLabel("  No numeric measures found");
-            noM.setFont(new Font("SansSerif", Font.ITALIC, 10));
-            noM.setForeground(new Color(150, 150, 150));
-            panel.add(noM);
-            panel.add(Box.createVerticalStrut(6));
-        }
-
-        panel.add(Box.createVerticalStrut(4));
-        int finalH = Math.max(panel.getPreferredSize().height, 80);
-        panel.setPreferredSize(new Dimension(SIDEBAR_WIDTH - 20, finalH));
-        panel.setMinimumSize(new Dimension(SIDEBAR_WIDTH - 20, finalH));
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, finalH));
-        return panel;
-    }
-
-    // ---------------------------------------------------------------
-    // Size Distribution Histogram (sidebar)
-    // ---------------------------------------------------------------
-
-    
-
-    // ---------------------------------------------------------------
-    // Filter / status helpers
-    // ---------------------------------------------------------------
-
-    /**
-     * Applies search text and numeric filters. Only sliders moved away from
-     * position 0 contribute to the filter (position 0 = no filter for that
-     * measure).
-     */
-    private void applySearchAndFilter(String text,
-            Map<String, MeasureDistributionBar> sliders,
-            Map<String, JComboBox<String>> operatorCombos,
-            Map<String, Double> minMap, Map<String, Double> maxMap) {
-
-        Map<String, Double> thresholds = new LinkedHashMap<>();
-        Map<String, String> operators  = new LinkedHashMap<>();
-
-        for (Map.Entry<String, MeasureDistributionBar> entry : sliders.entrySet()) {
-            String measure = entry.getKey();
-            MeasureDistributionBar bar = entry.getValue();
-            int pos = bar.getValue();
-
-            if (pos > 0) {
-                double min = minMap.get(measure);
-                double max = maxMap.get(measure);
-                double val = pos / 1000.0 * (max - min) + min;
-                thresholds.put(measure, val);
-                operators.put(measure,
-                        (String) operatorCombos.get(measure).getSelectedItem());
-            }
-        }
-
-        patternsPanel.applySearchAndFilters(text, thresholds, operators);
-        scrollPatternPanelToTop();
-        refreshPaginationBar();
-        updateStatusBar();
-    }
-
-    /** Updates the status bar, histogram, and distribution bars after any change. */
-    private void updateStatusBar() {
-        int total   = patternsPanel.getTotalPatternCount();
-        int visible = patternsPanel.getNumberOfVisiblePatterns();
-        updateCountLabel();
-        statusLabel.setText(total != visible
-                ? String.format("Showing %d of %d patterns (filtered)", visible, total)
-                : buildStatusText());
-        if (histogramPanel != null) histogramPanel.updateData(patternsPanel);
-        updateDistributionBars();
-    }
-
-    private void updateCountLabel() {
-        int total   = patternsPanel.getTotalPatternCount();
-        int visible = patternsPanel.getNumberOfVisiblePatterns();
-        countLabel.setText(total != visible
-                ? visible + " / " + total + " patterns "
-                : total + " patterns ");
-    }
-
-    private String buildStatusText() {
-        int total = patternsPanel.getTotalPatternCount();
-        Set<String> measures = patternsPanel.getAllMeasures();
-        StringBuilder sb = new StringBuilder(" ").append(total).append(" patterns");
-        if (!measures.isEmpty())
-            sb.append(" \u00B7 ").append(measures.size()).append(" measures");
-        return sb.toString();
-    }
-
-    // ---------------------------------------------------------------
-    // Menu bar
-    // ---------------------------------------------------------------
-
-    private static JMenuBar createMenuBar(JFrame parentFrame,
-            PatternsPanel rulesPanel, String originalFilePath) {
-        JMenuBar menuBar = new JMenuBar();
-
-        JMenu menuView = new JMenu("View");
-
-        JMenu menuSort = new JMenu("Sort by");
-        ButtonGroup sortGroup = new ButtonGroup();
-        for (String opt : rulesPanel.getListOfSortingOrders()) {
-            JRadioButtonMenuItem item = new JRadioButtonMenuItem(opt);
-            sortGroup.add(item);
-            item.addActionListener(e -> {
-                try {
-                    rulesPanel.sortPatterns(opt);
-                    rulesPanel.revalidate(); rulesPanel.repaint();
-                    if (parentFrame instanceof VisualPatternViewer v) {
-                        v.scrollPatternPanelToTop();
-                        v.refreshPaginationBar();
-                        v.updateStatusBar();
-                    }
-                } catch (Exception ex) {
-                    showErrorDialog(parentFrame, "Sort failed: " + ex.getMessage());
-                }
-            });
-            menuSort.add(item);
-        }
-
-        JRadioButtonMenuItem itemStats = new JRadioButtonMenuItem("Statistics");
-        itemStats.setSelected(true);
-        itemStats.addActionListener(e -> {
-            if (parentFrame instanceof VisualPatternViewer v) {
-                v.summaryPanel.setVisible(itemStats.isSelected());
-                v.sidebarPanel.revalidate(); v.sidebarPanel.repaint();
-            }
-        });
-        menuView.add(itemStats);
-
-        JRadioButtonMenuItem itemSearch = new JRadioButtonMenuItem("Search Panel");
-        itemSearch.setSelected(true);
-        itemSearch.addActionListener(e -> {
-            if (parentFrame instanceof VisualPatternViewer v) {
-                v.searchPanel.setVisible(itemSearch.isSelected());
-                v.sidebarPanel.revalidate(); v.sidebarPanel.repaint();
-            }
-        });
-        menuView.add(itemSearch);
-
-        JRadioButtonMenuItem itemFilter = new JRadioButtonMenuItem("Filter Panel");
-        itemFilter.setSelected(true);
-        itemFilter.addActionListener(e -> {
-            if (parentFrame instanceof VisualPatternViewer v) {
-                v.filterPanel.setVisible(itemFilter.isSelected());
-                v.sidebarPanel.revalidate(); v.sidebarPanel.repaint();
-            }
-        });
-        menuView.add(itemFilter);
-
-        JRadioButtonMenuItem itemHist = new JRadioButtonMenuItem("Size Histogram");
-        itemHist.setSelected(true);
-        itemHist.addActionListener(e -> {
-            if (parentFrame instanceof VisualPatternViewer v) {
-                v.histogramPanel.setVisible(itemHist.isSelected());
-                v.sidebarPanel.revalidate(); v.sidebarPanel.repaint();
-            }
-        });
-        menuView.add(itemHist);
-
-        JRadioButtonMenuItem itemSidebar = new JRadioButtonMenuItem("Sidebar");
-        itemSidebar.setSelected(true);
-        itemSidebar.addActionListener(e -> {
-            if (parentFrame instanceof VisualPatternViewer v) {
-                java.awt.Component sc = v.sidebarPanel.getParent();
-                if (sc != null) {
-                    java.awt.Component sp = sc.getParent();
-                    if (sp instanceof JScrollPane jsp)
-                        jsp.setVisible(itemSidebar.isSelected());
-                    else sc.setVisible(itemSidebar.isSelected());
-                    v.getContentPane().revalidate();
-                    v.getContentPane().repaint();
-                }
-            }
-        });
-        menuView.add(itemSidebar);
-
-        JRadioButtonMenuItem itemPag = new JRadioButtonMenuItem("Pagination Bar");
-        itemPag.setSelected(true);
-        itemPag.addActionListener(e -> {
-            if (parentFrame instanceof VisualPatternViewer v) {
-                v.paginationBar.setVisible(itemPag.isSelected());
-                v.getContentPane().revalidate();
-                v.getContentPane().repaint();
-            }
-        });
-        menuView.add(itemPag);
-
-        menuView.addSeparator();
-
-        JMenu menuLayout = new JMenu("Layout");
-        ButtonGroup lg = new ButtonGroup();
-        LayoutMode cur = (parentFrame instanceof VisualPatternViewer vf)
-                ? vf.mode : LayoutMode.GRID;
-        for (LayoutMode lm : LayoutMode.values()) {
-            JRadioButtonMenuItem item = new JRadioButtonMenuItem(lm.toString());
-            lg.add(item);
-            if (lm == cur) item.setSelected(true);
-            item.addActionListener(e -> {
-                if (parentFrame instanceof VisualPatternViewer v) v.mode = lm;
-                rulesPanel.setLayoutModeWithCallback(lm,
-                        () -> configureFrameSize(parentFrame, rulesPanel));
-            });
-            menuLayout.add(item);
-        }
-        menuView.add(menuLayout);
-
-        JMenu menuTools = new JMenu("Tools");
-
-        JMenuItem itemOpen = new JMenuItem("Open this file using the system text editor");
-        itemOpen.addActionListener(e -> {
-            try {
-                if (Desktop.isDesktopSupported()
-                        && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                    File f = new File(originalFilePath);
-                    if (f.exists() && f.canRead()) Desktop.getDesktop().open(f);
-                    else JOptionPane.showMessageDialog(parentFrame,
-                            "Cannot open file:\n" + originalFilePath,
-                            "File Not Found", JOptionPane.ERROR_MESSAGE);
-                } else JOptionPane.showMessageDialog(parentFrame,
-                        "Desktop API not supported.",
-                        "Not Supported", JOptionPane.ERROR_MESSAGE);
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(parentFrame,
-                        "Failed to open file:\n" + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-        menuTools.add(itemOpen);
-
-        JMenuItem itemExport = new JMenuItem("Export as PNG\u2026");
-        itemExport.addActionListener(e ->
-                new ExportDialog(parentFrame, rulesPanel).setVisible(true));
-        menuTools.add(itemExport);
-
-        menuTools.addSeparator();
-
-        JMenuItem itemMeasureHist =
-                new JMenuItem("View Measure Distribution Histogram");
-        itemMeasureHist.addActionListener(e -> {
-            try {
-                Map<String, List<Double>> mv =
-                        MeasureValuesExtractor.extractMeasureValues(rulesPanel);
-                if (mv.values().stream().noneMatch(v -> !v.isEmpty())) {
-                    JOptionPane.showMessageDialog(parentFrame,
-                            "No numeric measure values found.",
-                            "No Data", JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
-                new MeasureHistogramDialog((JFrame) parentFrame,
-                        rulesPanel, mv).setVisible(true);
-            } catch (Exception ex) {
-                showErrorDialog(parentFrame,
-                        "Failed to create histogram: " + ex.getMessage());
-            }
-        });
-        menuTools.add(itemMeasureHist);
-
-        menuBar.add(menuView);
-        menuBar.add(menuSort);
-        menuBar.add(menuTools);
-        return menuBar;
-    }
-
-    private static void configureFrameSize(JFrame frame,
-            PatternsPanel patternsPanel) {
-        frame.pack();
-        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-        int maxW = (int) (screen.width  * 0.9);
-        int maxH = (int) (screen.height * 0.9);
-        Dimension pref = frame.getSize();
-
-        if (frame instanceof VisualPatternViewer v && v.sidebarPanel != null) {
-            int sh = v.sidebarPanel.getPreferredSize().height;
-            Insets ins = frame.getInsets();
-            int mh = frame.getJMenuBar() != null
-                    ? frame.getJMenuBar().getPreferredSize().height : 0;
-            int sbh = v.statusBar    != null
-                    ? v.statusBar.getPreferredSize().height    : 0;
-            int ph  = v.paginationBar != null
-                    ? v.paginationBar.getPreferredSize().height : 0;
-            int min = sh + ins.top + ins.bottom + mh + sbh + ph;
-            pref = new Dimension(pref.width, Math.max(pref.height, min));
-        }
-
-        frame.setSize(Math.min(pref.width, maxW), Math.min(pref.height, maxH));
-        frame.setMinimumSize(new Dimension(700, 450));
-        frame.setLocationRelativeTo(null);
-    }
-
-    private static void showErrorDialog(JFrame parent, String msg) {
-        JOptionPane.showMessageDialog(parent, msg, "Error",
-                JOptionPane.ERROR_MESSAGE);
-    }
+	private static final long serialVersionUID = 3545413603350311234L;
+
+	private static final String WINDOW_TITLE = "SPMF Visual Pattern Viewer ";
+	static final String DEFAULT_EXPORT_FILENAME = "patterns_visualization.png";
+
+	static final int SIDEBAR_WIDTH = 380;
+	private static final int SIDEBAR_MIN_WIDTH = 260;
+	private static final int SIDEBAR_SECTION_GAP = 8;
+
+	/** Datasets larger than this threshold automatically activate pagination. */
+	private static final int LARGE_DATASET_THRESHOLD = 200;
+	private static final int DEFAULT_PAGE_SIZE = 50;
+	/** Ask for confirmation before "Show all" above this many patterns. */
+	private static final int SHOW_ALL_WARNING_THRESHOLD = 2000;
+	private static final String SHOW_ALL = "Show all";
+
+	/** Delay (ms) between the last keystroke and the live search. */
+	private static final int SEARCH_DELAY_MS = 300;
+
+	private final String filePath;
+	LayoutMode mode = LayoutMode.GRID;
+	private final PatternsPanel patternsPanel;
+	private JScrollPane patternScrollPane;
+
+	// --- Toolbar ---
+	private JToolBar toolbar;
+	private final Map<LayoutMode, JToggleButton> layoutButtons = new EnumMap<>(LayoutMode.class);
+	private final Map<LayoutMode, JRadioButtonMenuItem> layoutMenuItems = new EnumMap<>(LayoutMode.class);
+	private JComboBox<String> sortCombo;
+	private final Map<String, JRadioButtonMenuItem> sortMenuItems = new LinkedHashMap<>();
+	private boolean suppressSortEvents;
+	private JButton filterChip;
+	private JToggleButton sidebarToggle;
+	private JCheckBoxMenuItem sidebarMenuItem;
+
+	// --- Sidebar ---
+	private JSplitPane splitPane;
+	private int lastDividerLocation = SIDEBAR_WIDTH;
+	private JPanel sidebarPanel;
+	private JScrollPane sidebarScroll;
+	private SidebarSection searchSection;
+	private SidebarSection filterSection;
+	private SidebarSection statsSection;
+	private SidebarSection histogramSection;
+	private StatisticsPanel statisticsPanel;
+	private SizeDistributionHistogram histogramPanel;
+	private PlaceholderTextField searchField;
+	private JButton clearSearchButton;
+	private Timer searchTimer;
+	private final Map<String, MeasureFilterRow> filterRows = new LinkedHashMap<>();
+	private JButton clearAllButton;
+	private boolean suppressFilterEvents;
+
+	// --- Status bar ---
+	private JPanel statusBar;
+	private JLabel statusLabel;
+	private JLabel countLabel;
+
+	// --- Pagination bar ---
+	private JPanel paginationBar;
+	private JPanel navPanel;
+	private JButton btnFirst;
+	private JButton btnPrev;
+	private JButton btnNext;
+	private JButton btnLast;
+	private JTextField pageField;
+	private JLabel pageTotalLabel;
+	private JLabel rangeLabel;
+	private JComboBox<String> pageSizeCombo;
+
+	// ---------------------------------------------------------------
+	// Constructor
+	// ---------------------------------------------------------------
+
+	/**
+	 * @param runAsStandaloneProgram if true, closing the window exits the JVM
+	 * @param filePath               path to the pattern file to visualize
+	 * @param patternType            type of pattern to display
+	 * @throws IOException if error reading the input file
+	 */
+	public VisualPatternViewer(boolean runAsStandaloneProgram, String filePath, PatternType patternType)
+			throws IOException {
+		super(WINDOW_TITLE + Main.SPMF_VERSION);
+		setDefaultCloseOperation(runAsStandaloneProgram ? JFrame.EXIT_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
+		this.filePath = filePath;
+
+		PatternsPanel panel = PatternPanelFactory.getPatternPanel(filePath, patternType, mode);
+		if (panel == null) {
+			throw new IOException("This type of pattern cannot be displayed by the viewer: " + patternType);
+		}
+		patternsPanel = panel;
+		patternsPanel.setClearFiltersAction(this::clearAllFilters);
+
+		if (patternsPanel.getTotalPatternCount() > LARGE_DATASET_THRESHOLD) {
+			patternsPanel.setPageSize(DEFAULT_PAGE_SIZE);
+		}
+
+		Map<String, Double> minMap = new LinkedHashMap<>();
+		Map<String, Double> maxMap = new LinkedHashMap<>();
+		for (String measure : patternsPanel.getAllMeasures()) {
+			Double minVal = patternsPanel.getMinForMeasureOriginal(measure);
+			Double maxVal = patternsPanel.getMaxForMeasureOriginal(measure);
+			if (minVal != null && maxVal != null) {
+				minMap.put(measure, minVal);
+				maxMap.put(measure, maxVal);
+			}
+		}
+
+		buildSidebar(minMap, maxMap);
+		toolbar = buildToolbar();
+		paginationBar = buildPaginationBar();
+		statusBar = buildStatusBar();
+
+		// === Layout assembly ===
+		patternScrollPane = new JScrollPane(patternsPanel);
+		patternScrollPane.setBorder(BorderFactory.createEmptyBorder());
+		patternScrollPane.getViewport().setBackground(ViewerStyle.CANVAS_BG);
+
+		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, sidebarScroll, patternScrollPane);
+		splitPane.setBorder(null);
+		splitPane.setDividerSize(6);
+		splitPane.setResizeWeight(0); // extra space goes to the patterns
+		splitPane.setDividerLocation(SIDEBAR_WIDTH);
+
+		JPanel southPanel = new JPanel(new BorderLayout());
+		southPanel.add(paginationBar, BorderLayout.NORTH);
+		southPanel.add(statusBar, BorderLayout.SOUTH);
+
+		getContentPane().setLayout(new BorderLayout());
+		getContentPane().add(toolbar, BorderLayout.NORTH);
+		getContentPane().add(splitPane, BorderLayout.CENTER);
+		getContentPane().add(southPanel, BorderLayout.SOUTH);
+
+		setJMenuBar(createMenuBar());
+		installKeyBindings();
+		setTitle(WINDOW_TITLE + Main.SPMF_VERSION + " - " + new File(filePath).getName());
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowOpened(WindowEvent e) {
+				patternsPanel.requestFocusInWindow();
+			}
+		});
+
+		configureFrameSize();
+		refreshPaginationBar();
+		updateStatusBar();
+	}
+
+	// ---------------------------------------------------------------
+	// Toolbar
+	// ---------------------------------------------------------------
+
+	private JToolBar buildToolbar() {
+		JToolBar tb = new JToolBar();
+		tb.setFloatable(false);
+		tb.setRollover(true);
+		tb.setOpaque(true);
+		tb.setBackground(ViewerStyle.CARD_BG);
+		tb.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createMatteBorder(0, 0, 1, 0, ViewerStyle.CARD_BORDER),
+				BorderFactory.createEmptyBorder(4, 8, 4, 8)));
+
+		// Sidebar toggle
+		sidebarToggle = new JToggleButton("\u2630 Sidebar", true);
+		ViewerStyle.styleButton(sidebarToggle);
+		sidebarToggle.setFocusable(false);
+		sidebarToggle.setToolTipText("Show / hide the search, filter and statistics panel (" + menuKeyName() + "+B)");
+		sidebarToggle.addActionListener(e -> setSidebarVisible(sidebarToggle.isSelected()));
+		tb.add(sidebarToggle);
+		tb.addSeparator(new Dimension(14, 0));
+
+		// Layout
+		tb.add(toolbarLabel("Layout:"));
+		tb.add(Box.createHorizontalStrut(4));
+		ButtonGroup layoutGroup = new ButtonGroup();
+		for (LayoutMode lm : LayoutMode.values()) {
+			JToggleButton b = new JToggleButton(layoutLabel(lm), lm == mode);
+			ViewerStyle.styleButton(b);
+			b.setFocusable(false);
+			b.setToolTipText(layoutTooltip(lm));
+			b.addActionListener(e -> setLayoutMode(lm));
+			layoutGroup.add(b);
+			layoutButtons.put(lm, b);
+			tb.add(b);
+			tb.add(Box.createHorizontalStrut(2));
+		}
+
+		// Sort
+		List<String> orders = patternsPanel.getListOfSortingOrders();
+		if (orders != null && !orders.isEmpty()) {
+			tb.addSeparator(new Dimension(14, 0));
+			tb.add(toolbarLabel("Sort:"));
+			tb.add(Box.createHorizontalStrut(4));
+			sortCombo = new JComboBox<>(orders.toArray(new String[0]));
+			sortCombo.setSelectedIndex(-1); // file order until the user picks one
+			sortCombo.setFont(ViewerStyle.measureValueFont());
+			sortCombo.setFocusable(false);
+			sortCombo.setMaximumSize(new Dimension(280, 26));
+			sortCombo.setToolTipText("Change the order in which the patterns are displayed");
+			sortCombo.setRenderer(new DefaultListCellRenderer() {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+						boolean isSelected, boolean cellHasFocus) {
+					super.getListCellRendererComponent(list, value == null ? "Sort by\u2026" : value, index,
+							isSelected, cellHasFocus);
+					if (value == null) {
+						setForeground(ViewerStyle.TEXT_SECONDARY);
+					}
+					return this;
+				}
+			});
+			sortCombo.addActionListener(e -> {
+				Object sel = sortCombo.getSelectedItem();
+				if (!suppressSortEvents && sel != null) {
+					applySort((String) sel);
+				}
+			});
+			tb.add(sortCombo);
+		}
+
+		tb.add(Box.createHorizontalGlue());
+
+		// Active-filter indicator (hidden until a filter is active)
+		filterChip = new JButton();
+		ViewerStyle.styleButton(filterChip);
+		filterChip.setFocusable(false);
+		filterChip.setForeground(ViewerStyle.ACCENT_DARK);
+		filterChip.setBackground(ViewerStyle.ACCENT_SOFT);
+		filterChip.setToolTipText("A search or filter is active. Click to remove it and show all patterns.");
+		filterChip.setVisible(false);
+		filterChip.addActionListener(e -> clearAllFilters());
+		tb.add(filterChip);
+		return tb;
+	}
+
+	private static JLabel toolbarLabel(String text) {
+		JLabel l = new JLabel(text);
+		l.setFont(ViewerStyle.measureValueFont());
+		l.setForeground(ViewerStyle.TEXT_SECONDARY);
+		return l;
+	}
+
+	private static String layoutLabel(LayoutMode lm) {
+		switch (lm.name()) {
+		case "GRID":
+			return "\u25A6 Grid";
+		case "VERTICAL":
+			return "\u2630 List";
+		case "HORIZONTAL":
+			return "\u2A1D Row";
+		default:
+			return capitalize(lm.name());
+		}
+	}
+
+	private static String layoutTooltip(LayoutMode lm) {
+		switch (lm.name()) {
+		case "GRID":
+			return "Grid: cards arranged in rows and columns (default)";
+		case "VERTICAL":
+			return "List: one card per line, from top to bottom";
+		case "HORIZONTAL":
+			return "Row: all cards on one line, from left to right";
+		default:
+			return capitalize(lm.name());
+		}
+	}
+
+	private void setLayoutMode(LayoutMode lm) {
+		if (lm == null) {
+			return;
+		}
+		mode = lm;
+		JToggleButton b = layoutButtons.get(lm);
+		if (b != null && !b.isSelected()) {
+			b.setSelected(true);
+		}
+		JRadioButtonMenuItem mi = layoutMenuItems.get(lm);
+		if (mi != null && !mi.isSelected()) {
+			mi.setSelected(true);
+		}
+		if (patternsPanel.getLayoutMode() != lm) {
+			patternsPanel.setLayoutModeWithCallback(lm, this::scrollPatternPanelToTop);
+		}
+	}
+
+	private void applySort(String order) {
+		try {
+			patternsPanel.sortPatterns(order);
+		} catch (Exception ex) {
+			showErrorDialog(this, "Sort failed: " + ex.getMessage());
+			return;
+		}
+		suppressSortEvents = true;
+		try {
+			if (sortCombo != null && !order.equals(sortCombo.getSelectedItem())) {
+				sortCombo.setSelectedItem(order);
+			}
+			JRadioButtonMenuItem item = sortMenuItems.get(order);
+			if (item != null && !item.isSelected()) {
+				item.setSelected(true);
+			}
+		} finally {
+			suppressSortEvents = false;
+		}
+		afterContentChanged();
+	}
+
+	/** Everything to refresh when the set / order of displayed patterns changes. */
+	private void afterContentChanged() {
+		scrollPatternPanelToTop();
+		refreshPaginationBar();
+		updateStatusBar();
+	}
+
+	// ---------------------------------------------------------------
+	// Sidebar
+	// ---------------------------------------------------------------
+
+	private void buildSidebar(Map<String, Double> minMap, Map<String, Double> maxMap) {
+		sidebarPanel = new ScrollableColumn();
+		sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
+		sidebarPanel.setBackground(ViewerStyle.SIDEBAR_BG);
+		sidebarPanel.setOpaque(true);
+		sidebarPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+		searchSection = new SidebarSection("Search", buildSearchContent());
+		filterSection = new SidebarSection("Filters", buildFilterContent(minMap, maxMap));
+		statisticsPanel = new StatisticsPanel(patternsPanel.getAllMeasures());
+		statsSection = new SidebarSection("Statistics", statisticsPanel);
+		histogramPanel = new SizeDistributionHistogram();
+		histogramSection = new SidebarSection("Size distribution", histogramPanel);
+
+		for (SidebarSection section : List.of(searchSection, filterSection, statsSection, histogramSection)) {
+			sidebarPanel.add(section);
+			sidebarPanel.add(Box.createVerticalStrut(SIDEBAR_SECTION_GAP));
+		}
+		sidebarPanel.add(Box.createVerticalGlue());
+
+		sidebarScroll = new JScrollPane(sidebarPanel);
+		sidebarScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		sidebarScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		sidebarScroll.setBorder(BorderFactory.createEmptyBorder());
+		sidebarScroll.getViewport().setBackground(ViewerStyle.SIDEBAR_BG);
+		sidebarScroll.getVerticalScrollBar().setUnitIncrement(16);
+		sidebarScroll.setPreferredSize(new Dimension(SIDEBAR_WIDTH, 0));
+		sidebarScroll.setMinimumSize(new Dimension(SIDEBAR_MIN_WIDTH, 200));
+	}
+
+	private JComponent buildSearchContent() {
+		JPanel panel = new JPanel(new BorderLayout(4, 4));
+		panel.setOpaque(false);
+
+		searchField = new PlaceholderTextField("Type items to search\u2026", 10);
+		searchField.setFont(ViewerStyle.baseFont());
+		searchField.setToolTipText("Patterns are filtered as you type. Enter applies immediately, Esc clears the text.");
+
+		clearSearchButton = new JButton("\u2715");
+		clearSearchButton.setToolTipText("Clear search text (Esc)");
+		clearSearchButton.setFocusable(false);
+		clearSearchButton.setBorderPainted(false);
+		clearSearchButton.setContentAreaFilled(false);
+		clearSearchButton.setMargin(new Insets(0, 4, 0, 4));
+		clearSearchButton.setForeground(ViewerStyle.TEXT_SECONDARY);
+		clearSearchButton.setVisible(false);
+		clearSearchButton.addActionListener(e -> {
+			searchField.setText("");
+			searchField.requestFocusInWindow();
+		});
+
+		JPanel fieldRow = new JPanel(new BorderLayout());
+		fieldRow.setOpaque(false);
+		fieldRow.add(searchField, BorderLayout.CENTER);
+		fieldRow.add(clearSearchButton, BorderLayout.EAST);
+		panel.add(fieldRow, BorderLayout.CENTER);
+
+		JLabel hint = new JLabel("Shows only the patterns containing all the words typed");
+		hint.setFont(ViewerStyle.smallFont());
+		hint.setForeground(ViewerStyle.TEXT_SECONDARY);
+		panel.add(hint, BorderLayout.SOUTH);
+
+		// Live search with a small delay
+		searchTimer = new Timer(SEARCH_DELAY_MS, e -> applyCurrentFilters());
+		searchTimer.setRepeats(false);
+		searchField.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				onSearchTextChanged();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				onSearchTextChanged();
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				onSearchTextChanged();
+			}
+		});
+		searchField.addActionListener(e -> {
+			searchTimer.stop();
+			applyCurrentFilters();
+		});
+		// Esc in the search field clears only the search text
+		searchField.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+				"clearSearchText");
+		searchField.getActionMap().put("clearSearchText", new AbstractAction() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (!searchField.getText().isEmpty()) {
+					searchField.setText("");
+				}
+			}
+		});
+		return panel;
+	}
+
+	private void onSearchTextChanged() {
+		clearSearchButton.setVisible(!searchField.getText().isEmpty());
+		if (!suppressFilterEvents) {
+			searchTimer.restart();
+		}
+	}
+
+	private JComponent buildFilterContent(Map<String, Double> minMap, Map<String, Double> maxMap) {
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		panel.setOpaque(false);
+
+		if (minMap.isEmpty()) {
+			JLabel none = new JLabel("No numeric measures available");
+			none.setFont(ViewerStyle.smallFont().deriveFont(java.awt.Font.ITALIC));
+			none.setForeground(ViewerStyle.TEXT_SECONDARY);
+			none.setAlignmentX(LEFT_ALIGNMENT);
+			panel.add(none);
+		} else {
+			JLabel hint = new JLabel("Keep only the patterns whose measure satisfies a threshold");
+			hint.setFont(ViewerStyle.smallFont());
+			hint.setForeground(ViewerStyle.TEXT_SECONDARY);
+			hint.setAlignmentX(LEFT_ALIGNMENT);
+			panel.add(hint);
+			panel.add(Box.createVerticalStrut(6));
+			for (Map.Entry<String, Double> entry : minMap.entrySet()) {
+				String measure = entry.getKey();
+				MeasureFilterRow row = new MeasureFilterRow(measure, entry.getValue(), maxMap.get(measure),
+						this::onFilterChanged);
+				row.setAlignmentX(LEFT_ALIGNMENT);
+				filterRows.put(measure, row);
+				panel.add(row);
+				panel.add(Box.createVerticalStrut(6));
+			}
+		}
+
+		clearAllButton = new JButton("Clear search & filters");
+		ViewerStyle.styleButton(clearAllButton);
+		clearAllButton.setEnabled(false);
+		clearAllButton.setToolTipText("Remove the search text and all measure filters");
+		clearAllButton.addActionListener(e -> clearAllFilters());
+		JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+		buttonRow.setOpaque(false);
+		buttonRow.add(clearAllButton);
+		buttonRow.setAlignmentX(LEFT_ALIGNMENT);
+		buttonRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, buttonRow.getPreferredSize().height));
+		panel.add(Box.createVerticalStrut(2));
+		panel.add(buttonRow);
+		return panel;
+	}
+
+	private void onFilterChanged() {
+		if (!suppressFilterEvents) {
+			applyCurrentFilters();
+		}
+	}
+
+	/**
+	 * Reads the search text and every filter row and applies the resulting
+	 * filter to the patterns panel (or clears it if nothing is active).
+	 */
+	private void applyCurrentFilters() {
+		String text = searchField == null ? "" : searchField.getText().trim();
+		Map<String, Double> thresholds = new LinkedHashMap<>();
+		Map<String, String> operators = new LinkedHashMap<>();
+		for (MeasureFilterRow row : filterRows.values()) {
+			if (row.isActive()) {
+				thresholds.put(row.getMeasure(), row.getThreshold());
+				operators.put(row.getMeasure(), row.getOperator());
+			}
+		}
+		boolean active = !text.isEmpty() || !thresholds.isEmpty();
+		if (active) {
+			patternsPanel.applySearchAndFilters(text, thresholds, operators);
+		} else {
+			patternsPanel.clearSearchAndFilters();
+		}
+
+		if (clearAllButton != null) {
+			clearAllButton.setEnabled(active);
+		}
+		if (searchSection != null) {
+			searchSection.setInfo(text.isEmpty() ? "" : "active");
+		}
+		if (filterSection != null) {
+			filterSection.setInfo(thresholds.isEmpty() ? "" : thresholds.size() + " active");
+		}
+		if (filterChip != null) {
+			if (active) {
+				filterChip.setText(String.format("%d of %d shown   \u2715 Clear filters",
+						patternsPanel.getNumberOfVisiblePatterns(), patternsPanel.getTotalPatternCount()));
+			}
+			filterChip.setVisible(active);
+			toolbar.revalidate();
+			toolbar.repaint();
+		}
+		afterContentChanged();
+	}
+
+	private void clearAllFilters() {
+		suppressFilterEvents = true;
+		try {
+			if (searchTimer != null) {
+				searchTimer.stop();
+			}
+			searchField.setText("");
+			for (MeasureFilterRow row : filterRows.values()) {
+				row.reset();
+			}
+		} finally {
+			suppressFilterEvents = false;
+		}
+		applyCurrentFilters();
+	}
+
+	private void focusSearchField() {
+		setSidebarVisible(true);
+		searchSection.setCollapsed(false);
+		searchField.requestFocusInWindow();
+		searchField.selectAll();
+		SwingUtilities.invokeLater(() -> sidebarPanel.scrollRectToVisible(searchSection.getBounds()));
+	}
+
+	private void setSidebarVisible(boolean visible) {
+		if (sidebarScroll.isVisible() != visible) {
+			if (!visible) {
+				lastDividerLocation = splitPane.getDividerLocation();
+			}
+			sidebarScroll.setVisible(visible);
+			if (visible) {
+				splitPane.setDividerLocation(Math.max(SIDEBAR_MIN_WIDTH, lastDividerLocation));
+			}
+			splitPane.revalidate();
+			splitPane.repaint();
+		}
+		if (sidebarToggle != null && sidebarToggle.isSelected() != visible) {
+			sidebarToggle.setSelected(visible);
+		}
+		if (sidebarMenuItem != null && sidebarMenuItem.isSelected() != visible) {
+			sidebarMenuItem.setSelected(visible);
+		}
+	}
+
+	/**
+	 * Recomputes everything that depends on the set of visible patterns.
+	 */
+	private void refreshStatistics() {
+		Map<String, List<Double>> values = new LinkedHashMap<>();
+		for (String measure : patternsPanel.getAllMeasures()) {
+			values.put(measure, new ArrayList<>());
+		}
+		patternsPanel.populateMeasureValues(values);
+
+		Map<String, DescriptiveStats> stats = new LinkedHashMap<>();
+		for (Map.Entry<String, List<Double>> entry : values.entrySet()) {
+			stats.put(entry.getKey(), DescriptiveStats.of(entry.getValue()));
+			MeasureFilterRow row = filterRows.get(entry.getKey());
+			if (row != null) {
+				row.getBar().updateDistribution(entry.getValue());
+			}
+		}
+		if (statisticsPanel != null) {
+			statisticsPanel.update(patternsPanel.getTotalPatternCount(), patternsPanel.getNumberOfVisiblePatterns(),
+					stats);
+		}
+		if (histogramPanel != null) {
+			histogramPanel.updateData(patternsPanel);
+			histogramSection.setInfo(histogramPanel.getSummaryText());
+		}
+	}
+
+	/** A panel that fills the viewport width but scrolls vertically. */
+	private static final class ScrollableColumn extends JPanel implements Scrollable {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public Dimension getPreferredScrollableViewportSize() {
+			return getPreferredSize();
+		}
+
+		@Override
+		public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+			return 16;
+		}
+
+		@Override
+		public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+			return Math.max(16, visibleRect.height - 16);
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportWidth() {
+			return true;
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportHeight() {
+			return false;
+		}
+	}
+
+	// ---------------------------------------------------------------
+	// Status bar
+	// ---------------------------------------------------------------
+
+	private JPanel buildStatusBar() {
+		JPanel bar = new JPanel(new BorderLayout());
+		bar.setBackground(ViewerStyle.CARD_BG);
+		bar.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createMatteBorder(1, 0, 0, 0, ViewerStyle.CARD_BORDER),
+				BorderFactory.createEmptyBorder(4, 10, 4, 10)));
+		statusLabel = new JLabel();
+		statusLabel.setFont(ViewerStyle.measureValueFont());
+		statusLabel.setForeground(ViewerStyle.TEXT_SECONDARY);
+		countLabel = new JLabel();
+		countLabel.setFont(ViewerStyle.measureNameFont());
+		countLabel.setForeground(ViewerStyle.TEXT_PRIMARY);
+		bar.add(statusLabel, BorderLayout.WEST);
+		bar.add(countLabel, BorderLayout.EAST);
+		return bar;
+	}
+
+	private void updateStatusBar() {
+		int total = patternsPanel.getTotalPatternCount();
+		int visible = patternsPanel.getNumberOfVisiblePatterns();
+		boolean filtered = total != visible;
+		countLabel.setText(filtered ? visible + " / " + total + " patterns" : total + " patterns");
+
+		Set<String> measures = patternsPanel.getAllMeasures();
+		StringBuilder sb = new StringBuilder(new File(filePath).getName());
+		sb.append(" \u00B7 ").append(total).append(total == 1 ? " pattern" : " patterns");
+		if (!measures.isEmpty()) {
+			sb.append(" \u00B7 ").append(measures.size()).append(measures.size() == 1 ? " measure" : " measures");
+		}
+		if (filtered) {
+			sb.append(" \u00B7 filtered: ").append(visible).append(" shown");
+		}
+		statusLabel.setText(sb.toString());
+		refreshStatistics();
+	}
+
+	// ---------------------------------------------------------------
+	// Pagination bar
+	// ---------------------------------------------------------------
+
+	private JPanel buildPaginationBar() {
+		JPanel bar = new JPanel(new BorderLayout(8, 0));
+		bar.setBackground(ViewerStyle.CARD_BG);
+		bar.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createMatteBorder(1, 0, 0, 0, ViewerStyle.CARD_BORDER),
+				BorderFactory.createEmptyBorder(4, 8, 4, 8)));
+
+		// Navigation: |<  <  Page [ 3 ] of 12  >  >|
+		navPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
+		navPanel.setOpaque(false);
+		btnFirst = navButton("|\u25C0", "First page (Alt+Home)", () -> navigateToPage(0));
+		btnPrev = navButton("\u25C0", "Previous page (Alt+\u2190)",
+				() -> navigateToPage(patternsPanel.getCurrentPage() - 1));
+		btnNext = navButton("\u25B6", "Next page (Alt+\u2192)",
+				() -> navigateToPage(patternsPanel.getCurrentPage() + 1));
+		btnLast = navButton("\u25B6|", "Last page (Alt+End)",
+				() -> navigateToPage(patternsPanel.getTotalPages() - 1));
+
+		JLabel pageLabel = toolbarLabel("Page");
+		pageField = new JTextField(3);
+		pageField.setFont(ViewerStyle.measureValueFont());
+		pageField.setHorizontalAlignment(SwingConstants.CENTER);
+		pageField.setToolTipText("Type a page number and press Enter");
+		pageField.addActionListener(e -> {
+			try {
+				navigateToPage(Integer.parseInt(pageField.getText().trim()) - 1);
+			} catch (NumberFormatException ex) {
+				refreshPaginationBar();
+			}
+			patternsPanel.requestFocusInWindow();
+		});
+		pageTotalLabel = toolbarLabel("of 1");
+
+		navPanel.add(btnFirst);
+		navPanel.add(btnPrev);
+		navPanel.add(Box.createHorizontalStrut(4));
+		navPanel.add(pageLabel);
+		navPanel.add(pageField);
+		navPanel.add(pageTotalLabel);
+		navPanel.add(Box.createHorizontalStrut(4));
+		navPanel.add(btnNext);
+		navPanel.add(btnLast);
+
+		rangeLabel = new JLabel("", SwingConstants.CENTER);
+		rangeLabel.setFont(ViewerStyle.measureValueFont());
+		rangeLabel.setForeground(ViewerStyle.TEXT_PRIMARY);
+
+		JPanel sizePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+		sizePanel.setOpaque(false);
+		JLabel sizeLabel = toolbarLabel("Patterns per page:");
+		pageSizeCombo = new JComboBox<>(new String[] { "10", "25", "50", "100", "200", "500", SHOW_ALL });
+		pageSizeCombo.setFont(ViewerStyle.measureValueFont());
+		pageSizeCombo.setPreferredSize(new Dimension(92, 24));
+		pageSizeCombo.setFocusable(false);
+		pageSizeCombo.setToolTipText("How many patterns to display per page. Fewer patterns = faster display.");
+		syncPageSizeCombo();
+		pageSizeCombo.addActionListener(e -> onPageSizeSelected());
+		sizePanel.add(sizeLabel);
+		sizePanel.add(pageSizeCombo);
+
+		bar.add(navPanel, BorderLayout.WEST);
+		bar.add(rangeLabel, BorderLayout.CENTER);
+		bar.add(sizePanel, BorderLayout.EAST);
+		return bar;
+	}
+
+	private static JButton navButton(String text, String tooltip, Runnable action) {
+		JButton b = new JButton(text);
+		b.setToolTipText(tooltip);
+		ViewerStyle.styleButton(b);
+		b.setFocusable(false);
+		b.setMargin(new Insets(2, 7, 2, 7));
+		b.addActionListener(e -> action.run());
+		return b;
+	}
+
+	private void onPageSizeSelected() {
+		String sel = (String) pageSizeCombo.getSelectedItem();
+		if (sel == null) {
+			return;
+		}
+		int newSize = SHOW_ALL.equals(sel) ? Integer.MAX_VALUE : Integer.parseInt(sel);
+		if (newSize == patternsPanel.getPageSize()) {
+			return;
+		}
+		int visible = patternsPanel.getNumberOfVisiblePatterns();
+		if (newSize == Integer.MAX_VALUE && visible > SHOW_ALL_WARNING_THRESHOLD) {
+			int r = JOptionPane.showConfirmDialog(this,
+					"Displaying " + visible + " patterns at once may make the viewer slow.\nContinue?",
+					"Show all patterns", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+			if (r != JOptionPane.YES_OPTION) {
+				syncPageSizeCombo();
+				return;
+			}
+		}
+		patternsPanel.setPageSize(newSize);
+		afterContentChanged();
+	}
+
+	/** Selects the combo entry matching the current page size, silently. */
+	private void syncPageSizeCombo() {
+		if (pageSizeCombo == null) {
+			return;
+		}
+		int current = patternsPanel.getPageSize();
+		String target = (current == Integer.MAX_VALUE) ? SHOW_ALL : String.valueOf(current);
+		var listeners = pageSizeCombo.getActionListeners();
+		for (var l : listeners) {
+			pageSizeCombo.removeActionListener(l);
+		}
+		try {
+			for (int i = 0; i < pageSizeCombo.getItemCount(); i++) {
+				if (target.equals(pageSizeCombo.getItemAt(i))) {
+					pageSizeCombo.setSelectedIndex(i);
+					break;
+				}
+			}
+		} finally {
+			for (var l : listeners) {
+				pageSizeCombo.addActionListener(l);
+			}
+		}
+	}
+
+	private void navigateToPage(int page) {
+		if (!patternsPanel.isPaginated()) {
+			return;
+		}
+		patternsPanel.goToPage(page);
+		afterContentChanged();
+	}
+
+	private void refreshPaginationBar() {
+		if (paginationBar == null) {
+			return;
+		}
+		boolean paginated = patternsPanel.isPaginated();
+		int visible = patternsPanel.getNumberOfVisiblePatterns();
+		int cp = patternsPanel.getCurrentPage();
+		int tp = patternsPanel.getTotalPages();
+
+		navPanel.setVisible(paginated);
+		if (paginated) {
+			btnFirst.setEnabled(cp > 0);
+			btnPrev.setEnabled(cp > 0);
+			btnNext.setEnabled(cp < tp - 1);
+			btnLast.setEnabled(cp < tp - 1);
+			pageField.setText(String.valueOf(cp + 1));
+			pageTotalLabel.setText("of " + tp);
+			long ps = patternsPanel.getPageSize();
+			long from = visible == 0 ? 0 : cp * ps + 1;
+			long to = Math.min(visible, (cp + 1) * ps);
+			rangeLabel.setText(visible == 0 ? "No patterns to show"
+					: String.format("Showing %d\u2013%d of %d", from, to, visible));
+		} else {
+			rangeLabel.setText(visible == 0 ? "No patterns to show" : "Showing all " + visible + " patterns");
+		}
+		syncPageSizeCombo();
+		paginationBar.revalidate();
+		paginationBar.repaint();
+	}
+
+	private void scrollPatternPanelToTop() {
+		if (patternScrollPane != null) {
+			SwingUtilities.invokeLater(() -> patternScrollPane.getViewport().setViewPosition(new Point(0, 0)));
+		}
+	}
+
+	// ---------------------------------------------------------------
+	// Keyboard shortcuts (window-wide)
+	// ---------------------------------------------------------------
+
+	private void installKeyBindings() {
+		InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+		ActionMap am = getRootPane().getActionMap();
+		bind(im, am, KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.ALT_DOWN_MASK), "nextPage",
+				() -> navigateToPage(patternsPanel.getCurrentPage() + 1));
+		bind(im, am, KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.ALT_DOWN_MASK), "prevPage",
+				() -> navigateToPage(patternsPanel.getCurrentPage() - 1));
+		bind(im, am, KeyStroke.getKeyStroke(KeyEvent.VK_HOME, InputEvent.ALT_DOWN_MASK), "firstPage",
+				() -> navigateToPage(0));
+		bind(im, am, KeyStroke.getKeyStroke(KeyEvent.VK_END, InputEvent.ALT_DOWN_MASK), "lastPage",
+				() -> navigateToPage(patternsPanel.getTotalPages() - 1));
+	}
+
+	private static void bind(InputMap im, ActionMap am, KeyStroke ks, String name, Runnable r) {
+		im.put(ks, name);
+		am.put(name, new AbstractAction() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				r.run();
+			}
+		});
+	}
+
+	// ---------------------------------------------------------------
+	// Menu bar
+	// ---------------------------------------------------------------
+
+	private JMenuBar createMenuBar() {
+		JMenuBar menuBar = new JMenuBar();
+		int menuMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+
+		// ---- File ----
+		JMenu menuFile = new JMenu("File");
+		menuFile.setMnemonic(KeyEvent.VK_F);
+		menuFile.add(menuItem("Open in system text editor", null, this::openInSystemEditor));
+		menuFile.add(menuItem("Export as PNG\u2026", KeyStroke.getKeyStroke(KeyEvent.VK_E, menuMask),
+				() -> new ExportDialog(this, patternsPanel).setVisible(true)));
+		menuFile.addSeparator();
+		menuFile.add(menuItem("Close", KeyStroke.getKeyStroke(KeyEvent.VK_W, menuMask),
+				() -> dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING))));
+
+		// ---- View ----
+		JMenu menuView = new JMenu("View");
+		menuView.setMnemonic(KeyEvent.VK_V);
+		sidebarMenuItem = new JCheckBoxMenuItem("Sidebar", true);
+		sidebarMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, menuMask));
+		sidebarMenuItem.addActionListener(e -> setSidebarVisible(sidebarMenuItem.isSelected()));
+		menuView.add(sidebarMenuItem);
+		menuView.add(toggleItem("Toolbar", toolbar));
+		menuView.add(toggleItem("Pagination bar", paginationBar));
+		menuView.add(toggleItem("Status bar", statusBar));
+		menuView.addSeparator();
+
+		JMenu menuLayout = new JMenu("Layout");
+		ButtonGroup layoutGroup = new ButtonGroup();
+		for (LayoutMode lm : LayoutMode.values()) {
+			JRadioButtonMenuItem item = new JRadioButtonMenuItem(layoutLabel(lm).substring(2)); // drop the icon
+			layoutGroup.add(item);
+			item.setSelected(lm == mode);
+			item.addActionListener(e -> setLayoutMode(lm));
+			layoutMenuItems.put(lm, item);
+			menuLayout.add(item);
+		}
+		menuView.add(menuLayout);
+
+		List<String> orders = patternsPanel.getListOfSortingOrders();
+		if (orders != null && !orders.isEmpty()) {
+			JMenu menuSort = new JMenu("Sort by");
+			ButtonGroup sortGroup = new ButtonGroup();
+			for (String opt : orders) {
+				JRadioButtonMenuItem item = new JRadioButtonMenuItem(opt);
+				sortGroup.add(item);
+				item.addActionListener(e -> {
+					if (!suppressSortEvents) {
+						applySort(opt);
+					}
+				});
+				sortMenuItems.put(opt, item);
+				menuSort.add(item);
+			}
+			menuView.add(menuSort);
+		}
+
+		// ---- Tools ----
+		JMenu menuTools = new JMenu("Tools");
+		menuTools.setMnemonic(KeyEvent.VK_T);
+		menuTools.add(menuItem("Find\u2026", KeyStroke.getKeyStroke(KeyEvent.VK_F, menuMask), this::focusSearchField));
+		menuTools.add(menuItem("Clear search & filters",
+				KeyStroke.getKeyStroke(KeyEvent.VK_F, menuMask | InputEvent.SHIFT_DOWN_MASK), this::clearAllFilters));
+		menuTools.addSeparator();
+		menuTools.add(menuItem("Measure distribution histogram\u2026", KeyStroke.getKeyStroke(KeyEvent.VK_H, menuMask),
+				this::showMeasureHistogram));
+
+		// ---- Help ----
+		JMenu menuHelp = new JMenu("Help");
+		menuHelp.setMnemonic(KeyEvent.VK_H);
+		menuHelp.add(menuItem("Quick help & keyboard shortcuts", KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0),
+				this::showQuickHelp));
+
+		menuBar.add(menuFile);
+		menuBar.add(menuView);
+		menuBar.add(menuTools);
+		menuBar.add(menuHelp);
+		return menuBar;
+	}
+
+	private static JMenuItem menuItem(String text, KeyStroke accelerator, Runnable action) {
+		JMenuItem item = new JMenuItem(text);
+		if (accelerator != null) {
+			item.setAccelerator(accelerator);
+		}
+		item.addActionListener(e -> action.run());
+		return item;
+	}
+
+	/** A check-box menu item that shows / hides a component. */
+	private JCheckBoxMenuItem toggleItem(String text, JComponent target) {
+		JCheckBoxMenuItem item = new JCheckBoxMenuItem(text, target != null && target.isVisible());
+		item.addActionListener(e -> {
+			if (target == null) {
+				return;
+			}
+			target.setVisible(item.isSelected());
+			getContentPane().revalidate();
+			getContentPane().repaint();
+		});
+		return item;
+	}
+
+	private void showMeasureHistogram() {
+		try {
+			Map<String, List<Double>> mv = MeasureValuesExtractor.extractMeasureValues(patternsPanel);
+			if (mv == null || mv.values().stream().allMatch(List::isEmpty)) {
+				JOptionPane.showMessageDialog(this, "No numeric measure values found.", "No data",
+						JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+			new MeasureHistogramDialog(this, patternsPanel, mv).setVisible(true);
+		} catch (Exception ex) {
+			showErrorDialog(this, "Failed to create histogram: " + ex.getMessage());
+		}
+	}
+
+	private void showQuickHelp() {
+		String k = menuKeyName();
+		String html = "<html><body style='width:420px;font-family:sans-serif'>"
+				+ "<h3 style='margin-top:0'>How to use the viewer</h3><ul>"
+				+ "<li><b>Search</b> (sidebar): type item names separated by spaces; only patterns containing "
+				+ "<i>all</i> of them are shown. The list updates as you type.</li>"
+				+ "<li><b>Filters</b> (sidebar): keep only patterns whose measure (support, confidence, \u2026) is "
+				+ "above or below a threshold. Several filters can be combined.</li>"
+				+ "<li><b>Sort</b> and <b>Layout</b>: use the toolbar at the top.</li>"
+				+ "<li>Click a sidebar section title to collapse / expand it. Drag the divider to resize the sidebar.</li>"
+				+ "<li>Hover a pattern card for details. Large files are split into pages (see bottom bar).</li>"
+				+ "</ul><h3>Keyboard shortcuts</h3><table cellpadding='2'>"
+				+ row(k + "+F", "Go to the search box") + row("Esc (in search box)", "Clear the search text")
+				+ row(k + "+Shift+F", "Clear search and all filters") + row(k + "+B", "Show / hide the sidebar")
+				+ row("Alt+\u2190 / Alt+\u2192", "Previous / next page")
+				+ row("Alt+Home / Alt+End", "First / last page")
+				+ row("Page Up / Page Down", "Scroll the patterns") + row(k + "+E", "Export as PNG")
+				+ row(k + "+H", "Measure distribution histogram") + row(k + "+W", "Close the viewer")
+				+ "</table></body></html>";
+		JOptionPane.showMessageDialog(this, html, "Quick help", JOptionPane.PLAIN_MESSAGE);
+	}
+
+	private static String row(String key, String desc) {
+		return "<tr><td><b>" + key + "</b></td><td style='padding-left:14px'>" + desc + "</td></tr>";
+	}
+
+	private static String menuKeyName() {
+		String os = System.getProperty("os.name", "").toLowerCase();
+		return os.contains("mac") ? "Cmd" : "Ctrl";
+	}
+
+	private void openInSystemEditor() {
+		try {
+			if (!Desktop.isDesktopSupported() || !Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+				JOptionPane.showMessageDialog(this, "Desktop API not supported on this platform.", "Not supported",
+						JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			File f = new File(filePath);
+			if (f.exists() && f.canRead()) {
+				Desktop.getDesktop().open(f);
+			} else {
+				JOptionPane.showMessageDialog(this, "Cannot open file:\n" + filePath, "File not found",
+						JOptionPane.ERROR_MESSAGE);
+			}
+		} catch (IOException ex) {
+			JOptionPane.showMessageDialog(this, "Failed to open file:\n" + ex.getMessage(), "Error",
+					JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private static String capitalize(String s) {
+		if (s == null || s.isEmpty()) {
+			return s;
+		}
+		return s.charAt(0) + s.substring(1).toLowerCase();
+	}
+
+	// ---------------------------------------------------------------
+	// Frame size
+	// ---------------------------------------------------------------
+
+	private void configureFrameSize() {
+		pack();
+		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+		int maxW = (int) (screen.width * 0.9);
+		int maxH = (int) (screen.height * 0.9);
+
+		Insets ins = getInsets();
+		int chromeH = ins.top + ins.bottom + (getJMenuBar() != null ? getJMenuBar().getPreferredSize().height : 0)
+				+ toolbar.getPreferredSize().height + statusBar.getPreferredSize().height
+				+ paginationBar.getPreferredSize().height;
+		int wantedH = Math.max(600, sidebarPanel.getPreferredSize().height + chromeH);
+		int wantedW = Math.max(getWidth(), SIDEBAR_WIDTH + 760);
+
+		setSize(Math.min(wantedW, maxW), Math.min(wantedH, maxH));
+		setMinimumSize(new Dimension(SIDEBAR_MIN_WIDTH + 420, 450));
+		setLocationRelativeTo(null);
+		splitPane.setDividerLocation(SIDEBAR_WIDTH);
+	}
+
+	private static void showErrorDialog(JFrame parent, String msg) {
+		JOptionPane.showMessageDialog(parent, msg, "Error", JOptionPane.ERROR_MESSAGE);
+	}
 }

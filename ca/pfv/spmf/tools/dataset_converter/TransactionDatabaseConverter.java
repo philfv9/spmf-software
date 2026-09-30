@@ -118,6 +118,7 @@ public class TransactionDatabaseConverter {
 		
 		// object for writing the output file
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output)); 
+		
 
 		BufferedReader myInput = null;
 		try {
@@ -170,6 +171,10 @@ public class TransactionDatabaseConverter {
 					}
 					if(returnMapItemIDValue == false){
 						writer.write("@CONVERTED_FROM_ARFF");
+						writer.newLine();
+						writer.write("@FILETYPE=\"Simple transaction database\"");
+						writer.newLine();
+						writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
 						writer.newLine();
 						writer.write("@RELATION_NAME=");
 						writer.write(relationName + "=");
@@ -487,6 +492,10 @@ public class TransactionDatabaseConverter {
 		try {
 			// we create an object for writing the output file
 			BufferedWriter writer = new BufferedWriter(new FileWriter(output)); 
+			writer.write("@FILETYPE=\"Simple transaction database\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 			
 			// Objects to read the file
 			FileInputStream fin = new FileInputStream(new File(input));
@@ -565,6 +574,10 @@ public class TransactionDatabaseConverter {
 		// We read the file
 		FileInputStream fin  = new FileInputStream(new File(input));
 		myInput = new BufferedReader(new InputStreamReader(fin));
+		writer.write("@FILETYPE=\"Simple transaction database\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		// a set for the items that we have already seen in a transaction
 		Set<Integer> alreadySeen = new HashSet<Integer>();
@@ -684,6 +697,11 @@ public class TransactionDatabaseConverter {
 		
 		// we create an object for writing the output file
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output)); 
+		writer.write("@FILETYPE=\"Transaction database with utility and cost values\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		//writer.write("@CONVERTED_FROM_ARFF");
 		
 		// We create objects for reading the input file

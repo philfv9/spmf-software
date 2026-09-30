@@ -1,0 +1,479 @@
+@FILETYPE="Attribute Evolution Rules"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+size 2pattern,count: 120
+CorePattern{ childAttr=132, parentAttr=[9]} #SUP: 1195 #CONF: 0.09855500558837618
+CorePattern{ childAttr=144, parentAttr=[151]} #SUP: 1184 #CONF: 0.10849351190063146
+CorePattern{ childAttr=132, parentAttr=[13]} #SUP: 1205 #CONF: 0.08865559635957208
+CorePattern{ childAttr=132, parentAttr=[31]} #SUP: 1139 #CONF: 0.1001916014689446
+CorePattern{ childAttr=133, parentAttr=[13]} #SUP: 1127 #CONF: 0.09782231476661461
+CorePattern{ childAttr=132, parentAttr=[48]} #SUP: 1156 #CONF: 0.07308797700782373
+CorePattern{ childAttr=132, parentAttr=[51]} #SUP: 1439 #CONF: 0.11184735749640748
+CorePattern{ childAttr=132, parentAttr=[52]} #SUP: 1247 #CONF: 0.1254191282133163
+CorePattern{ childAttr=133, parentAttr=[31]} #SUP: 1187 #CONF: 0.12493492972410203
+CorePattern{ childAttr=133, parentAttr=[45]} #SUP: 1231 #CONF: 0.11322228006246747
+CorePattern{ childAttr=133, parentAttr=[51]} #SUP: 1175 #CONF: 0.10003470414714559
+CorePattern{ childAttr=133, parentAttr=[52]} #SUP: 1232 #CONF: 0.16241540864133264
+CorePattern{ childAttr=132, parentAttr=[85]} #SUP: 1250 #CONF: 0.12266485709723775
+CorePattern{ childAttr=133, parentAttr=[54]} #SUP: 1335 #CONF: 0.16415061599861183
+CorePattern{ childAttr=132, parentAttr=[87]} #SUP: 1464 #CONF: 0.15855021555165255
+CorePattern{ childAttr=130, parentAttr=[153]} #SUP: 1195 #CONF: 0.19956151278090586
+CorePattern{ childAttr=130, parentAttr=[157]} #SUP: 1481 #CONF: 0.2508844486521501
+CorePattern{ childAttr=132, parentAttr=[114]} #SUP: 1102 #CONF: 0.07121187929107456
+CorePattern{ childAttr=133, parentAttr=[85]} #SUP: 1178 #CONF: 0.14697206316154782
+CorePattern{ childAttr=133, parentAttr=[87]} #SUP: 1309 #CONF: 0.17234947076175602
+CorePattern{ childAttr=135, parentAttr=[27]} #SUP: 1296 #CONF: 0.07602320018350428
+CorePattern{ childAttr=135, parentAttr=[31]} #SUP: 1501 #CONF: 0.10420421404463086
+CorePattern{ childAttr=135, parentAttr=[39]} #SUP: 1098 #CONF: 0.08372382606416096
+CorePattern{ childAttr=33, parentAttr=[132]} #SUP: 1228 #CONF: 0.4350093716893489
+CorePattern{ childAttr=135, parentAttr=[43]} #SUP: 1189 #CONF: 0.06475079463905364
+CorePattern{ childAttr=33, parentAttr=[135]} #SUP: 1348 #CONF: 0.5896014994702958
+CorePattern{ childAttr=135, parentAttr=[48]} #SUP: 1392 #CONF: 0.07232034603663531
+CorePattern{ childAttr=33, parentAttr=[142]} #SUP: 1216 #CONF: 0.43541683644364765
+CorePattern{ childAttr=135, parentAttr=[52]} #SUP: 1606 #CONF: 0.13284398859651997
+CorePattern{ childAttr=33, parentAttr=[144]} #SUP: 1340 #CONF: 0.5301116453426779
+CorePattern{ childAttr=135, parentAttr=[57]} #SUP: 1289 #CONF: 0.08025035226267327
+CorePattern{ childAttr=132, parentAttr=[156]} #SUP: 1361 #CONF: 0.11707648091968705
+CorePattern{ childAttr=135, parentAttr=[63]} #SUP: 1206 #CONF: 0.0673722843005538
+CorePattern{ childAttr=132, parentAttr=[157]} #SUP: 1871 #CONF: 0.21100111767523552
+CorePattern{ childAttr=33, parentAttr=[159]} #SUP: 1359 #CONF: 0.7904816233395812
+CorePattern{ childAttr=135, parentAttr=[81]} #SUP: 1302 #CONF: 0.08781990366025494
+CorePattern{ childAttr=135, parentAttr=[85]} #SUP: 1621 #CONF: 0.13169708686961365
+CorePattern{ childAttr=133, parentAttr=[153]} #SUP: 1365 #CONF: 0.20484122852680894
+CorePattern{ childAttr=135, parentAttr=[93]} #SUP: 1123 #CONF: 0.08057803847036078
+CorePattern{ childAttr=133, parentAttr=[156]} #SUP: 1143 #CONF: 0.11105327086586847
+CorePattern{ childAttr=133, parentAttr=[157]} #SUP: 1625 #CONF: 0.24344959222627105
+CorePattern{ childAttr=135, parentAttr=[123]} #SUP: 1352 #CONF: 0.09309565160402399
+CorePattern{ childAttr=135, parentAttr=[151]} #SUP: 1242 #CONF: 0.11180653406298129
+CorePattern{ childAttr=135, parentAttr=[157]} #SUP: 2151 #CONF: 0.20477111118393027
+CorePattern{ childAttr=157, parentAttr=[13]} #SUP: 1134 #CONF: 0.09580046509507091
+CorePattern{ childAttr=157, parentAttr=[15]} #SUP: 1407 #CONF: 0.14568419132734486
+CorePattern{ childAttr=157, parentAttr=[31]} #SUP: 1182 #CONF: 0.11312753636405089
+CorePattern{ childAttr=157, parentAttr=[33]} #SUP: 1475 #CONF: 0.21822990287720578
+CorePattern{ childAttr=157, parentAttr=[45]} #SUP: 1371 #CONF: 0.13323605854726187
+CorePattern{ childAttr=157, parentAttr=[51]} #SUP: 1242 #CONF: 0.11112124390132688
+CorePattern{ childAttr=157, parentAttr=[52]} #SUP: 1232 #CONF: 0.14504582554375087
+CorePattern{ childAttr=142, parentAttr=[6]} #SUP: 1110 #CONF: 0.04700769733291675
+CorePattern{ childAttr=157, parentAttr=[54]} #SUP: 1322 #CONF: 0.15840590944325383
+CorePattern{ childAttr=142, parentAttr=[9]} #SUP: 1467 #CONF: 0.08819268895390121
+CorePattern{ childAttr=159, parentAttr=[3]} #SUP: 1134 #CONF: 0.04382566585956416
+CorePattern{ childAttr=159, parentAttr=[6]} #SUP: 1357 #CONF: 0.04406779661016949
+CorePattern{ childAttr=142, parentAttr=[24]} #SUP: 1093 #CONF: 0.06157866333399608
+CorePattern{ childAttr=142, parentAttr=[27]} #SUP: 1329 #CONF: 0.07214474394296588
+CorePattern{ childAttr=159, parentAttr=[21]} #SUP: 1153 #CONF: 0.03675985031917235
+CorePattern{ childAttr=157, parentAttr=[85]} #SUP: 1142 #CONF: 0.12876749806210386
+CorePattern{ childAttr=142, parentAttr=[39]} #SUP: 1247 #CONF: 0.08631806174908399
+CorePattern{ childAttr=159, parentAttr=[24]} #SUP: 1349 #CONF: 0.05203609949372661
+CorePattern{ childAttr=157, parentAttr=[87]} #SUP: 1300 #CONF: 0.15521408052528385
+CorePattern{ childAttr=159, parentAttr=[25]} #SUP: 1386 #CONF: 0.04851419766674004
+CorePattern{ childAttr=142, parentAttr=[43]} #SUP: 1294 #CONF: 0.06606640724855853
+CorePattern{ childAttr=142, parentAttr=[48]} #SUP: 1412 #CONF: 0.06788422756838129
+CorePattern{ childAttr=142, parentAttr=[49]} #SUP: 1150 #CONF: 0.05990286022665947
+CorePattern{ childAttr=159, parentAttr=[36]} #SUP: 1318 #CONF: 0.046731234866828085
+CorePattern{ childAttr=159, parentAttr=[39]} #SUP: 1348 #CONF: 0.06929341844596082
+CorePattern{ childAttr=142, parentAttr=[57]} #SUP: 1336 #CONF: 0.07674610162751726
+CorePattern{ childAttr=159, parentAttr=[43]} #SUP: 1662 #CONF: 0.060510675764913056
+CorePattern{ childAttr=142, parentAttr=[63]} #SUP: 1145 #CONF: 0.058482688101797936
+CorePattern{ childAttr=159, parentAttr=[48]} #SUP: 1864 #CONF: 0.06427470834250495
+CorePattern{ childAttr=159, parentAttr=[49]} #SUP: 1359 #CONF: 0.05012106537530266
+CorePattern{ childAttr=159, parentAttr=[55]} #SUP: 1399 #CONF: 0.05148580233325996
+CorePattern{ childAttr=144, parentAttr=[9]} #SUP: 1249 #CONF: 0.07820414960793838
+CorePattern{ childAttr=144, parentAttr=[13]} #SUP: 1486 #CONF: 0.08965373672888766
+CorePattern{ childAttr=142, parentAttr=[76]} #SUP: 1115 #CONF: 0.07302525066038004
+CorePattern{ childAttr=159, parentAttr=[63]} #SUP: 1585 #CONF: 0.05687871450583315
+CorePattern{ childAttr=142, parentAttr=[81]} #SUP: 1342 #CONF: 0.0869713409265203
+CorePattern{ childAttr=159, parentAttr=[69]} #SUP: 1099 #CONF: 0.043737618313889504
+CorePattern{ childAttr=144, parentAttr=[27]} #SUP: 1199 #CONF: 0.07070987440149885
+CorePattern{ childAttr=142, parentAttr=[93]} #SUP: 1243 #CONF: 0.08367654159684154
+CorePattern{ childAttr=159, parentAttr=[78]} #SUP: 1378 #CONF: 0.05390710983931323
+CorePattern{ childAttr=144, parentAttr=[31]} #SUP: 1482 #CONF: 0.10217889112483519
+CorePattern{ childAttr=159, parentAttr=[79]} #SUP: 1268 #CONF: 0.053664979088707904
+CorePattern{ childAttr=142, parentAttr=[105]} #SUP: 1104 #CONF: 0.05635242991450564
+CorePattern{ childAttr=144, parentAttr=[43]} #SUP: 1100 #CONF: 0.061515508986191104
+CorePattern{ childAttr=157, parentAttr=[153]} #SUP: 1341 #CONF: 0.1956591126715608
+CorePattern{ childAttr=159, parentAttr=[91]} #SUP: 1262 #CONF: 0.04833810257539071
+CorePattern{ childAttr=144, parentAttr=[45]} #SUP: 1742 #CONF: 0.10949968773853307
+CorePattern{ childAttr=142, parentAttr=[108]} #SUP: 1121 #CONF: 0.05649444712699179
+CorePattern{ childAttr=159, parentAttr=[93]} #SUP: 1585 #CONF: 0.07360774818401937
+CorePattern{ childAttr=157, parentAttr=[157]} #SUP: 1555 #CONF: 0.18635721125347682
+CorePattern{ childAttr=144, parentAttr=[48]} #SUP: 1259 #CONF: 0.0661994309902158
+CorePattern{ childAttr=144, parentAttr=[51]} #SUP: 1625 #CONF: 0.09916036361113038
+CorePattern{ childAttr=142, parentAttr=[114]} #SUP: 1149 #CONF: 0.05510267844462749
+CorePattern{ childAttr=144, parentAttr=[52]} #SUP: 1637 #CONF: 0.13454999653042815
+CorePattern{ childAttr=159, parentAttr=[103]} #SUP: 1414 #CONF: 0.0511336121505613
+CorePattern{ childAttr=144, parentAttr=[57]} #SUP: 1262 #CONF: 0.07882867254180834
+CorePattern{ childAttr=159, parentAttr=[105]} #SUP: 1527 #CONF: 0.058265463350209115
+CorePattern{ childAttr=159, parentAttr=[106]} #SUP: 1206 #CONF: 0.040457847237508254
+CorePattern{ childAttr=142, parentAttr=[123]} #SUP: 1459 #CONF: 0.08981168517624336
+CorePattern{ childAttr=159, parentAttr=[108]} #SUP: 1529 #CONF: 0.05533788245652652
+CorePattern{ childAttr=144, parentAttr=[63]} #SUP: 1094 #CONF: 0.061446117549094445
+CorePattern{ childAttr=159, parentAttr=[114]} #SUP: 1442 #CONF: 0.05045124367158266
+CorePattern{ childAttr=159, parentAttr=[123]} #SUP: 1713 #CONF: 0.07279330838652873
+CorePattern{ childAttr=159, parentAttr=[124]} #SUP: 1313 #CONF: 0.042945190402817524
+CorePattern{ childAttr=159, parentAttr=[126]} #SUP: 1277 #CONF: 0.04232885758309487
+CorePattern{ childAttr=144, parentAttr=[81]} #SUP: 1300 #CONF: 0.08666990493373118
+CorePattern{ childAttr=144, parentAttr=[85]} #SUP: 1600 #CONF: 0.12733328707237526
+CorePattern{ childAttr=144, parentAttr=[87]} #SUP: 1884 #CONF: 0.16393727014086462
+CorePattern{ childAttr=142, parentAttr=[151]} #SUP: 1393 #CONF: 0.12239043372056693
+CorePattern{ childAttr=142, parentAttr=[154]} #SUP: 1175 #CONF: 0.08367654159684154
+CorePattern{ childAttr=144, parentAttr=[93]} #SUP: 1090 #CONF: 0.07574075359100688
+CorePattern{ childAttr=130, parentAttr=[15]} #SUP: 1114 #CONF: 0.13069908814589665
+CorePattern{ childAttr=159, parentAttr=[151]} #SUP: 1771 #CONF: 0.11501210653753027
+CorePattern{ childAttr=159, parentAttr=[154]} #SUP: 1519 #CONF: 0.08318291877613912
+CorePattern{ childAttr=130, parentAttr=[33]} #SUP: 1195 #CONF: 0.20075738701479895
+CorePattern{ childAttr=144, parentAttr=[123]} #SUP: 1160 #CONF: 0.08025119700228991
+size 3pattern,count: 343
+CorePattern{ childAttr=133, parentAttr=[33, 132]} #SUP: 1138 #CONF: 0.40253231337378
+CorePattern{ childAttr=130, parentAttr=[135, 135]} #SUP: 1491 #CONF: 0.5333444900008367
+CorePattern{ childAttr=132, parentAttr=[133, 135]} #SUP: 1278 #CONF: 0.5289376469271242
+CorePattern{ childAttr=133, parentAttr=[132, 135]} #SUP: 1431 #CONF: 0.5101674075475268
+CorePattern{ childAttr=135, parentAttr=[130, 135]} #SUP: 1427 #CONF: 0.5150702563552505
+CorePattern{ childAttr=133, parentAttr=[33, 135]} #SUP: 1213 #CONF: 0.525455025059351
+CorePattern{ childAttr=130, parentAttr=[135, 142]} #SUP: 1483 #CONF: 0.4782863358714752
+CorePattern{ childAttr=132, parentAttr=[133, 142]} #SUP: 1270 #CONF: 0.4569573491548192
+CorePattern{ childAttr=133, parentAttr=[132, 142]} #SUP: 1419 #CONF: 0.4789558308900028
+CorePattern{ childAttr=135, parentAttr=[130, 142]} #SUP: 1365 #CONF: 0.46755336265150704
+CorePattern{ childAttr=130, parentAttr=[135, 144]} #SUP: 1507 #CONF: 0.4822190611664296
+CorePattern{ childAttr=132, parentAttr=[133, 144]} #SUP: 1333 #CONF: 0.48953319153699765
+CorePattern{ childAttr=133, parentAttr=[132, 144]} #SUP: 1486 #CONF: 0.47044358271067815
+CorePattern{ childAttr=135, parentAttr=[130, 144]} #SUP: 1454 #CONF: 0.4826772498122922
+CorePattern{ childAttr=133, parentAttr=[33, 142]} #SUP: 1179 #CONF: 0.48843752747735864
+CorePattern{ childAttr=133, parentAttr=[33, 144]} #SUP: 1217 #CONF: 0.4757759606084586
+CorePattern{ childAttr=135, parentAttr=[15, 132]} #SUP: 1326 #CONF: 0.44330278626307507
+CorePattern{ childAttr=135, parentAttr=[15, 135]} #SUP: 1384 #CONF: 0.560122188281033
+CorePattern{ childAttr=142, parentAttr=[156, 159]} #SUP: 1222 #CONF: 0.7750441756150604
+CorePattern{ childAttr=130, parentAttr=[135, 159]} #SUP: 1621 #CONF: 0.7575098318132374
+CorePattern{ childAttr=132, parentAttr=[133, 159]} #SUP: 1507 #CONF: 0.7961491100414194
+CorePattern{ childAttr=133, parentAttr=[132, 159]} #SUP: 1647 #CONF: 0.7684668495223683
+CorePattern{ childAttr=135, parentAttr=[130, 159]} #SUP: 1688 #CONF: 0.8008151882441275
+CorePattern{ childAttr=135, parentAttr=[15, 142]} #SUP: 1278 #CONF: 0.4644080348051467
+CorePattern{ childAttr=159, parentAttr=[57, 144]} #SUP: 1093 #CONF: 0.5122574055158324
+CorePattern{ childAttr=133, parentAttr=[33, 159]} #SUP: 1236 #CONF: 0.7510771124593335
+CorePattern{ childAttr=135, parentAttr=[15, 144]} #SUP: 1350 #CONF: 0.49838007960751646
+CorePattern{ childAttr=133, parentAttr=[133, 133]} #SUP: 1122 #CONF: 0.3013875123885035
+CorePattern{ childAttr=133, parentAttr=[133, 135]} #SUP: 1295 #CONF: 0.5033696729435084
+CorePattern{ childAttr=157, parentAttr=[142, 142]} #SUP: 1237 #CONF: 0.5129036807220421
+CorePattern{ childAttr=133, parentAttr=[133, 142]} #SUP: 1346 #CONF: 0.48344895936570864
+CorePattern{ childAttr=159, parentAttr=[156, 159]} #SUP: 1519 #CONF: 0.7671428571428571
+CorePattern{ childAttr=157, parentAttr=[142, 144]} #SUP: 1143 #CONF: 0.4353405725567621
+CorePattern{ childAttr=133, parentAttr=[133, 144]} #SUP: 1383 #CONF: 0.46858275520317144
+CorePattern{ childAttr=159, parentAttr=[57, 159]} #SUP: 1136 #CONF: 0.7473186925434117
+CorePattern{ childAttr=135, parentAttr=[15, 159]} #SUP: 1501 #CONF: 0.816439877811719
+CorePattern{ childAttr=157, parentAttr=[142, 159]} #SUP: 1514 #CONF: 0.8359892821886898
+CorePattern{ childAttr=142, parentAttr=[157, 159]} #SUP: 1166 #CONF: 0.6728297928140572
+CorePattern{ childAttr=133, parentAttr=[133, 159]} #SUP: 1515 #CONF: 0.7618434093161546
+CorePattern{ childAttr=135, parentAttr=[132, 132]} #SUP: 1640 #CONF: 0.4026762835721742
+CorePattern{ childAttr=135, parentAttr=[33, 132]} #SUP: 1336 #CONF: 0.4227920755415664
+CorePattern{ childAttr=132, parentAttr=[135, 135]} #SUP: 1690 #CONF: 0.5371411363180084
+CorePattern{ childAttr=135, parentAttr=[132, 135]} #SUP: 1821 #CONF: 0.5226345259561544
+CorePattern{ childAttr=135, parentAttr=[33, 135]} #SUP: 1501 #CONF: 0.5640622107017219
+CorePattern{ childAttr=159, parentAttr=[157, 157]} #SUP: 1163 #CONF: 0.37514473176379776
+CorePattern{ childAttr=132, parentAttr=[135, 142]} #SUP: 1547 #CONF: 0.444790202770528
+CorePattern{ childAttr=135, parentAttr=[132, 142]} #SUP: 1632 #CONF: 0.4487994685394325
+CorePattern{ childAttr=157, parentAttr=[159, 159]} #SUP: 1644 #CONF: 0.8610311059907834
+CorePattern{ childAttr=159, parentAttr=[157, 159]} #SUP: 1266 #CONF: 0.6227968609288563
+CorePattern{ childAttr=132, parentAttr=[135, 144]} #SUP: 1701 #CONF: 0.49588436057016666
+CorePattern{ childAttr=135, parentAttr=[132, 144]} #SUP: 1862 #CONF: 0.4955869792160957
+CorePattern{ childAttr=135, parentAttr=[33, 142]} #SUP: 1343 #CONF: 0.46167376411775596
+CorePattern{ childAttr=135, parentAttr=[33, 144]} #SUP: 1426 #CONF: 0.5028698389187187
+CorePattern{ childAttr=142, parentAttr=[142, 142]} #SUP: 1831 #CONF: 0.47603456116416554
+CorePattern{ childAttr=144, parentAttr=[156, 159]} #SUP: 1428 #CONF: 0.8138458632414054
+CorePattern{ childAttr=132, parentAttr=[135, 159]} #SUP: 1972 #CONF: 0.7964264203975105
+CorePattern{ childAttr=135, parentAttr=[132, 159]} #SUP: 2194 #CONF: 0.8087690993641454
+CorePattern{ childAttr=142, parentAttr=[142, 144]} #SUP: 1846 #CONF: 0.4666666666666667
+CorePattern{ childAttr=135, parentAttr=[33, 159]} #SUP: 1536 #CONF: 0.7921681170153675
+CorePattern{ childAttr=159, parentAttr=[9, 159]} #SUP: 1115 #CONF: 0.7920327173583762
+CorePattern{ childAttr=133, parentAttr=[135, 135]} #SUP: 1491 #CONF: 0.5185962235361434
+CorePattern{ childAttr=135, parentAttr=[133, 135]} #SUP: 1431 #CONF: 0.5137595258255715
+CorePattern{ childAttr=159, parentAttr=[142, 142]} #SUP: 2121 #CONF: 0.4356401384083045
+CorePattern{ childAttr=133, parentAttr=[135, 142]} #SUP: 1438 #CONF: 0.4775891665077246
+CorePattern{ childAttr=135, parentAttr=[133, 142]} #SUP: 1396 #CONF: 0.45977984758679086
+CorePattern{ childAttr=157, parentAttr=[144, 144]} #SUP: 1253 #CONF: 0.44922092376182526
+CorePattern{ childAttr=133, parentAttr=[135, 144]} #SUP: 1513 #CONF: 0.4724394430669464
+CorePattern{ childAttr=135, parentAttr=[133, 144]} #SUP: 1487 #CONF: 0.48920406435224384
+CorePattern{ childAttr=132, parentAttr=[54, 135]} #SUP: 1104 #CONF: 0.5474073218616469
+CorePattern{ childAttr=144, parentAttr=[157, 157]} #SUP: 1156 #CONF: 0.3212298978456559
+CorePattern{ childAttr=144, parentAttr=[157, 159]} #SUP: 1378 #CONF: 0.6775563871750784
+CorePattern{ childAttr=157, parentAttr=[144, 159]} #SUP: 1581 #CONF: 0.8387590428491931
+CorePattern{ childAttr=133, parentAttr=[135, 159]} #SUP: 1685 #CONF: 0.7662597749380126
+CorePattern{ childAttr=135, parentAttr=[133, 159]} #SUP: 1738 #CONF: 0.8034504657070279
+CorePattern{ childAttr=159, parentAttr=[76, 159]} #SUP: 1102 #CONF: 0.7477573972419334
+CorePattern{ childAttr=132, parentAttr=[54, 144]} #SUP: 1091 #CONF: 0.4963621665319321
+CorePattern{ childAttr=132, parentAttr=[153, 159]} #SUP: 1126 #CONF: 0.8082908885116016
+CorePattern{ childAttr=132, parentAttr=[54, 159]} #SUP: 1208 #CONF: 0.8051738075990299
+CorePattern{ childAttr=135, parentAttr=[51, 159]} #SUP: 1156 #CONF: 0.7994990607388854
+CorePattern{ childAttr=159, parentAttr=[27, 159]} #SUP: 1163 #CONF: 0.8046268152651131
+CorePattern{ childAttr=142, parentAttr=[45, 135]} #SUP: 1209 #CONF: 0.5162742019884877
+CorePattern{ childAttr=144, parentAttr=[142, 142]} #SUP: 1385 #CONF: 0.44436589848720487
+CorePattern{ childAttr=142, parentAttr=[144, 144]} #SUP: 1990 #CONF: 0.47704287120737493
+CorePattern{ childAttr=144, parentAttr=[142, 144]} #SUP: 1468 #CONF: 0.4782977520147038
+CorePattern{ childAttr=142, parentAttr=[45, 142]} #SUP: 1184 #CONF: 0.4964939822082679
+CorePattern{ childAttr=142, parentAttr=[45, 144]} #SUP: 1205 #CONF: 0.4694924123495552
+CorePattern{ childAttr=159, parentAttr=[45, 132]} #SUP: 1196 #CONF: 0.380828735259115
+CorePattern{ childAttr=135, parentAttr=[135, 135]} #SUP: 1943 #CONF: 0.5354546312907186
+CorePattern{ childAttr=159, parentAttr=[45, 135]} #SUP: 1365 #CONF: 0.5042735042735043
+CorePattern{ childAttr=135, parentAttr=[135, 142]} #SUP: 1662 #CONF: 0.4429232367104145
+CorePattern{ childAttr=144, parentAttr=[142, 159]} #SUP: 1836 #CONF: 0.8087091757387247
+CorePattern{ childAttr=135, parentAttr=[135, 144]} #SUP: 1908 #CONF: 0.4987253328297611
+CorePattern{ childAttr=159, parentAttr=[45, 142]} #SUP: 1254 #CONF: 0.46305312128096937
+CorePattern{ childAttr=142, parentAttr=[45, 159]} #SUP: 1302 #CONF: 0.763788592360021
+CorePattern{ childAttr=159, parentAttr=[45, 144]} #SUP: 1379 #CONF: 0.48901871686681814
+CorePattern{ childAttr=159, parentAttr=[144, 157]} #SUP: 1102 #CONF: 0.23864969006533757
+CorePattern{ childAttr=144, parentAttr=[159, 159]} #SUP: 3439 #CONF: 0.8606373292867981
+CorePattern{ childAttr=135, parentAttr=[135, 159]} #SUP: 2279 #CONF: 0.8094608629968841
+CorePattern{ childAttr=159, parentAttr=[45, 159]} #SUP: 1455 #CONF: 0.7320134155577194
+CorePattern{ childAttr=159, parentAttr=[13, 135]} #SUP: 1214 #CONF: 0.4865574459147238
+CorePattern{ childAttr=157, parentAttr=[130, 159]} #SUP: 1231 #CONF: 0.8290727575253366
+CorePattern{ childAttr=159, parentAttr=[33, 33]} #SUP: 1108 #CONF: 0.26492706351363593
+CorePattern{ childAttr=159, parentAttr=[13, 142]} #SUP: 1155 #CONF: 0.4595673177903802
+CorePattern{ childAttr=142, parentAttr=[13, 159]} #SUP: 1158 #CONF: 0.7562866722548198
+CorePattern{ childAttr=159, parentAttr=[13, 144]} #SUP: 1245 #CONF: 0.49453896240285655
+CorePattern{ childAttr=135, parentAttr=[87, 135]} #SUP: 1131 #CONF: 0.5472675472675472
+CorePattern{ childAttr=135, parentAttr=[54, 135]} #SUP: 1235 #CONF: 0.5512076172782164
+CorePattern{ childAttr=144, parentAttr=[144, 144]} #SUP: 3140 #CONF: 0.4447518743305962
+CorePattern{ childAttr=135, parentAttr=[87, 144]} #SUP: 1107 #CONF: 0.49935249935249937
+CorePattern{ childAttr=142, parentAttr=[130, 130]} #SUP: 1108 #CONF: 0.2295496547028499
+CorePattern{ childAttr=135, parentAttr=[54, 144]} #SUP: 1214 #CONF: 0.5077798420808175
+CorePattern{ childAttr=159, parentAttr=[13, 159]} #SUP: 1330 #CONF: 0.7285234194496955
+CorePattern{ childAttr=142, parentAttr=[130, 132]} #SUP: 1273 #CONF: 0.35609376519793795
+CorePattern{ childAttr=142, parentAttr=[130, 133]} #SUP: 1125 #CONF: 0.27779398891158447
+CorePattern{ childAttr=142, parentAttr=[130, 135]} #SUP: 1494 #CONF: 0.4782608695652174
+CorePattern{ childAttr=144, parentAttr=[144, 153]} #SUP: 1580 #CONF: 0.19863441627990003
+CorePattern{ childAttr=144, parentAttr=[144, 156]} #SUP: 1278 #CONF: 0.12022491967154587
+CorePattern{ childAttr=144, parentAttr=[144, 157]} #SUP: 1676 #CONF: 0.20568546947518743
+CorePattern{ childAttr=130, parentAttr=[142, 142]} #SUP: 1412 #CONF: 0.4697642042982685
+CorePattern{ childAttr=142, parentAttr=[130, 142]} #SUP: 1597 #CONF: 0.4825406088901858
+CorePattern{ childAttr=144, parentAttr=[144, 159]} #SUP: 3709 #CONF: 0.7926633345233846
+CorePattern{ childAttr=135, parentAttr=[153, 159]} #SUP: 1375 #CONF: 0.8075339902706749
+CorePattern{ childAttr=130, parentAttr=[142, 144]} #SUP: 1473 #CONF: 0.488036195945358
+CorePattern{ childAttr=142, parentAttr=[130, 144]} #SUP: 1602 #CONF: 0.46522711798463184
+CorePattern{ childAttr=135, parentAttr=[87, 159]} #SUP: 1229 #CONF: 0.7988862988862989
+CorePattern{ childAttr=142, parentAttr=[31, 142]} #SUP: 1094 #CONF: 0.497288842544317
+CorePattern{ childAttr=159, parentAttr=[130, 130]} #SUP: 1140 #CONF: 0.21943421817477232
+CorePattern{ childAttr=135, parentAttr=[54, 159]} #SUP: 1339 #CONF: 0.8008592661402694
+CorePattern{ childAttr=157, parentAttr=[132, 132]} #SUP: 1154 #CONF: 0.4380475594493116
+CorePattern{ childAttr=159, parentAttr=[130, 132]} #SUP: 1404 #CONF: 0.32435574501065684
+CorePattern{ childAttr=159, parentAttr=[130, 133]} #SUP: 1212 #CONF: 0.26700251889168763
+CorePattern{ childAttr=159, parentAttr=[31, 132]} #SUP: 1092 #CONF: 0.3749194068343005
+CorePattern{ childAttr=157, parentAttr=[132, 135]} #SUP: 1132 #CONF: 0.49979140592407173
+CorePattern{ childAttr=159, parentAttr=[130, 135]} #SUP: 1732 #CONF: 0.470838984692889
+CorePattern{ childAttr=142, parentAttr=[15, 132]} #SUP: 1233 #CONF: 0.416643212308847
+CorePattern{ childAttr=159, parentAttr=[31, 135]} #SUP: 1208 #CONF: 0.49065119277885233
+CorePattern{ childAttr=142, parentAttr=[15, 135]} #SUP: 1300 #CONF: 0.5194671169903368
+CorePattern{ childAttr=157, parentAttr=[132, 142]} #SUP: 1176 #CONF: 0.5002085940759282
+CorePattern{ childAttr=159, parentAttr=[130, 142]} #SUP: 1732 #CONF: 0.4418717302848285
+CorePattern{ childAttr=130, parentAttr=[142, 159]} #SUP: 1559 #CONF: 0.7512398851474811
+CorePattern{ childAttr=157, parentAttr=[132, 144]} #SUP: 1204 #CONF: 0.443471005423446
+CorePattern{ childAttr=142, parentAttr=[130, 159]} #SUP: 1856 #CONF: 0.7699640112829491
+CorePattern{ childAttr=159, parentAttr=[130, 144]} #SUP: 1899 #CONF: 0.489149389653168
+CorePattern{ childAttr=159, parentAttr=[31, 142]} #SUP: 1171 #CONF: 0.4565871480765098
+CorePattern{ childAttr=142, parentAttr=[15, 142]} #SUP: 1268 #CONF: 0.4880382775119617
+CorePattern{ childAttr=142, parentAttr=[31, 159]} #SUP: 1175 #CONF: 0.759436913451512
+CorePattern{ childAttr=159, parentAttr=[31, 144]} #SUP: 1246 #CONF: 0.4995701697829357
+CorePattern{ childAttr=142, parentAttr=[15, 144]} #SUP: 1306 #CONF: 0.4751852894267755
+CorePattern{ childAttr=159, parentAttr=[15, 132]} #SUP: 1454 #CONF: 0.40360661833054473
+CorePattern{ childAttr=159, parentAttr=[15, 135]} #SUP: 1496 #CONF: 0.5009295408068414
+CorePattern{ childAttr=130, parentAttr=[159, 159]} #SUP: 1574 #CONF: 0.8048853142686923
+CorePattern{ childAttr=157, parentAttr=[132, 159]} #SUP: 1551 #CONF: 0.8379919343623975
+CorePattern{ childAttr=159, parentAttr=[130, 159]} #SUP: 2169 #CONF: 0.7509203642704902
+CorePattern{ childAttr=159, parentAttr=[15, 142]} #SUP: 1364 #CONF: 0.4454359546384086
+CorePattern{ childAttr=159, parentAttr=[81, 144]} #SUP: 1104 #CONF: 0.5082075721472068
+CorePattern{ childAttr=159, parentAttr=[31, 159]} #SUP: 1318 #CONF: 0.7346872985170857
+CorePattern{ childAttr=142, parentAttr=[15, 159]} #SUP: 1466 #CONF: 0.7853457172342622
+CorePattern{ childAttr=159, parentAttr=[15, 144]} #SUP: 1578 #CONF: 0.5069715560513106
+CorePattern{ childAttr=159, parentAttr=[81, 159]} #SUP: 1155 #CONF: 0.7394757744241461
+CorePattern{ childAttr=159, parentAttr=[15, 159]} #SUP: 1715 #CONF: 0.7717977319204313
+CorePattern{ childAttr=142, parentAttr=[132, 132]} #SUP: 1633 #CONF: 0.38015417712441735
+CorePattern{ childAttr=142, parentAttr=[132, 133]} #SUP: 1193 #CONF: 0.2638042309071352
+CorePattern{ childAttr=142, parentAttr=[33, 132]} #SUP: 1232 #CONF: 0.4015476412455715
+CorePattern{ childAttr=142, parentAttr=[132, 135]} #SUP: 1746 #CONF: 0.48072785944783075
+CorePattern{ childAttr=144, parentAttr=[130, 135]} #SUP: 1105 #CONF: 0.49293228139381984
+CorePattern{ childAttr=142, parentAttr=[33, 135]} #SUP: 1370 #CONF: 0.5080179004288644
+CorePattern{ childAttr=132, parentAttr=[142, 142]} #SUP: 1391 #CONF: 0.4403728704596593
+CorePattern{ childAttr=142, parentAttr=[132, 142]} #SUP: 1780 #CONF: 0.46799928289709575
+CorePattern{ childAttr=157, parentAttr=[133, 159]} #SUP: 1290 #CONF: 0.8322026232473994
+CorePattern{ childAttr=130, parentAttr=[144, 144]} #SUP: 1491 #CONF: 0.48567322374921407
+CorePattern{ childAttr=132, parentAttr=[142, 144]} #SUP: 1545 #CONF: 0.5002678667095254
+CorePattern{ childAttr=142, parentAttr=[132, 144]} #SUP: 1911 #CONF: 0.4723019003226963
+CorePattern{ childAttr=144, parentAttr=[130, 144]} #SUP: 1173 #CONF: 0.47518080210387903
+CorePattern{ childAttr=142, parentAttr=[33, 142]} #SUP: 1329 #CONF: 0.4883460749580459
+CorePattern{ childAttr=142, parentAttr=[33, 144]} #SUP: 1384 #CONF: 0.4773447697184412
+CorePattern{ childAttr=159, parentAttr=[132, 132]} #SUP: 1984 #CONF: 0.36310032473081527
+CorePattern{ childAttr=159, parentAttr=[132, 133]} #SUP: 1293 #CONF: 0.24457357716629635
+CorePattern{ childAttr=159, parentAttr=[33, 132]} #SUP: 1468 #CONF: 0.38479659327715865
+CorePattern{ childAttr=159, parentAttr=[132, 135]} #SUP: 2137 #CONF: 0.4736797128695949
+CorePattern{ childAttr=159, parentAttr=[33, 133]} #SUP: 1110 #CONF: 0.28957144151490444
+CorePattern{ childAttr=159, parentAttr=[33, 135]} #SUP: 1700 #CONF: 0.5089245265923711
+CorePattern{ childAttr=159, parentAttr=[132, 142]} #SUP: 1999 #CONF: 0.4224918817296189
+CorePattern{ childAttr=130, parentAttr=[144, 159]} #SUP: 1566 #CONF: 0.7537950238031079
+CorePattern{ childAttr=132, parentAttr=[142, 159]} #SUP: 1775 #CONF: 0.7939569270331083
+CorePattern{ childAttr=142, parentAttr=[132, 159]} #SUP: 2218 #CONF: 0.7711545356758694
+CorePattern{ childAttr=159, parentAttr=[132, 144]} #SUP: 2414 #CONF: 0.5011109212100495
+CorePattern{ childAttr=144, parentAttr=[130, 159]} #SUP: 1422 #CONF: 0.8067061143984221
+CorePattern{ childAttr=159, parentAttr=[33, 142]} #SUP: 1499 #CONF: 0.44441424300081545
+CorePattern{ childAttr=142, parentAttr=[33, 159]} #SUP: 1498 #CONF: 0.7608614581391012
+CorePattern{ childAttr=159, parentAttr=[33, 144]} #SUP: 1719 #CONF: 0.5096493612394672
+CorePattern{ childAttr=142, parentAttr=[133, 133]} #SUP: 1236 #CONF: 0.28924026224450444
+CorePattern{ childAttr=142, parentAttr=[133, 135]} #SUP: 1499 #CONF: 0.47599305823370613
+CorePattern{ childAttr=133, parentAttr=[142, 142]} #SUP: 1418 #CONF: 0.4811293295818376
+CorePattern{ childAttr=142, parentAttr=[133, 142]} #SUP: 1611 #CONF: 0.47984959506363284
+CorePattern{ childAttr=132, parentAttr=[159, 159]} #SUP: 1962 #CONF: 0.8408936266727149
+CorePattern{ childAttr=135, parentAttr=[156, 159]} #SUP: 1170 #CONF: 0.8189902467010901
+CorePattern{ childAttr=133, parentAttr=[142, 144]} #SUP: 1451 #CONF: 0.4703599495488503
+CorePattern{ childAttr=142, parentAttr=[133, 144]} #SUP: 1649 #CONF: 0.46664095642113385
+CorePattern{ childAttr=159, parentAttr=[33, 159]} #SUP: 1805 #CONF: 0.7447675998912748
+CorePattern{ childAttr=144, parentAttr=[15, 159]} #SUP: 1106 #CONF: 0.8317535545023697
+CorePattern{ childAttr=159, parentAttr=[133, 133]} #SUP: 1376 #CONF: 0.2800718132854578
+CorePattern{ childAttr=157, parentAttr=[135, 135]} #SUP: 1214 #CONF: 0.5172027972027972
+CorePattern{ childAttr=159, parentAttr=[133, 135]} #SUP: 1757 #CONF: 0.4654634791646981
+CorePattern{ childAttr=142, parentAttr=[51, 135]} #SUP: 1140 #CONF: 0.5217196596506941
+CorePattern{ childAttr=157, parentAttr=[135, 142]} #SUP: 1195 #CONF: 0.5047552447552448
+CorePattern{ childAttr=159, parentAttr=[133, 142]} #SUP: 1785 #CONF: 0.4365491826514221
+CorePattern{ childAttr=133, parentAttr=[142, 159]} #SUP: 1610 #CONF: 0.7630736392742796
+CorePattern{ childAttr=157, parentAttr=[135, 144]} #SUP: 1182 #CONF: 0.440979020979021
+CorePattern{ childAttr=142, parentAttr=[133, 159]} #SUP: 1914 #CONF: 0.770632472040108
+CorePattern{ childAttr=159, parentAttr=[133, 144]} #SUP: 1988 #CONF: 0.4939053198525938
+CorePattern{ childAttr=142, parentAttr=[51, 144]} #SUP: 1137 #CONF: 0.4783922973578146
+CorePattern{ childAttr=144, parentAttr=[132, 132]} #SUP: 1367 #CONF: 0.3971621241921888
+CorePattern{ childAttr=159, parentAttr=[51, 132]} #SUP: 1108 #CONF: 0.3794124345251651
+CorePattern{ childAttr=144, parentAttr=[132, 135]} #SUP: 1419 #CONF: 0.4901657769036246
+CorePattern{ childAttr=159, parentAttr=[51, 135]} #SUP: 1273 #CONF: 0.5048963789569574
+CorePattern{ childAttr=144, parentAttr=[132, 142]} #SUP: 1278 #CONF: 0.4230120820455184
+CorePattern{ childAttr=133, parentAttr=[159, 159]} #SUP: 1719 #CONF: 0.7995534355018776
+CorePattern{ childAttr=157, parentAttr=[135, 159]} #SUP: 1537 #CONF: 0.8373426573426573
+CorePattern{ childAttr=159, parentAttr=[133, 159]} #SUP: 2268 #CONF: 0.7547954266276103
+CorePattern{ childAttr=132, parentAttr=[144, 144]} #SUP: 1727 #CONF: 0.5138830458561212
+CorePattern{ childAttr=159, parentAttr=[51, 142]} #SUP: 1127 #CONF: 0.4450011386927807
+CorePattern{ childAttr=144, parentAttr=[132, 144]} #SUP: 1575 #CONF: 0.4946614217476819
+CorePattern{ childAttr=142, parentAttr=[51, 159]} #SUP: 1239 #CONF: 0.7679131213613972
+CorePattern{ childAttr=159, parentAttr=[51, 144]} #SUP: 1323 #CONF: 0.5025051241175131
+CorePattern{ childAttr=130, parentAttr=[130, 132]} #SUP: 1363 #CONF: 0.4156425428614778
+CorePattern{ childAttr=130, parentAttr=[130, 133]} #SUP: 1202 #CONF: 0.2861477772720376
+CorePattern{ childAttr=130, parentAttr=[130, 135]} #SUP: 1403 #CONF: 0.5117584585040207
+CorePattern{ childAttr=142, parentAttr=[52, 135]} #SUP: 1097 #CONF: 0.49885308574549425
+CorePattern{ childAttr=130, parentAttr=[130, 142]} #SUP: 1447 #CONF: 0.48619329388560156
+CorePattern{ childAttr=132, parentAttr=[144, 159]} #SUP: 1934 #CONF: 0.7992217080353387
+CorePattern{ childAttr=144, parentAttr=[132, 159]} #SUP: 1899 #CONF: 0.8134307389716212
+CorePattern{ childAttr=130, parentAttr=[130, 144]} #SUP: 1438 #CONF: 0.4718555606129571
+CorePattern{ childAttr=142, parentAttr=[52, 142]} #SUP: 1116 #CONF: 0.49055161114145274
+CorePattern{ childAttr=159, parentAttr=[51, 159]} #SUP: 1388 #CONF: 0.7489182418583467
+CorePattern{ childAttr=132, parentAttr=[45, 159]} #SUP: 1160 #CONF: 0.7894278877528823
+CorePattern{ childAttr=142, parentAttr=[52, 144]} #SUP: 1134 #CONF: 0.47536865101037684
+CorePattern{ childAttr=144, parentAttr=[33, 159]} #SUP: 1170 #CONF: 0.8107500864154856
+CorePattern{ childAttr=135, parentAttr=[9, 159]} #SUP: 1115 #CONF: 0.8313744896696771
+CorePattern{ childAttr=159, parentAttr=[52, 132]} #SUP: 1170 #CONF: 0.37272630571215826
+CorePattern{ childAttr=142, parentAttr=[135, 135]} #SUP: 1837 #CONF: 0.4936379928315412
+CorePattern{ childAttr=144, parentAttr=[133, 135]} #SUP: 1147 #CONF: 0.4857142857142857
+CorePattern{ childAttr=159, parentAttr=[85, 135]} #SUP: 1226 #CONF: 0.49338999055712934
+CorePattern{ childAttr=159, parentAttr=[52, 135]} #SUP: 1290 #CONF: 0.48675672800765873
+CorePattern{ childAttr=135, parentAttr=[142, 142]} #SUP: 1626 #CONF: 0.4518207556379967
+CorePattern{ childAttr=142, parentAttr=[135, 142]} #SUP: 1786 #CONF: 0.46810035842293907
+CorePattern{ childAttr=144, parentAttr=[133, 142]} #SUP: 1136 #CONF: 0.44183109707971585
+CorePattern{ childAttr=159, parentAttr=[85, 142]} #SUP: 1184 #CONF: 0.44700188857412654
+CorePattern{ childAttr=130, parentAttr=[130, 159]} #SUP: 1495 #CONF: 0.7520103170990745
+CorePattern{ childAttr=133, parentAttr=[144, 144]} #SUP: 1529 #CONF: 0.479541257653805
+CorePattern{ childAttr=135, parentAttr=[142, 144]} #SUP: 1742 #CONF: 0.49389827199062775
+CorePattern{ childAttr=159, parentAttr=[52, 142]} #SUP: 1243 #CONF: 0.44878204446335496
+CorePattern{ childAttr=142, parentAttr=[135, 144]} #SUP: 1921 #CONF: 0.4743727598566308
+CorePattern{ childAttr=144, parentAttr=[133, 144]} #SUP: 1269 #CONF: 0.4841357537490134
+CorePattern{ childAttr=142, parentAttr=[85, 159]} #SUP: 1160 #CONF: 0.7500297867270345
+CorePattern{ childAttr=159, parentAttr=[85, 144]} #SUP: 1280 #CONF: 0.5050755429650614
+CorePattern{ childAttr=142, parentAttr=[52, 159]} #SUP: 1220 #CONF: 0.7568541780447843
+CorePattern{ childAttr=159, parentAttr=[52, 144]} #SUP: 1377 #CONF: 0.5071800872247634
+CorePattern{ childAttr=159, parentAttr=[135, 135]} #SUP: 2298 #CONF: 0.4894067796610169
+CorePattern{ childAttr=159, parentAttr=[135, 142]} #SUP: 2028 #CONF: 0.4207627118644068
+CorePattern{ childAttr=133, parentAttr=[144, 159]} #SUP: 1662 #CONF: 0.7660608416755759
+CorePattern{ childAttr=135, parentAttr=[142, 159]} #SUP: 2096 #CONF: 0.8070877672556868
+CorePattern{ childAttr=142, parentAttr=[135, 159]} #SUP: 2253 #CONF: 0.7760752688172043
+CorePattern{ childAttr=159, parentAttr=[135, 144]} #SUP: 2464 #CONF: 0.5035593220338983
+CorePattern{ childAttr=144, parentAttr=[133, 159]} #SUP: 1524 #CONF: 0.8088397790055248
+CorePattern{ childAttr=159, parentAttr=[85, 159]} #SUP: 1349 #CONF: 0.7337110481586402
+CorePattern{ childAttr=159, parentAttr=[52, 159]} #SUP: 1403 #CONF: 0.7351345601531752
+CorePattern{ childAttr=135, parentAttr=[159, 159]} #SUP: 2313 #CONF: 0.8462695547533092
+CorePattern{ childAttr=130, parentAttr=[132, 132]} #SUP: 1488 #CONF: 0.40726172465960664
+CorePattern{ childAttr=132, parentAttr=[130, 132]} #SUP: 1283 #CONF: 0.41390205371248023
+CorePattern{ childAttr=130, parentAttr=[132, 133]} #SUP: 1256 #CONF: 0.2781391830559758
+CorePattern{ childAttr=130, parentAttr=[132, 135]} #SUP: 1569 #CONF: 0.5155824508320727
+CorePattern{ childAttr=132, parentAttr=[130, 135]} #SUP: 1297 #CONF: 0.5085834649815693
+CorePattern{ childAttr=142, parentAttr=[87, 135]} #SUP: 1146 #CONF: 0.505681166073683
+CorePattern{ childAttr=142, parentAttr=[54, 135]} #SUP: 1216 #CONF: 0.5080584907674245
+CorePattern{ childAttr=130, parentAttr=[132, 142]} #SUP: 1585 #CONF: 0.4800302571860817
+CorePattern{ childAttr=132, parentAttr=[130, 142]} #SUP: 1340 #CONF: 0.4645602948920484
+CorePattern{ childAttr=142, parentAttr=[87, 142]} #SUP: 1128 #CONF: 0.4858257775737404
+CorePattern{ childAttr=130, parentAttr=[132, 144]} #SUP: 1613 #CONF: 0.4760968229954614
+CorePattern{ childAttr=132, parentAttr=[130, 144]} #SUP: 1379 #CONF: 0.4825697735650342
+CorePattern{ childAttr=142, parentAttr=[54, 142]} #SUP: 1166 #CONF: 0.48265556622905326
+CorePattern{ childAttr=142, parentAttr=[87, 144]} #SUP: 1158 #CONF: 0.4779065763801217
+CorePattern{ childAttr=142, parentAttr=[54, 144]} #SUP: 1223 #CONF: 0.48116127655032553
+CorePattern{ childAttr=159, parentAttr=[87, 132]} #SUP: 1176 #CONF: 0.36665533265329253
+CorePattern{ childAttr=159, parentAttr=[54, 132]} #SUP: 1318 #CONF: 0.3800738007380074
+CorePattern{ childAttr=144, parentAttr=[135, 135]} #SUP: 1524 #CONF: 0.5058495821727019
+CorePattern{ childAttr=132, parentAttr=[15, 132]} #SUP: 1293 #CONF: 0.4715329784354417
+CorePattern{ childAttr=159, parentAttr=[87, 135]} #SUP: 1409 #CONF: 0.5048169556840078
+CorePattern{ childAttr=159, parentAttr=[54, 135]} #SUP: 1549 #CONF: 0.5036401715368505
+CorePattern{ childAttr=135, parentAttr=[45, 135]} #SUP: 1189 #CONF: 0.5675270799723439
+CorePattern{ childAttr=132, parentAttr=[15, 135]} #SUP: 1299 #CONF: 0.5692502030136245
+CorePattern{ childAttr=144, parentAttr=[135, 142]} #SUP: 1314 #CONF: 0.42493036211699164
+CorePattern{ childAttr=159, parentAttr=[87, 142]} #SUP: 1247 #CONF: 0.4393063583815029
+CorePattern{ childAttr=142, parentAttr=[153, 159]} #SUP: 1421 #CONF: 0.7678989237248479
+CorePattern{ childAttr=130, parentAttr=[132, 159]} #SUP: 1692 #CONF: 0.7527987897125568
+CorePattern{ childAttr=132, parentAttr=[130, 159]} #SUP: 1535 #CONF: 0.7872564507635598
+CorePattern{ childAttr=135, parentAttr=[144, 144]} #SUP: 1939 #CONF: 0.5076200517588422
+CorePattern{ childAttr=159, parentAttr=[54, 142]} #SUP: 1354 #CONF: 0.4380173531465044
+CorePattern{ childAttr=144, parentAttr=[135, 144]} #SUP: 1594 #CONF: 0.4940111420612813
+CorePattern{ childAttr=142, parentAttr=[87, 159]} #SUP: 1269 #CONF: 0.7571444967290256
+CorePattern{ childAttr=159, parentAttr=[87, 144]} #SUP: 1453 #CONF: 0.5122974045109373
+CorePattern{ childAttr=132, parentAttr=[15, 142]} #SUP: 1239 #CONF: 0.463773346566814
+CorePattern{ childAttr=142, parentAttr=[54, 159]} #SUP: 1352 #CONF: 0.7684918347742555
+CorePattern{ childAttr=159, parentAttr=[54, 144]} #SUP: 1578 #CONF: 0.5161065124164755
+CorePattern{ childAttr=135, parentAttr=[45, 144]} #SUP: 1128 #CONF: 0.4945840055312284
+CorePattern{ childAttr=132, parentAttr=[15, 144]} #SUP: 1248 #CONF: 0.49291708021293873
+CorePattern{ childAttr=133, parentAttr=[130, 132]} #SUP: 1125 #CONF: 0.38095716871103963
+CorePattern{ childAttr=130, parentAttr=[133, 135]} #SUP: 1392 #CONF: 0.537048064653339
+CorePattern{ childAttr=133, parentAttr=[130, 135]} #SUP: 1237 #CONF: 0.5051276895234265
+CorePattern{ childAttr=130, parentAttr=[133, 142]} #SUP: 1366 #CONF: 0.48251807741386643
+CorePattern{ childAttr=133, parentAttr=[130, 142]} #SUP: 1277 #CONF: 0.48753267645284537
+CorePattern{ childAttr=159, parentAttr=[153, 159]} #SUP: 1708 #CONF: 0.7536820132204569
+CorePattern{ childAttr=135, parentAttr=[144, 159]} #SUP: 2240 #CONF: 0.8094507811751174
+CorePattern{ childAttr=144, parentAttr=[135, 159]} #SUP: 1943 #CONF: 0.8154596100278552
+CorePattern{ childAttr=130, parentAttr=[133, 144]} #SUP: 1377 #CONF: 0.47749893662271375
+CorePattern{ childAttr=133, parentAttr=[130, 144]} #SUP: 1290 #CONF: 0.46591594610898857
+CorePattern{ childAttr=159, parentAttr=[87, 159]} #SUP: 1499 #CONF: 0.7390910121273944
+CorePattern{ childAttr=159, parentAttr=[54, 159]} #SUP: 1698 #CONF: 0.7582527176623117
+CorePattern{ childAttr=135, parentAttr=[45, 159]} #SUP: 1237 #CONF: 0.7861258354459553
+CorePattern{ childAttr=132, parentAttr=[15, 159]} #SUP: 1363 #CONF: 0.8107913019940449
+CorePattern{ childAttr=133, parentAttr=[15, 132]} #SUP: 1097 #CONF: 0.4190156401873288
+CorePattern{ childAttr=133, parentAttr=[15, 135]} #SUP: 1122 #CONF: 0.526906423963948
+CorePattern{ childAttr=130, parentAttr=[133, 159]} #SUP: 1458 #CONF: 0.7521054870267971
+CorePattern{ childAttr=133, parentAttr=[130, 159]} #SUP: 1394 #CONF: 0.7657349688316911
+CorePattern{ childAttr=133, parentAttr=[15, 142]} #SUP: 1095 #CONF: 0.48970575240788194
+CorePattern{ childAttr=133, parentAttr=[15, 144]} #SUP: 1123 #CONF: 0.4725634001943978
+CorePattern{ childAttr=132, parentAttr=[132, 132]} #SUP: 1715 #CONF: 0.4339147467586979
+CorePattern{ childAttr=132, parentAttr=[132, 133]} #SUP: 1154 #CONF: 0.25165562913907286
+CorePattern{ childAttr=132, parentAttr=[33, 132]} #SUP: 1227 #CONF: 0.44879575194386495
+CorePattern{ childAttr=132, parentAttr=[132, 135]} #SUP: 1688 #CONF: 0.5112396231694805
+CorePattern{ childAttr=132, parentAttr=[33, 135]} #SUP: 1299 #CONF: 0.5750047411340793
+CorePattern{ childAttr=132, parentAttr=[132, 142]} #SUP: 1666 #CONF: 0.44911855237384574
+CorePattern{ childAttr=132, parentAttr=[132, 144]} #SUP: 1779 #CONF: 0.48782762801977425
+CorePattern{ childAttr=132, parentAttr=[33, 142]} #SUP: 1213 #CONF: 0.46216575004741134
+CorePattern{ childAttr=132, parentAttr=[33, 144]} #SUP: 1272 #CONF: 0.49962070927365826
+CorePattern{ childAttr=133, parentAttr=[15, 159]} #SUP: 1161 #CONF: 0.7715825748873376
+CorePattern{ childAttr=135, parentAttr=[13, 159]} #SUP: 1107 #CONF: 0.7787572565039776
+CorePattern{ childAttr=144, parentAttr=[153, 159]} #SUP: 1699 #CONF: 0.8073401799219807
+CorePattern{ childAttr=132, parentAttr=[132, 159]} #SUP: 2091 #CONF: 0.796474209495383
+CorePattern{ childAttr=144, parentAttr=[54, 159]} #SUP: 1119 #CONF: 0.8216286888307808
+CorePattern{ childAttr=132, parentAttr=[33, 159]} #SUP: 1346 #CONF: 0.7940451355964346
+CorePattern{ childAttr=133, parentAttr=[132, 132]} #SUP: 1346 #CONF: 0.3935496074907784
+CorePattern{ childAttr=135, parentAttr=[130, 132]} #SUP: 1190 #CONF: 0.37359219135471416
+CorePattern{ childAttr=133, parentAttr=[132, 133]} #SUP: 1156 #CONF: 0.2951858507519153
+size 4pattern,count: 11
+CorePattern{ childAttr=142, parentAttr=[159, 159, 159]} #SUP: 1216 #CONF: 0.8464716006884682
+CorePattern{ childAttr=159, parentAttr=[144, 144, 144]} #SUP: 1114 #CONF: 0.5465673230441724
+CorePattern{ childAttr=159, parentAttr=[144, 159, 159]} #SUP: 1298 #CONF: 0.8653882665654072
+CorePattern{ childAttr=142, parentAttr=[142, 159, 159]} #SUP: 1165 #CONF: 0.8455114822546973
+CorePattern{ childAttr=159, parentAttr=[159, 159, 159]} #SUP: 1339 #CONF: 0.8670605612998523
+CorePattern{ childAttr=159, parentAttr=[144, 144, 159]} #SUP: 1172 #CONF: 0.7718644669150257
+CorePattern{ childAttr=159, parentAttr=[142, 159, 159]} #SUP: 1271 #CONF: 0.8648190045248869
+CorePattern{ childAttr=159, parentAttr=[142, 144, 159]} #SUP: 1135 #CONF: 0.7708923512747875
+CorePattern{ childAttr=159, parentAttr=[132, 159, 159]} #SUP: 1092 #CONF: 0.8542151839776432
+CorePattern{ childAttr=142, parentAttr=[144, 159, 159]} #SUP: 1185 #CONF: 0.8445969728968673
+CorePattern{ childAttr=159, parentAttr=[135, 159, 159]} #SUP: 1104 #CONF: 0.8553270164085972

@@ -85,7 +85,8 @@ public class DescriptionAlgoLCIM extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getInputFileTypes() {
-		return new String[]{"Database of instances","Transaction database", "Transaction database with utility and cost values"};
+		return new String[]{"Database of instances", "Transaction database",
+				"Transaction database with utility and cost values"};
 	}
 
 	@Override

@@ -43,7 +43,8 @@ public class MainTestCMSPAM_saveToFile {
         boolean outputSequenceIdentifiers = true;
 		
 		// execute the algorithm with minsup = 2 sequences  (50 %)
-		algo.runAlgorithm(input, output, 0.5, outputSequenceIdentifiers);     // minsup = 106   k = 1000   BMS
+		algo.runAlgorithm(input, output, 0.5);
+		algo.showSequenceIdentifiersInOutput(outputSequenceIdentifiers);
 		algo.printStatistics();
 	}
 	

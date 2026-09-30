@@ -31,6 +31,8 @@ import ca.pfv.spmf.tools.MemoryLogger;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 /**
  * Implementation of the NOSEP algorithm. It was converted from C++ to Java.
@@ -922,6 +924,11 @@ public class AlgoNOSEP {
 
 		// Writer results to the output file
 		BufferedWriter writer = new BufferedWriter(new FileWriter(new File(outputPath)));
+		writer.write("@FILETYPE=\"Frequent sequential patterns\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		StringBuilder builder = new StringBuilder();
 
 		for (int i = minlen-1; i < fLevel; i++) {  //  THIS LINE MODIFIED BY PHILIPPE TO FIX MINLEN BUG - 2024-17

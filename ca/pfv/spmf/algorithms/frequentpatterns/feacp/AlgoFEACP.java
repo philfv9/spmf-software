@@ -167,7 +167,11 @@ public class AlgoFEACP {
 
 		// if the user choose to save to file
 		writer = new BufferedWriter(new FileWriter(outputPath));
-
+		writer.write("@FILETYPE=\"Cross-Level High-utility itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+		
 		// Scan the database using utility-bin array to calculate the TWU
 		// of each item
 		useUtilityBinArrayToCalculateLocalUtilityFirstTime(dataset);

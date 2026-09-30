@@ -114,7 +114,7 @@ public class DescriptionAlgoTKS extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getOutputFileTypes() {
-		return new String[]{"Patterns", "Sequential patterns", "Frequent sequential patterns"};
+		return new String[]{"Patterns", "Sequential patterns", "Top-k frequent sequential patterns"};
 	}
 	
 	@Override

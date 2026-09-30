@@ -30,6 +30,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.goKrimp;
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
  * 
+ * Do not remove copyright and license information.
+ * 
  * @see AlgoGoKrimp
  * @see DataReader
  * @see Event

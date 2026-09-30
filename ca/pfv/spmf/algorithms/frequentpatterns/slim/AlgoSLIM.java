@@ -421,7 +421,11 @@ public class AlgoSLIM {
 		// for writing the results.
 		if (outputFilePath != null) {
 			writer = new BufferedWriter(new FileWriter(outputFilePath));
-
+			writer.write("@FILETYPE=\"Frequent itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
+			
 			// Write each itemset that has a non zero support!
 			for (Itemset itemset : codeTable) {
 				writeOut(itemset);

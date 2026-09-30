@@ -75,6 +75,11 @@ class AlgoConvertToVerticalDatabase {
 		String line;
 		int tidcount=0;
 		while( ((line = reader.readLine())!= null)){
+			// Skip comments and metadata
+			if (line.isEmpty() || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+				continue;
+			}
+			
 			String[] lineSplited = line.split(":");
 			
 			int transactionUtility = Integer.parseInt(lineSplited[1]);  			

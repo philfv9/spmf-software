@@ -3,34 +3,38 @@ package ca.pfv.spmf.test;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.util.List;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.BIDE_and_prefixspan.AlgoMaxSP;
-import ca.pfv.spmf.algorithms.sequentialpatterns.BIDE_and_prefixspan.SequentialPatterns;
-import ca.pfv.spmf.input.sequence_database_list_integers.SequenceDatabase;
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.AlgoMaxSP2;
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.SequentialPattern;
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.SequentialPatterns;
 
 /**
  * Example of how to use the MaxSP algorithm, from the source code.
  * 
- * @author Philippe Fournier-Viger
+ * @author copyright Philippe Fournier-Viger 2026
  */
 public class MainTestMaxSP_saveToMemory {
 
 	public static void main(String [] arg) throws IOException{    
-		// Load a sequence database
-		SequenceDatabase sequenceDatabase = new SequenceDatabase(); 
-		sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"));
-		sequenceDatabase.print();
+		// Input sequence database
+		String inputFile = fileToPath("contextPrefixSpan.txt");
+		
 		// Create an instance of the algorithm
-		AlgoMaxSP algo  = new AlgoMaxSP();
+		AlgoMaxSP2 algo  = new AlgoMaxSP2();
 		
         // if you set the following parameter to true, the sequence ids of the sequences where
         // each pattern appears will be shown in the result
         boolean showSequenceIdentifiers = false;
 		
 		// execute the algorithm
-		SequentialPatterns patterns = algo.runAlgorithm(sequenceDatabase, null, 2);    
-		algo.printStatistics(sequenceDatabase.size());
-		patterns.printFrequentPatterns(sequenceDatabase.size(),showSequenceIdentifiers);
+		SequentialPatterns patterns = algo.runAlgorithm(inputFile, null, 2);    
+		algo.printStatistics();
+		for(List<SequentialPattern> level : patterns.getLevels()) {
+			for(SequentialPattern pattern : level) {
+				System.out.println(pattern + " support: " + pattern.getAbsoluteSupport());
+			}
+		}
 	}
 	
 	public static String fileToPath(String filename) throws UnsupportedEncodingException{

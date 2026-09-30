@@ -91,7 +91,11 @@ public class AlgoIGB {
 	    }else{ 
 	    	// if the user wants to save the result to a file
 	    	rules = null;
-			writer = new BufferedWriter(new FileWriter(outputFilePath)); 
+			writer = new BufferedWriter(new FileWriter(outputFilePath));
+			writer.write("@FILETYPE=\"Association rules\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 		}
 		
 		startTimestamp = System.currentTimeMillis();

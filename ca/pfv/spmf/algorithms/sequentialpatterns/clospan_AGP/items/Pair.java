@@ -2,8 +2,6 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items;
 
 import java.util.BitSet;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.abstractions.ItemAbstractionPair;
-
 /**
  * This class is used by PrefixSpan and it is based on SPMF original PrefixSpan
  * Algorithm. It represents, based on Hirate & Yamana
@@ -26,6 +24,8 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.abstractions.
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  *
  * @author agomariz
  */

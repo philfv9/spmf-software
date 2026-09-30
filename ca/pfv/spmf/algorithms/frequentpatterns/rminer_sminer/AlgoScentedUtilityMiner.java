@@ -144,6 +144,11 @@ public class AlgoScentedUtilityMiner {
 		startTimestamp = System.currentTimeMillis();
 		MemoryLogger.getInstance().reset();
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		BufferedReader myInput = null;
 		int tid = 0;
 		String thisLine;

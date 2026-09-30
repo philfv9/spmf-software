@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.frequentpatterns.uapriori.AlgoUApriori;
 import ca.pfv.spmf.algorithms.frequentpatterns.uapriori.UncertainTransactionDatabase;
 import ca.pfv.spmf.algorithms.frequentpatterns.uveclat.AlgoUVEclat;
 

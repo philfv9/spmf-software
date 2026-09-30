@@ -6,7 +6,8 @@ import java.net.URL;
 import java.util.PriorityQueue;
 
 import ca.pfv.spmf.algorithms.sequentialpatterns.spam.AlgoTKS;
-import ca.pfv.spmf.algorithms.sequentialpatterns.spam.PatternTKS;
+import ca.pfv.spmf.algorithms.sequentialpatterns.spam.AlgoTKS.PatternTKS2;
+import ca.pfv.spmf.algorithms.sequentialpatterns.spam_oldversion.PatternTKS;
 
 
 /**
@@ -47,7 +48,7 @@ public class MainTestTKS {
 //		algo.showSequenceIdentifiersInOutput(true);
 		
 		// execute the algorithm, which returns some patterns
-		PriorityQueue<PatternTKS> patterns = algo.runAlgorithm(input, output, k);  
+		PriorityQueue<PatternTKS2> patterns = algo.runAlgorithm(input, output, k);  
 		// save results to file
 		algo.writeResultTofile(output);   
 		algo.printStatistics();

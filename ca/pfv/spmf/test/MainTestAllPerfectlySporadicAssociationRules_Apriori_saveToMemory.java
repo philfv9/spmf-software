@@ -35,7 +35,7 @@ public class MainTestAllPerfectlySporadicAssociationRules_Apriori_saveToMemory {
 		
 		// STEP 2: Generating all rules from the set of sporadic itemsets (based on Agrawal & Srikant, 94)
 		double  minconf = 0.60;
-		AlgoAgrawalFaster94 algoAgrawal = new AlgoAgrawalFaster94();
+		AlgoAgrawalFaster94 algoAgrawal = new AlgoAgrawalFaster94("Sporadic association rules");
 		AssocRules rules = algoAgrawal.runAlgorithm(patterns, output,databaseSize, minconf);
 		rules.printRules(databaseSize);
 	}

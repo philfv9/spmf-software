@@ -1,3 +1,5 @@
+@FILETYPE="Simple transaction database"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
 1 4
 2 3 4
 1 2 4 5

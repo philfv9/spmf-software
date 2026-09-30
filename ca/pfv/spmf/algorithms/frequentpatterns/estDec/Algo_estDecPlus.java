@@ -12,9 +12,9 @@ import ca.pfv.spmf.tools.MemoryLogger;
  * This is an implementation of the estDecPlus algorithm 
  * <br/>
  * 
- * Se Jung Shin , Dae Su Lee , Won Suk Lee, “CP-tree: An adaptive synopsis structure 
- * for compressing frequent itemsets over online data streams”, 
- * Information Sciences,Volume 278, 10 September 2014, Pages 559–576<br/>
+ * Se Jung Shin , Dae Su Lee , Won Suk Lee, ï¿½CP-tree: An adaptive synopsis structure 
+ * for compressing frequent itemsets over online data streamsï¿½, 
+ * Information Sciences,Volume 278, 10 September 2014, Pages 559ï¿½576<br/>
  * 
  * This implementation was made by Azadeh Soltani <br/>
  * <br/>
@@ -107,6 +107,12 @@ public class Algo_estDecPlus {
 
 		// for each line (transaction)
 		while (((line = reader.readLine()) != null)) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+				continue;
+			}
+			
 			// split the line into an array of strings (items)
 			String[] lineSplited = line.split(" ");
 			

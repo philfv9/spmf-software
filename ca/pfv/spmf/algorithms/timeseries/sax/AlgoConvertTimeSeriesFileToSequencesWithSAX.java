@@ -15,6 +15,8 @@ package ca.pfv.spmf.algorithms.timeseries.sax;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 import java.io.BufferedWriter;
@@ -81,7 +83,13 @@ public class AlgoConvertTimeSeriesFileToSequencesWithSAX {
 		
 		// create a writer object to write results to file
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.newLine();
 		writer.write("@CONVERTED_FROM_TIME_SERIES");
+		writer.newLine();
+		writer.write("@FILETYPE=\"Simple sequence database\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		
 
 		// this variable will count the number of transactions
 		timeSeriesCount = multipleTimeSeries.size();

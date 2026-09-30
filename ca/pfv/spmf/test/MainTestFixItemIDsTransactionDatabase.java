@@ -14,8 +14,8 @@ public class MainTestFixItemIDsTransactionDatabase {
 
 	public static void main(String [] arg) throws IOException{
 		
-		String inputFile = fileToPath("retail_negative.txt");
-		String outputFile = "retail_negative2.txt";
+		String inputFile = fileToPath("contextPasquier99.txt");
+		String outputFile = "output.txt";
 		
 		// This is a parameter that indicates that we want to increase the item ids by 1
 		int increment = 1;

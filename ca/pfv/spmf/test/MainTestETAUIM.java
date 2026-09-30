@@ -14,9 +14,9 @@ public class MainTestETAUIM {
 		String output = "output.txt";
 		// Applying the ETAUIM algorithm
 		int k=5;
-		AlgoETAUIM EHAUPM = new AlgoETAUIM();
-		EHAUPM.runAlgorithm(input, output,k);
-		EHAUPM.printStats();
+		AlgoETAUIM algorithm = new AlgoETAUIM();
+		algorithm.runAlgorithm(input, output,k);
+		algorithm.printStats();
 	}
 	public static String fileToPath(String filename) throws UnsupportedEncodingException{
 		URL url = MainTestETAUIM.class.getResource(filename);

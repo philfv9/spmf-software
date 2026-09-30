@@ -74,14 +74,20 @@ public class LinePainter implements Highlighter.HighlightPainter, CaretListener,
 	 */
 	public void setColor(Color color) {
 		this.color = color;
+		if (component != null) {
+			component.repaint();
+		}
 	}
 
 	/**
 	 * Calculate the line color by making the selection color lighter
 	 *
-	 * @return the color of the background line
+	 * @param color the base color
 	 */
 	public void setLighter(Color color) {
+		if (color == null) {
+			return;
+		}
 		int red = Math.min(255, (int) (color.getRed() * 1.2));
 		int green = Math.min(255, (int) (color.getGreen() * 1.2));
 		int blue = Math.min(255, (int) (color.getBlue() * 1.2));
@@ -90,15 +96,21 @@ public class LinePainter implements Highlighter.HighlightPainter, CaretListener,
 
 	/** Paint the background highlight */
 	public void paint(Graphics g, int p0, int p1, Shape bounds, JTextComponent c) {
+		if (color == null) {
+			return;
+		}
 		try {
 			Rectangle2D r = c.modelToView2D(c.getCaretPosition());
+			if (r == null) { // component not yet laid out
+				return;
+			}
 			g.setColor(color);
 			g.fillRect(0, (int) r.getY(), c.getWidth(), (int) r.getHeight());
 
 			if (lastView == null)
 				lastView = r;
 		} catch (BadLocationException ble) {
-			System.out.println(ble);
+			// ignore
 		}
 	}
 
@@ -115,8 +127,18 @@ public class LinePainter implements Highlighter.HighlightPainter, CaretListener,
 					int offset = component.getCaretPosition();
 					Rectangle2D currentView = component.modelToView2D(offset);
 
-					// Remove the highlighting from the previously highlighted line
+					// BUG FIX: modelToView2D may return null before layout, and
+					// lastView is null until the first paint -> NPE
+					if (currentView == null) {
+						return;
+					}
+					if (lastView == null) {
+						lastView = currentView;
+						component.repaint();
+						return;
+					}
 
+					// Remove the highlighting from the previously highlighted line
 					if (lastView.getY() != currentView.getY()) {
 						component.repaint(0, (int) lastView.getY(), component.getWidth(), (int) lastView.getHeight());
 						lastView = currentView;

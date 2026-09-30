@@ -17,6 +17,8 @@ import java.util.LinkedList;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 /**
@@ -65,7 +67,7 @@ public class Sequence implements Iterable<Itemset>, Cloneable {
             buff.append(itemset.concatenate());
             buff.append(" -1 ");
         }
-        return buff.toString() + "-2";
+        return buff.toString();
     }
 
 

@@ -43,6 +43,27 @@ public class ClosedSubgraph extends FrequentSubgraph {
     /** support or MNI */
     private int thresholdValue;
 
+    /**
+     * true if this cgSpan closed subgraph is also a closed subgraph according to the threshold based definition,
+     * i.e. there is no proper supergraph in the frequent set having the same value of the threshold measure.
+     * <p>
+     * The threshold measure depends on the mining setting:
+     * <ul>
+     *     <li>for the multiple graphs (support) setting this is the CloseGraph definition, where a subgraph is
+     *     closed when no proper supergraph has the same <i>support</i>;</li>
+     *     <li>for the single large graph (MNI) setting this is the CloGraMi definition, where a subgraph is
+     *     closed when no proper supergraph has the same <i>MNI</i>.</li>
+     * </ul>
+     * <p>
+     * Note: the cgSpan closed set is a superset of this threshold based closed set. cgSpan considers a subgraph
+     * closed when no supergraph has an <i>equivalent occurrence</i> (which implies an equal threshold value), which
+     * is a stronger condition than merely having an equal threshold value. A supergraph with an equal threshold
+     * value but a non equivalent occurrence therefore leaves a graph cgSpan-closed but not closed by threshold.
+     * <p>
+     * Defaults to true and is set to false when such a supergraph is found.
+     */
+    private boolean isClosedByThreshold = true;
+
 
     /**
      * Constructor
@@ -349,5 +370,21 @@ public class ClosedSubgraph extends FrequentSubgraph {
 
     public void setThresholdValue(int thresholdValue) {
         this.thresholdValue = thresholdValue;
+    }
+
+    /**
+     * @return true if this cgSpan closed subgraph is also closed according to the threshold based definition
+     *         (CloseGraph for the support setting, CloGraMi for the MNI setting)
+     */
+    public boolean isClosedByThreshold() {
+        return isClosedByThreshold;
+    }
+
+    /**
+     * @param closedByThreshold whether this cgSpan closed subgraph is also closed according to the threshold based
+     *                          definition (CloseGraph for the support setting, CloGraMi for the MNI setting)
+     */
+    public void setClosedByThreshold(boolean closedByThreshold) {
+        this.isClosedByThreshold = closedByThreshold;
     }
 }

@@ -52,6 +52,10 @@ public class TransactionDatabaseGenerator {
 		
 		// We create a BufferedWriter to write the database to disk
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output)); 
+		writer.write("@FILETYPE=\"Simple transaction database\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		// For the number of transactions to be generated
 		for (int i = 0; i < transactionCount; i++) {
 			// if it is not the first one, we write on a new line

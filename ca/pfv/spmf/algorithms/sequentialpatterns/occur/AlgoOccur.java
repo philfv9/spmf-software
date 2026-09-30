@@ -7,17 +7,16 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.SequenceDatabase;
 import ca.pfv.spmf.tools.MemoryLogger;
 
-
-/*** 
+/*
  *
  * Copyright (c) 2008-2012 Philippe Fournier-Viger
- * 
+ *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
  *
@@ -33,12 +32,13 @@ import ca.pfv.spmf.tools.MemoryLogger;
  *
  * You should have received a copy of the GNU General Public License
  * along with SPMF.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  */
 
 /**
- * This is an implementation of the OCCUR algorithm, a custom
- * algorithm to find occurrences of sequential patterns in a sequence database.
- * 
+ * This is an implementation of the OCCUR algorithm.
+ *
  * @author Philippe Fournier-Viger
  */
 public class AlgoOccur {
@@ -53,17 +53,49 @@ public class AlgoOccur {
     /** the sequence database **/
     SequenceDatabase sequenceDatabase;
 
-    /** 
-     * Reusable list of occurrences to avoid allocating a new list per sequence.
-     * This is cleared before each use inside findOccurrences.
-     */
-    private final List<String> reusableOccurrences = new ArrayList<>();
+    /** Raw view of the sequence database to avoid ArrayList.get() overhead */
+    private int[][] sequencesArray;
 
     /**
-     * Reusable StringBuilder to build occurrence strings without allocating
-     * new String objects on every recursive call.
+     * Reusable stack holding, for the pattern currently being matched, the
+     * itemset position (in the sequence) chosen for each level (itemset)
+     * of the pattern.
      */
-    private final StringBuilder occurrenceBuilder = new StringBuilder(64);
+    private int[] occurrencePositions = new int[16];
+
+    /** Reusable growable buffer for the pattern tokens of the current line. */
+    private int[] patternBuffer = new int[64];
+    private int patternLength;
+
+    /** Reusable growable buffer for the sids of the current line. */
+    private int[] sidBuffer = new int[256];
+    private int sidLength;
+
+    /** Positions (within the raw line) delimiting the text to re-emit as-is. */
+    private int patternTextEnd; // exclusive end of the pattern text
+    private int supStart;       // inclusive start of the "#SUP: ..." text
+    private int supEnd;         // exclusive end of the "#SUP: ..." text
+
+    /**
+     * Flag used while writing the occurrences of a single sid, so that we
+     * know whether a separating space must be written before the next
+     * occurrence.
+     */
+    private boolean firstOccurrenceForSid;
+
+    /**
+     * Reusable buffer used to build a complete output line before it is
+     * flushed to the underlying writer with a single call.
+     */
+    private final StringBuilder lineBuilder = new StringBuilder(4096);
+
+    /** Reusable char array mirroring lineBuilder, to flush without toString(). */
+    private char[] flushBuffer = new char[4096];
+
+    private static final String NEWLINE = System.lineSeparator();
+
+    private static final int MEMORY_CHECK_INTERVAL = 256;
+    private int lineCounter = 0;
 
     /**
      * Default constructor
@@ -80,28 +112,37 @@ public class AlgoOccur {
      * @throws IOException  exception if error while writing the file
      */
     public void runAlgorithm(String inputFile, String patternFile, String outputFilePath) throws IOException {
-        // record start time
+        MemoryLogger.getInstance().reset();
         startTime = System.currentTimeMillis();
 
         // Load the sequence database
         sequenceDatabase = new SequenceDatabase();
         sequenceDatabase.loadFile(inputFile);
 
-        // if the user want to keep the result into memory
+        // Convert once to a raw array: removes ArrayList.get() overhead
+        // from the hottest lookup path (done once per sequential search).
+        final List<int[]> seqList = sequenceDatabase.getSequences();
+        sequencesArray = seqList.toArray(new int[seqList.size()][]);
+
         if (outputFilePath == null) {
             writer = null;
-        } else { // if the user want to save the result to a file
-            writer = new BufferedWriter(new FileWriter(outputFilePath));
+        } else {
+            writer = new BufferedWriter(new FileWriter(outputFilePath), 1 << 16);
+    		writer.write("@FILETYPE=\"Frequent sequential patterns with occurrences\"");
+    						writer.append(System.lineSeparator());
+    						writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+    						writer.append(System.lineSeparator());
         }
 
-        processPatterns(patternFile);
-
-        // record end time
-        endTime = System.currentTimeMillis();
-        // close the output file if the result was saved to a file
-        if (writer != null) {
-            writer.close();
+        try {
+            processPatterns(patternFile);
+        } finally {
+            endTime = System.currentTimeMillis();
+            if (writer != null) {
+                writer.close();
+            }
         }
+        MemoryLogger.getInstance().checkMemory();
     }
 
     /**
@@ -110,14 +151,12 @@ public class AlgoOccur {
      * @throws IOException
      */
     private void processPatterns(String patternFile) throws IOException {
-        String thisLine; // variable to read each line.
+        String thisLine;
 
         try (BufferedReader myInput = new BufferedReader(
-                new InputStreamReader(new FileInputStream(new File(patternFile))))) {
+                new InputStreamReader(new FileInputStream(new File(patternFile))), 1 << 16)) {
 
             while ((thisLine = myInput.readLine()) != null) {
-                // if the line is not a comment, is not empty or is not other
-                // kind of metadata
                 if (thisLine.isEmpty()
                         || thisLine.charAt(0) == '#'
                         || thisLine.charAt(0) == '%'
@@ -125,74 +164,55 @@ public class AlgoOccur {
                     continue;
                 }
 
-                // Find the position of the first '#' which starts the support text
-                final int posFirstCharacterSUP = thisLine.indexOf('#');
+                // Single manual pass: fills patternBuffer/patternLength,
+                // sidBuffer/sidLength, and the text ranges to re-emit.
+                parseLine(thisLine);
 
-                // Extract the sequence text (the pattern items before the support block)
-                final String sequenceText = thisLine.substring(0, posFirstCharacterSUP - 1);
+                lineBuilder.setLength(0);
+                // Append pattern text and support text directly from the
+                // original line - no substring allocated.
+                lineBuilder.append(thisLine, 0, patternTextEnd);
+                lineBuilder.append(' ');
+                lineBuilder.append(thisLine, supStart, supEnd);
+                lineBuilder.append(" #SIDOCC:");
 
-                // Find the position of "#SID" block
-                final int posFirstCharacterSIDLine = thisLine.indexOf("#SID");
+                findOccurrences();
 
-                // Extract the support text block (between '#' and '#SID')
-                final String supText = thisLine.substring(posFirstCharacterSUP, posFirstCharacterSIDLine - 1);
+                lineBuilder.append(NEWLINE);
+                flushLine();
 
-                // THE SIDS as text - everything after "#SID: " (6 characters)
-                final String sidListString = thisLine.substring(posFirstCharacterSIDLine + 6);
-
-                // THE SIDS as an Integer array - parse manually to avoid regex overhead
-                final int[] sids = parseIntArray(sidListString);
-
-                // The sequential pattern as integers - parse manually to avoid regex overhead
-                final int[] pattern = parseIntArray(sequenceText);
-
-                // Write the pattern header
-                writer.append(sequenceText);
-                writer.append(' ');
-                writer.append(supText);
-                writer.append(" #SIDOCC:");
-
-                // Find and write occurrences for this pattern
-                findOccurrences(sids, pattern);
-
-                writer.newLine();
+                if (++lineCounter >= MEMORY_CHECK_INTERVAL) {
+                    lineCounter = 0;
+                    MemoryLogger.getInstance().checkMemory();
+                }
             }
         }
     }
 
     /**
-     * Parse a space-separated string of integers into an int array.
-     * This avoids the overhead of String.split() and Integer.parseInt()
-     * by doing a single-pass manual parse.
+     * Parse one pattern-file line in a single pass, filling:
+     *  - patternBuffer[0..patternLength) with the pattern's integer tokens
+     *  - sidBuffer[0..sidLength) with the sid list
+     *  - patternTextEnd / supStart / supEnd, the character ranges of the
+     *    original line to re-emit verbatim in the output (no substrings).
      *
-     * @param str the string to parse
-     * @return the parsed int array
+     * @param line the raw pattern-file line (already known non-empty/valid)
      */
-    private int[] parseIntArray(final String str) {
-        // Count tokens first to allocate exact size
-        int tokenCount = 0;
-        boolean inToken = false;
-        final int len = str.length();
-        for (int i = 0; i < len; i++) {
-            final char c = str.charAt(i);
-            if (c != ' ') {
-                if (!inToken) {
-                    tokenCount++;
-                    inToken = true;
-                }
-            } else {
-                inToken = false;
-            }
-        }
+    private void parseLine(final String line) {
+        final int lineLen = line.length();
 
-        final int[] result = new int[tokenCount];
-        int idx = 0;
+        // ---- Phase 1: parse pattern tokens up to the first '#' ----
+        patternLength = 0;
+        int i = 0;
         int currentValue = 0;
         boolean negative = false;
-        inToken = false;
+        boolean inToken = false;
 
-        for (int i = 0; i < len; i++) {
-            final char c = str.charAt(i);
+        while (i < lineLen) {
+            final char c = line.charAt(i);
+            if (c == '#') {
+                break;
+            }
             if (c == '-' && !inToken) {
                 negative = true;
                 inToken = true;
@@ -200,73 +220,136 @@ public class AlgoOccur {
                 currentValue = currentValue * 10 + (c - '0');
                 inToken = true;
             } else if (c == ' ' && inToken) {
-                result[idx++] = negative ? -currentValue : currentValue;
+                addPatternValue(negative ? -currentValue : currentValue);
                 currentValue = 0;
                 negative = false;
                 inToken = false;
             }
+            i++;
         }
-        // last token
         if (inToken) {
-            result[idx] = negative ? -currentValue : currentValue;
+            addPatternValue(negative ? -currentValue : currentValue);
+            currentValue = 0;
+            negative = false;
         }
-        return result;
+
+        final int posFirstCharacterSUP = i; // index of the first '#'
+        patternTextEnd = posFirstCharacterSUP - 1; // exclude the space before '#'
+
+        // ---- Phase 2: locate "#SID" (search only after the first '#') ----
+        final int posFirstCharacterSIDLine = line.indexOf("#SID", posFirstCharacterSUP + 1);
+        supStart = posFirstCharacterSUP;
+        supEnd = posFirstCharacterSIDLine - 1;
+
+        // ---- Phase 3: parse the sid list after "#SID: " (6 chars) ----
+        sidLength = 0;
+        i = posFirstCharacterSIDLine + 6;
+        inToken = false;
+
+        while (i < lineLen) {
+            final char c = line.charAt(i);
+            if (c == '-' && !inToken) {
+                negative = true;
+                inToken = true;
+            } else if (c >= '0' && c <= '9') {
+                currentValue = currentValue * 10 + (c - '0');
+                inToken = true;
+            } else if (c == ' ' && inToken) {
+                addSidValue(negative ? -currentValue : currentValue);
+                currentValue = 0;
+                negative = false;
+                inToken = false;
+            }
+            i++;
+        }
+        if (inToken) {
+            addSidValue(negative ? -currentValue : currentValue);
+        }
+    }
+
+    /** Append a value to the reusable pattern buffer, growing it if needed. */
+    private void addPatternValue(final int value) {
+        if (patternLength == patternBuffer.length) {
+            patternBuffer = Arrays.copyOf(patternBuffer, patternBuffer.length * 2);
+        }
+        patternBuffer[patternLength++] = value;
+    }
+
+    /** Append a value to the reusable sid buffer, growing it if needed. */
+    private void addSidValue(final int value) {
+        if (sidLength == sidBuffer.length) {
+            sidBuffer = Arrays.copyOf(sidBuffer, sidBuffer.length * 2);
+        }
+        sidBuffer[sidLength++] = value;
     }
 
     /**
-     * Recursive function to find occurrences
-     * @param sids    the list of sids
-     * @param pattern the pattern
+     * Push the content currently accumulated in {@link #lineBuilder} to the
+     * writer using a single call.
+     *
      * @throws IOException
      */
-    private void findOccurrences(final int[] sids, final int[] pattern) throws IOException {
-        final List<int[]> allSequences = sequenceDatabase.getSequences();
+    private void flushLine() throws IOException {
+        if (writer == null) {
+            return;
+        }
+        final int len = lineBuilder.length();
+        if (flushBuffer.length < len) {
+            flushBuffer = new char[Math.max(len, flushBuffer.length * 2)];
+        }
+        lineBuilder.getChars(0, len, flushBuffer, 0);
+        writer.write(flushBuffer, 0, len);
+    }
 
-        for (final int sid : sids) {
-            // Reuse the list to avoid repeated GC pressure
-            reusableOccurrences.clear();
-
-            final int[] sequence = allSequences.get(sid);
-
-            // try to match the pattern with that sequence
-            findOccurrencesHelper(pattern, sequence, 0, 0, 0, reusableOccurrences);
-
-            // Write SID
-            writer.append(' ');
-            writer.append(Integer.toString(sid));
-
-            // Write occurrences
-            final int occSize = reusableOccurrences.size();
-            for (int i = 0; i < occSize; i++) {
-                writer.append('[');
-                writer.append(reusableOccurrences.get(i));
-                writer.append(']');
-                if (i != occSize - 1) {
-                    writer.append(' ');
-                }
+    /**
+     * Find all occurrences of the pattern currently stored in
+     * {@link #patternBuffer} for every sid currently stored in
+     * {@link #sidBuffer}, appending the result text directly to
+     * {@link #lineBuilder}.
+     */
+    private void findOccurrences() {
+        int itemsetCount = 0;
+        for (int idx = 0; idx < patternLength; idx++) {
+            if (patternBuffer[idx] == -1) {
+                itemsetCount++;
             }
+        }
+        if (occurrencePositions.length < itemsetCount) {
+            occurrencePositions = new int[itemsetCount];
+        }
+
+        for (int s = 0; s < sidLength; s++) {
+            final int sid = sidBuffer[s];
+            final int[] sequence = sequencesArray[sid];
+
+            lineBuilder.append(' ');
+            lineBuilder.append(sid);
+
+            firstOccurrenceForSid = true;
+            findOccurrencesHelper(patternBuffer, patternLength, sequence, 0, 0, 0, 0);
         }
     }
 
     /**
-     * Try to match an itemset of a sequence with a pattern.
-     * Uses an iterative do-while loop for the inner matching, and
-     * only recurses when moving to the next itemset in the pattern.
+     * Recursive function to match a pattern against a sequence and append
+     * every occurrence found directly to {@link #lineBuilder}.
      *
-     * @param pattern              the pattern to match
+     * @param pattern              the pattern buffer to match (may be oversized)
+     * @param patLen               logical length of the pattern
      * @param sequence             the sequence to search in
      * @param posPattern           current position in the pattern array
      * @param posSequence          current position in the sequence array
      * @param posItemsetSequence   current itemset index within the sequence
-     * @param listOccurrences      accumulated list of occurrence strings
+     * @param depth                current depth in occurrencePositions
      */
     private void findOccurrencesHelper(
             final int[] pattern,
+            final int patLen,
             final int[] sequence,
             final int posPattern,
             final int posSequence,
             final int posItemsetSequence,
-            final List<String> listOccurrences) {
+            final int depth) {
 
         final int patternResetPosition = posPattern;
         int curPosPattern = posPattern;
@@ -274,89 +357,6 @@ public class AlgoOccur {
         int curPosItemsetSequence = posItemsetSequence;
 
         final int seqLen = sequence.length;
-        final int patLen = pattern.length;
-
-        do {
-            final int seqVal = sequence[curPosSequence];
-            final int patVal = pattern[curPosPattern];
-
-            if (patVal == seqVal) {
-                // matched current pattern token (either item or -1 separator)
-                if (patVal == -1) {
-                    // We matched an itemset separator, so record the itemset position
-                    // Build occurrence string using the shared builder to minimize allocations
-                    occurrenceBuilder.setLength(0);
-                    // We need to reconstruct the full occurrence path up to this point.
-                    // Since we pass the occurrence as a parameter in the recursive call,
-                    // we handle it via a local inline approach here:
-                    // Note: the occurrence string tracking requires passing it along,
-                    // so we keep the string-based approach but build it efficiently.
-                    // (See note below about why we still pass a String.)
-                    // We'll call a helper that rebuilds from scratch with the builder.
-                    final String newOccurrence = buildOccurrence("", curPosItemsetSequence);
-
-                    if (curPosPattern == patLen - 1) {
-                        // last element of pattern -> record occurrence
-                        listOccurrences.add(newOccurrence);
-                    } else {
-                        // recurse into next itemset of the pattern
-                        findOccurrencesHelperWithOccurrence(
-                                pattern, sequence,
-                                curPosPattern + 1,
-                                curPosSequence + 1,
-                                newOccurrence,
-                                curPosItemsetSequence + 1,
-                                listOccurrences);
-                    }
-
-                    curPosItemsetSequence++;
-                    curPosPattern = patternResetPosition;
-
-                } else {
-                    // matched a regular item, advance pattern
-                    curPosPattern++;
-                }
-            } else if (seqVal == -1) {
-                // end of sequence itemset but did not match -> reset pattern to itemset start
-                curPosPattern = patternResetPosition;
-                curPosItemsetSequence++;
-            }
-
-            curPosSequence++;
-
-        } while (curPosSequence < seqLen);
-    }
-
-    /**
-     * Continuation of findOccurrencesHelper for levels deeper than the first,
-     * where a partial occurrence string has already been built.
-     * This avoids passing an occurrence string at the top level and incurring
-     * unnecessary string concatenations.
-     *
-     * @param pattern              the pattern to match
-     * @param sequence             the sequence to search in
-     * @param posPattern           current position in the pattern array
-     * @param posSequence          current position in the sequence array
-     * @param occurrence           occurrence string built so far
-     * @param posItemsetSequence   current itemset index within the sequence
-     * @param listOccurrences      accumulated list of occurrence strings
-     */
-    private void findOccurrencesHelperWithOccurrence(
-            final int[] pattern,
-            final int[] sequence,
-            final int posPattern,
-            final int posSequence,
-            final String occurrence,
-            final int posItemsetSequence,
-            final List<String> listOccurrences) {
-
-        final int patternResetPosition = posPattern;
-        int curPosPattern = posPattern;
-        int curPosSequence = posSequence;
-        int curPosItemsetSequence = posItemsetSequence;
-
-        final int seqLen = sequence.length;
-        final int patLen = pattern.length;
 
         do {
             final int seqVal = sequence[curPosSequence];
@@ -364,19 +364,17 @@ public class AlgoOccur {
 
             if (patVal == seqVal) {
                 if (patVal == -1) {
-                    // Build new occurrence string efficiently
-                    final String newOccurrence = buildOccurrence(occurrence, curPosItemsetSequence);
+                    occurrencePositions[depth] = curPosItemsetSequence;
 
                     if (curPosPattern == patLen - 1) {
-                        listOccurrences.add(newOccurrence);
+                        writeOccurrence(depth);
                     } else {
-                        findOccurrencesHelperWithOccurrence(
-                                pattern, sequence,
+                        findOccurrencesHelper(
+                                pattern, patLen, sequence,
                                 curPosPattern + 1,
                                 curPosSequence + 1,
-                                newOccurrence,
                                 curPosItemsetSequence + 1,
-                                listOccurrences);
+                                depth + 1);
                     }
 
                     curPosItemsetSequence++;
@@ -396,33 +394,34 @@ public class AlgoOccur {
     }
 
     /**
-     * Build an occurrence string by appending the current itemset position
-     * to the existing occurrence string. Uses the shared occurrenceBuilder
-     * to minimize object allocation.
+     * Append a full occurrence (all itemset positions from depth 0 to
+     * {@code depth}) directly to {@link #lineBuilder}: "[p0] [p1] ... [pk]",
+     * with occurrences for the same sid separated by a single space.
      *
-     * @param existing           the existing occurrence string (may be empty)
-     * @param itemsetPosition    the itemset position to append
-     * @return the new occurrence string
+     * @param depth the deepest index (inclusive) in occurrencePositions to write
      */
-    private String buildOccurrence(final String existing, final int itemsetPosition) {
-        occurrenceBuilder.setLength(0);
-        if (existing.length() == 0) {
-            occurrenceBuilder.append(itemsetPosition);
+    private void writeOccurrence(final int depth) {
+        if (firstOccurrenceForSid) {
+            firstOccurrenceForSid = false;
         } else {
-            occurrenceBuilder.append(existing);
-            occurrenceBuilder.append(' ');
-            occurrenceBuilder.append(itemsetPosition);
+            lineBuilder.append(' ');
         }
-        return occurrenceBuilder.toString();
+        lineBuilder.append('[');
+        for (int i = 0; i <= depth; i++) {
+            if (i > 0) {
+                lineBuilder.append(' ');
+            }
+            lineBuilder.append(occurrencePositions[i]);
+        }
+        lineBuilder.append(']');
     }
 
     /**
      * Print statistics about the algorithm execution to System.out.
-     * @param size  the size of the database
      */
     public void printStatistics() {
         StringBuilder r = new StringBuilder(200);
-        r.append("=============  Occur 2.66 - STATISTICS =============\n Total time ~ ");
+        r.append("=============  Occur 2.67 - STATISTICS =============\n Total time ~ ");
         r.append(endTime - startTime);
         r.append(" ms");
         r.append(System.lineSeparator());

@@ -95,12 +95,11 @@ public class DescriptionAlgoTRCT extends DescriptionOfAlgorithm {
         return new String[]{"Database of instances", "Transaction database", "Simple transaction database"};
     }
 
-    @Override
-    public String[] getOutputFileTypes() {
-        return new String[]{"Patterns", "Frequent patterns", "Periodic patterns",
-                "Periodic frequent patterns"};
-    }
-
+	@Override
+	public String[] getOutputFileTypes() {
+		return new String[]{"Patterns", "Frequent patterns", "Periodic patterns", "Periodic frequent patterns", "Periodic frequent itemsets"};
+	}
+	
     @Override
     public AlgorithmType getAlgorithmType() {
         return AlgorithmType.DATA_MINING;

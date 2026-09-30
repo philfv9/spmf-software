@@ -15,6 +15,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.uspan;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 import java.io.BufferedReader;
@@ -110,6 +112,10 @@ public class AlgoUSpan {
 		
 		// create a writer object to write results to file
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High-utility sequential patterns\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		
 		// save the minimum utility threshold
 		this.minUtility = minUtility;

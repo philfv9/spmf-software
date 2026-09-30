@@ -5,15 +5,17 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Locale;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -21,6 +23,8 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -57,397 +61,262 @@ import ca.pfv.spmf.gui.MainWindow;
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * A JFrame that displays a HeatMap with an improved user interface.
- * 
+ * A JFrame that displays a {@link HeatMap} with controls for zooming, display
+ * options and export.
+ * <p>
+ * The viewer never stores view state itself: every action simply calls a
+ * setter on the {@link HeatMap}, and the heat map's property change events
+ * bring the controls back in sync. This keeps the spinners, slider, status bar
+ * and Ctrl+wheel zoom consistent with a single code path.
+ *
  * @author Philippe Fournier-Viger
  */
 @SuppressWarnings("serial")
 public class HeatMapViewer extends JFrame {
-	
-	/** The heatmap component */
-	private HeatMap heatMap;
-	
-	/** Control panel on the right side */
+
+	/** Cell size corresponding to 100 % zoom */
+	private static final int BASE_CELL_SIZE = HeatMap.DEFAULT_MIN_CELL_SIZE;
+	private static final int ZOOM_MIN = 10;
+	private static final int ZOOM_MAX = 400;
+	private static final int ZOOM_STEP = 10;
+	private static final int CELL_MIN = 1;
+	private static final int CELL_MAX = HeatMap.MAX_CELL_SIZE;
+	private static final int MARGIN_MAX = 100;
+	private static final int FONT_MIN = 6;
+	private static final int FONT_MAX = 36;
+
+	private final HeatMap heatMap;
+	private final ViewSettings initialSettings;
+
 	private JPanel controlPanel;
-	
-	/** Status bar at the bottom */
+	private JCheckBoxMenuItem controlPanelMenuItem;
 	private JLabel statusLabel;
-	
-	/** Checkboxes for display options */
+
 	private JCheckBox showRowLabelsCheckBox;
 	private JCheckBox showColumnLabelsCheckBox;
 	private JCheckBox showColorScaleCheckBox;
 	private JCheckBox verticalColumnLabelsCheckBox;
-	
-	/** Spinners for size controls */
+
 	private JSpinner cellWidthSpinner;
 	private JSpinner cellHeightSpinner;
 	private JSpinner marginSpinner;
-	
-	/** Slider for zoom */
+	private JSpinner fontSizeSpinner;
+
 	private JSlider zoomSlider;
 	private JLabel zoomLabel;
-	
-	/** Flag to prevent recursive updates */
-	private boolean isUpdating = false;
-	
-	/** Data dimensions */
-	private int numRows;
-	private int numCols;
+
+	/** True while controls are being updated from the model, to avoid feedback */
+	private boolean updatingControls;
+
+	/** Directory of the last export, reused by the file chooser */
+	private File lastDirectory;
 
 	/**
 	 * Constructor
-	 * 
-	 * @param runAsStandaloneProgram true if running standalone
-	 * @param data the heatmap data
-	 * @param rowNames the row names
-	 * @param columnNames the column names
-	 * @param drawColumnLabels whether to draw column labels
-	 * @param drawRowLabels whether to draw row labels
-	 * @param drawColorScale whether to draw color scale
+	 *
+	 * @param runAsStandaloneProgram    true if running standalone (closing exits the JVM)
+	 * @param data                      the heatmap data
+	 * @param rowNames                  the row names
+	 * @param columnNames               the column names
+	 * @param drawColumnLabels          whether to draw column labels
+	 * @param drawRowLabels             whether to draw row labels
+	 * @param drawColorScale            whether to draw color scale
 	 * @param drawColumnLabelsVertically whether to draw column labels vertically
 	 */
-	public HeatMapViewer(boolean runAsStandaloneProgram, double[][] data, String[] rowNames, 
-			String[] columnNames, boolean drawColumnLabels, boolean drawRowLabels, 
+	public HeatMapViewer(boolean runAsStandaloneProgram, double[][] data, String[] rowNames,
+			String[] columnNames, boolean drawColumnLabels, boolean drawRowLabels,
 			boolean drawColorScale, boolean drawColumnLabelsVertically) {
-		
 		super("SPMF HeatMap Viewer");
-		
-		// Set icon
+
 		try {
-			setIconImage(Toolkit.getDefaultToolkit().getImage(
-					MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/heatmap20.png")));
+			setIconImage(Toolkit.getDefaultToolkit()
+					.getImage(MainWindow.class.getResource("/ca/pfv/spmf/gui/icons/heatmap20.png")));
 		} catch (Exception e) {
-			// Icon not found, continue without it
+			// Icon not found: continue without it
 		}
-		
-		// Store dimensions
-		this.numRows = data.length;
-		this.numCols = data[0].length;
-		
-		// Create the heatmap
-		this.heatMap = new HeatMap(data, rowNames, columnNames);
+
+		heatMap = new HeatMap(data, rowNames, columnNames);
 		heatMap.setDrawColumnLabels(drawColumnLabels);
 		heatMap.setDrawRowLabels(drawRowLabels);
 		heatMap.setDrawColorScale(drawColorScale);
 		heatMap.setDrawColumnLabelsVertically(drawColumnLabelsVertically);
-		
-		// Set close operation
-		if (runAsStandaloneProgram) {
-			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		} else {
-			setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		}
-		
-		// Build the UI
+		initialSettings = ViewSettings.capture(heatMap);
+
+		setDefaultCloseOperation(runAsStandaloneProgram ? JFrame.EXIT_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
+
 		initializeUI();
-		
-		// Set size and position
+		heatMap.addPropertyChangeListener(evt -> {
+			String name = evt.getPropertyName();
+			if (HeatMap.PROP_CELL_SIZE.equals(name) || HeatMap.PROP_MARGIN.equals(name)
+					|| HeatMap.PROP_LABEL_FONT.equals(name) || HeatMap.PROP_DISPLAY_OPTIONS.equals(name)) {
+				syncControls();
+			}
+		});
+		syncControls();
+
 		setPreferredSize(new Dimension(1000, 700));
 		pack();
 		setLocationRelativeTo(null);
 		setVisible(true);
-		
-		// Update status
-		updateStatus();
 	}
-	
-	/**
-	 * Initialize the user interface
-	 */
+
+	// =====================================================================
+	// UI construction
+	// =====================================================================
+
 	private void initializeUI() {
 		setLayout(new BorderLayout(5, 5));
-		
-		// Create menu bar
 		setJMenuBar(createMenuBar());
-		
-		// Create toolbar
 		add(createToolBar(), BorderLayout.NORTH);
-		
-		// Add heatmap to center
 		add(heatMap, BorderLayout.CENTER);
-		
-		// Create and add control panel on the right
+
 		controlPanel = createControlPanel();
 		add(controlPanel, BorderLayout.EAST);
-		
-		// Create status bar
+
 		JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		statusPanel.setBorder(BorderFactory.createLoweredBevelBorder());
 		statusLabel = new JLabel(" ");
 		statusPanel.add(statusLabel);
 		add(statusPanel, BorderLayout.SOUTH);
+
+		// Extra zoom bindings for the numeric keypad
+		int mask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+		JComponent root = getRootPane();
+		root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke(KeyEvent.VK_ADD, mask), "zoomIn");
+		root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke(KeyEvent.VK_SUBTRACT, mask), "zoomOut");
+		root.getActionMap().put("zoomIn", action(() -> adjustZoom(ZOOM_STEP)));
+		root.getActionMap().put("zoomOut", action(() -> adjustZoom(-ZOOM_STEP)));
 	}
-	
-	/**
-	 * Create the menu bar
-	 * @return the menu bar
-	 */
+
 	private JMenuBar createMenuBar() {
+		int mask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
 		JMenuBar menuBar = new JMenuBar();
-		
-		// File menu
+
 		JMenu fileMenu = new JMenu("File");
 		fileMenu.setMnemonic(KeyEvent.VK_F);
-		
-		JMenuItem exportImageItem = new JMenuItem("Export as Image...");
-		exportImageItem.setMnemonic(KeyEvent.VK_I);
-		exportImageItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, 
-				Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-		exportImageItem.addActionListener(e -> exportHeatMapAsImage());
-		fileMenu.add(exportImageItem);
-		
-		JMenuItem exportCSVItem = new JMenuItem("Export as CSV...");
-		exportCSVItem.setMnemonic(KeyEvent.VK_C);
-		exportCSVItem.addActionListener(e -> exportHeatMapDataAsCSV());
-		fileMenu.add(exportCSVItem);
-		
+		fileMenu.add(menuItem("Export as Image...", KeyEvent.VK_I,
+				KeyStroke.getKeyStroke(KeyEvent.VK_S, mask), this::exportHeatMapAsImage));
+		fileMenu.add(menuItem("Export as CSV...", KeyEvent.VK_C, null, this::exportHeatMapDataAsCSV));
 		fileMenu.addSeparator();
-		
-		JMenuItem closeItem = new JMenuItem("Close");
-		closeItem.setMnemonic(KeyEvent.VK_X);
-		closeItem.addActionListener(e -> dispose());
-		fileMenu.add(closeItem);
-		
+		fileMenu.add(menuItem("Close", KeyEvent.VK_X,
+				KeyStroke.getKeyStroke(KeyEvent.VK_W, mask), this::dispose));
 		menuBar.add(fileMenu);
-		
-		// View menu
+
 		JMenu viewMenu = new JMenu("View");
 		viewMenu.setMnemonic(KeyEvent.VK_V);
-		
-		JMenuItem resetZoomItem = new JMenuItem("Reset Zoom");
-		resetZoomItem.setMnemonic(KeyEvent.VK_R);
-		resetZoomItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_0, 
-				Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-		resetZoomItem.addActionListener(e -> resetZoom());
-		viewMenu.add(resetZoomItem);
-		
-		JMenuItem fitToWindowItem = new JMenuItem("Fit to Window");
-		fitToWindowItem.setMnemonic(KeyEvent.VK_F);
-		fitToWindowItem.addActionListener(e -> fitToWindow());
-		viewMenu.add(fitToWindowItem);
-		
+		viewMenu.add(menuItem("Zoom In", KeyEvent.VK_I,
+				KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, mask), () -> adjustZoom(ZOOM_STEP)));
+		viewMenu.add(menuItem("Zoom Out", KeyEvent.VK_O,
+				KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, mask), () -> adjustZoom(-ZOOM_STEP)));
+		viewMenu.add(menuItem("Reset Zoom", KeyEvent.VK_R,
+				KeyStroke.getKeyStroke(KeyEvent.VK_0, mask), () -> applyZoom(100)));
+		viewMenu.add(menuItem("Fit to Window", KeyEvent.VK_F,
+				KeyStroke.getKeyStroke(KeyEvent.VK_F, mask), heatMap::fitToViewport));
 		viewMenu.addSeparator();
-		
-		JMenuItem toggleControlPanelItem = new JMenuItem("Toggle Control Panel");
-		toggleControlPanelItem.setMnemonic(KeyEvent.VK_P);
-		toggleControlPanelItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, 
-				Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-		toggleControlPanelItem.addActionListener(e -> toggleControlPanel());
-		viewMenu.add(toggleControlPanelItem);
-		
+		controlPanelMenuItem = new JCheckBoxMenuItem("Show Control Panel", true);
+		controlPanelMenuItem.setMnemonic(KeyEvent.VK_P);
+		controlPanelMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, mask));
+		controlPanelMenuItem.addActionListener(e -> setControlPanelVisible(controlPanelMenuItem.isSelected()));
+		viewMenu.add(controlPanelMenuItem);
+		viewMenu.addSeparator();
+		viewMenu.add(menuItem("Reset View", KeyEvent.VK_D, null, this::resetView));
 		menuBar.add(viewMenu);
-		
+
 		return menuBar;
 	}
-	
-	/**
-	 * Create the toolbar
-	 * @return the toolbar
-	 */
+
 	private JToolBar createToolBar() {
 		JToolBar toolBar = new JToolBar();
 		toolBar.setFloatable(false);
-		
-		// Export buttons
-		JButton exportImageBtn = new JButton("Export Image");
-		exportImageBtn.setToolTipText("Export heatmap as PNG image");
-		exportImageBtn.addActionListener(e -> exportHeatMapAsImage());
-		toolBar.add(exportImageBtn);
-		
-		JButton exportCSVBtn = new JButton("Export CSV");
-		exportCSVBtn.setToolTipText("Export data as CSV file");
-		exportCSVBtn.addActionListener(e -> exportHeatMapDataAsCSV());
-		toolBar.add(exportCSVBtn);
-		
+
+		toolBar.add(button("Export Image", "Export the whole heatmap as a PNG image", this::exportHeatMapAsImage));
+		toolBar.add(button("Export CSV", "Export the data as a CSV file", this::exportHeatMapDataAsCSV));
 		toolBar.addSeparator();
-		
-		// Zoom controls
+
 		toolBar.add(new JLabel("Zoom: "));
-		
-		JButton zoomOutBtn = new JButton("-");
-		zoomOutBtn.setToolTipText("Zoom out");
-		zoomOutBtn.addActionListener(e -> adjustZoom(-10));
-		toolBar.add(zoomOutBtn);
-		
-		zoomSlider = new JSlider(10, 200, 100);
+		toolBar.add(button("-", "Zoom out (Ctrl+-, or Ctrl+wheel)", () -> adjustZoom(-ZOOM_STEP)));
+		zoomSlider = new JSlider(ZOOM_MIN, ZOOM_MAX, 100);
 		zoomSlider.setPreferredSize(new Dimension(150, 25));
 		zoomSlider.setMaximumSize(new Dimension(150, 25));
 		zoomSlider.setToolTipText("Adjust zoom level");
 		zoomSlider.addChangeListener(e -> {
-			if (!isUpdating) {
-				applyZoom();
+			if (!updatingControls) {
+				applyZoom(zoomSlider.getValue());
 			}
 		});
 		toolBar.add(zoomSlider);
-		
-		JButton zoomInBtn = new JButton("+");
-		zoomInBtn.setToolTipText("Zoom in");
-		zoomInBtn.addActionListener(e -> adjustZoom(10));
-		toolBar.add(zoomInBtn);
-		
+		toolBar.add(button("+", "Zoom in (Ctrl++, or Ctrl+wheel)", () -> adjustZoom(ZOOM_STEP)));
 		zoomLabel = new JLabel("100%");
-		zoomLabel.setPreferredSize(new Dimension(45, 20));
+		zoomLabel.setPreferredSize(new Dimension(50, 20));
 		toolBar.add(zoomLabel);
-		
 		toolBar.addSeparator();
-		
-		// Reset button
-		JButton resetBtn = new JButton("Reset View");
-		resetBtn.setToolTipText("Reset all view settings to defaults");
-		resetBtn.addActionListener(e -> resetView());
-		toolBar.add(resetBtn);
-		
+
+		toolBar.add(button("Fit to Window", "Choose a cell size so the whole heatmap is visible", heatMap::fitToViewport));
+		toolBar.add(button("Reset View", "Reset all view settings to their initial values", this::resetView));
 		return toolBar;
 	}
-	
-	/**
-	 * Create the control panel
-	 * @return the control panel
-	 */
+
 	private JPanel createControlPanel() {
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createMatteBorder(0, 1, 0, 0, Color.LIGHT_GRAY),
 				BorderFactory.createEmptyBorder(10, 10, 10, 10)));
-		panel.setPreferredSize(new Dimension(220, 0));
-		
-		// Display Options Section
+		panel.setPreferredSize(new Dimension(230, 0));
+
+		// --- Display options
 		JPanel displayPanel = createSectionPanel("Display Options");
-		
-		showRowLabelsCheckBox = new JCheckBox("Show Row Labels", heatMap.isDrawRowLabels());
-		showRowLabelsCheckBox.addActionListener(e -> {
-			heatMap.setDrawRowLabels(showRowLabelsCheckBox.isSelected());
-			refreshHeatMap();
-		});
+		showRowLabelsCheckBox = checkBox("Show Row Labels", heatMap::setDrawRowLabels);
+		showColumnLabelsCheckBox = checkBox("Show Column Labels", heatMap::setDrawColumnLabels);
+		verticalColumnLabelsCheckBox = checkBox("Vertical Column Labels", heatMap::setDrawColumnLabelsVertically);
+		showColorScaleCheckBox = checkBox("Show Color Scale", heatMap::setDrawColorScale);
 		displayPanel.add(showRowLabelsCheckBox);
-		
-		showColumnLabelsCheckBox = new JCheckBox("Show Column Labels", heatMap.isDrawColumnLabels());
-		showColumnLabelsCheckBox.addActionListener(e -> {
-			heatMap.setDrawColumnLabels(showColumnLabelsCheckBox.isSelected());
-			refreshHeatMap();
-		});
 		displayPanel.add(showColumnLabelsCheckBox);
-		
-		showColorScaleCheckBox = new JCheckBox("Show Color Scale", heatMap.isDrawColorScale());
-		showColorScaleCheckBox.addActionListener(e -> {
-			heatMap.setDrawColorScale(showColorScaleCheckBox.isSelected());
-			refreshHeatMap();
-		});
-		displayPanel.add(showColorScaleCheckBox);
-		
-		verticalColumnLabelsCheckBox = new JCheckBox("Vertical Column Labels", 
-				heatMap.isDrawColumnLabelsVertically());
-		verticalColumnLabelsCheckBox.addActionListener(e -> {
-			heatMap.setDrawColumnLabelsVertically(verticalColumnLabelsCheckBox.isSelected());
-			refreshHeatMap();
-		});
 		displayPanel.add(verticalColumnLabelsCheckBox);
-		
-		panel.add(displayPanel);
+		displayPanel.add(showColorScaleCheckBox);
+		panel.add(finishSection(displayPanel));
 		panel.add(Box.createVerticalStrut(15));
-		
-		// Cell Size Section
-		JPanel cellSizePanel = createSectionPanel("Cell Size");
-		
-		JPanel widthPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-		widthPanel.add(new JLabel("Min Width:"));
-		cellWidthSpinner = new JSpinner(new SpinnerNumberModel(
-				heatMap.getMinCellWidth(), 5, 200, 5));
-		cellWidthSpinner.setPreferredSize(new Dimension(70, 25));
-		cellWidthSpinner.addChangeListener(e -> {
-			if (!isUpdating) {
-				heatMap.setMinCellWidth((Integer) cellWidthSpinner.getValue());
-				refreshHeatMap();
-				updateZoomFromCellSize();
-			}
-		});
-		widthPanel.add(cellWidthSpinner);
-		widthPanel.add(new JLabel("px"));
-		cellSizePanel.add(widthPanel);
-		
-		JPanel heightPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-		heightPanel.add(new JLabel("Min Height:"));
-		cellHeightSpinner = new JSpinner(new SpinnerNumberModel(
-				heatMap.getMinCellHeight(), 5, 200, 5));
-		cellHeightSpinner.setPreferredSize(new Dimension(70, 25));
-		cellHeightSpinner.addChangeListener(e -> {
-			if (!isUpdating) {
-				heatMap.setMinCellHeight((Integer) cellHeightSpinner.getValue());
-				refreshHeatMap();
-				updateZoomFromCellSize();
-			}
-		});
-		heightPanel.add(cellHeightSpinner);
-		heightPanel.add(new JLabel("px"));
-		cellSizePanel.add(heightPanel);
-		
-		JPanel marginPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-		marginPanel.add(new JLabel("Margin:"));
-		marginSpinner = new JSpinner(new SpinnerNumberModel(
-				heatMap.getMargin(), 0, 100, 5));
-		marginSpinner.setPreferredSize(new Dimension(70, 25));
-		marginSpinner.addChangeListener(e -> {
-			if (!isUpdating) {
-				heatMap.setMargin((Integer) marginSpinner.getValue());
-				refreshHeatMap();
-			}
-		});
-		marginPanel.add(marginSpinner);
-		marginPanel.add(new JLabel("px"));
-		cellSizePanel.add(marginPanel);
-		
-		panel.add(cellSizePanel);
+
+		// --- Sizes
+		JPanel sizePanel = createSectionPanel("Size");
+		cellWidthSpinner = spinner(CELL_MIN, CELL_MAX, 1, heatMap::setMinCellWidth);
+		cellHeightSpinner = spinner(CELL_MIN, CELL_MAX, 1, heatMap::setMinCellHeight);
+		marginSpinner = spinner(0, MARGIN_MAX, 1, heatMap::setMargin);
+		fontSizeSpinner = spinner(FONT_MIN, FONT_MAX, 1, heatMap::setLabelFontSize);
+		sizePanel.add(labeledRow("Cell width:", cellWidthSpinner, "px"));
+		sizePanel.add(labeledRow("Cell height:", cellHeightSpinner, "px"));
+		sizePanel.add(labeledRow("Margin:", marginSpinner, "px"));
+		sizePanel.add(labeledRow("Label font:", fontSizeSpinner, "pt"));
+		panel.add(finishSection(sizePanel));
 		panel.add(Box.createVerticalStrut(15));
-		
-		// Quick Actions Section
+
+		// --- Actions
 		JPanel actionsPanel = createSectionPanel("Quick Actions");
-		
-		JButton fitCellsBtn = new JButton("Auto-fit Cell Size");
-		fitCellsBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-		fitCellsBtn.setToolTipText("Automatically adjust cell size to fit window");
-		fitCellsBtn.addActionListener(e -> fitToWindow());
-		actionsPanel.add(fitCellsBtn);
+		actionsPanel.add(leftAligned(button("Fit to Window",
+				"Choose a cell size so the whole heatmap is visible", heatMap::fitToViewport)));
 		actionsPanel.add(Box.createVerticalStrut(5));
-		
-		JButton resetDefaultsBtn = new JButton("Reset to Defaults");
-		resetDefaultsBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-		resetDefaultsBtn.setToolTipText("Reset all settings to default values");
-		resetDefaultsBtn.addActionListener(e -> resetView());
-		actionsPanel.add(resetDefaultsBtn);
-		
-		panel.add(actionsPanel);
+		actionsPanel.add(leftAligned(button("Reset View",
+				"Reset all view settings to their initial values", this::resetView)));
+		panel.add(finishSection(actionsPanel));
 		panel.add(Box.createVerticalStrut(15));
-		
-		// Info Section
+
+		// --- Info
 		JPanel infoPanel = createSectionPanel("Data Info");
-		
-		JLabel rowsLabel = new JLabel("Rows: " + numRows);
-		rowsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		infoPanel.add(rowsLabel);
-		
-		JLabel colsLabel = new JLabel("Columns: " + numCols);
-		colsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		infoPanel.add(colsLabel);
-		
-		JLabel cellsLabel = new JLabel("Total Cells: " + (numRows * numCols));
-		cellsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		infoPanel.add(cellsLabel);
-		
-		panel.add(infoPanel);
-		
-		// Push everything to the top
+		infoPanel.add(leftAligned(new JLabel("Rows: " + heatMap.getRowCount())));
+		infoPanel.add(leftAligned(new JLabel("Columns: " + heatMap.getColumnCount())));
+		infoPanel.add(leftAligned(new JLabel("Cells: " + ((long) heatMap.getRowCount() * heatMap.getColumnCount()))));
+		infoPanel.add(leftAligned(new JLabel("Min: " + heatMap.getMinValue())));
+		infoPanel.add(leftAligned(new JLabel("Max: " + heatMap.getMaxValue())));
+		panel.add(finishSection(infoPanel));
+
 		panel.add(Box.createVerticalGlue());
-		
 		return panel;
 	}
-	
-	/**
-	 * Create a section panel with a title
-	 * @param title the section title
-	 * @return the panel
-	 */
+
+	// --- small factory helpers -------------------------------------------
+
 	private JPanel createSectionPanel(String title) {
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -455,321 +324,301 @@ public class HeatMapViewer extends JFrame {
 				BorderFactory.createTitledBorder(title),
 				BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 		panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height + 200));
 		return panel;
 	}
-	
-	/**
-	 * Refresh the heatmap display - forces complete redraw with new size
-	 */
-	private void refreshHeatMap() {
-		heatMap.refreshDisplay();
-		updateStatus();
+
+	/** Freeze the section height so BoxLayout does not stretch it. */
+	private static JPanel finishSection(JPanel panel) {
+		panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
+		return panel;
 	}
-	
-	/**
-	 * Update the status bar
-	 */
-	private void updateStatus() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Size: ").append(numRows).append(" x ").append(numCols);
-		sb.append(" | Cell: ").append(heatMap.getMinCellWidth());
-		sb.append(" x ").append(heatMap.getMinCellHeight()).append(" px");
-		sb.append(" | Zoom: ").append(zoomSlider.getValue()).append("%");
-		statusLabel.setText(sb.toString());
+
+	private static <T extends JComponent> T leftAligned(T component) {
+		component.setAlignmentX(Component.LEFT_ALIGNMENT);
+		return component;
 	}
-	
-	/**
-	 * Update zoom slider based on current cell size
-	 */
-	private void updateZoomFromCellSize() {
-		isUpdating = true;
-		int cellSize = Math.max(heatMap.getMinCellWidth(), heatMap.getMinCellHeight());
-		int zoomPercent = (int) (cellSize * 100.0 / 20);
-		zoomPercent = Math.max(10, Math.min(200, zoomPercent));
-		zoomSlider.setValue(zoomPercent);
-		zoomLabel.setText(zoomPercent + "%");
-		isUpdating = false;
-		updateStatus();
+
+	private JCheckBox checkBox(String text, Consumer<Boolean> onChange) {
+		JCheckBox box = new JCheckBox(text);
+		box.addActionListener(e -> {
+			if (!updatingControls) {
+				onChange.accept(box.isSelected());
+			}
+		});
+		return leftAligned(box);
 	}
-	
-	/**
-	 * Adjust zoom level
-	 * @param delta the amount to adjust
-	 */
-	private void adjustZoom(int delta) {
-		int newValue = zoomSlider.getValue() + delta;
-		newValue = Math.max(zoomSlider.getMinimum(), Math.min(zoomSlider.getMaximum(), newValue));
-		zoomSlider.setValue(newValue);
+
+	private JSpinner spinner(int min, int max, int step, IntConsumer onChange) {
+		JSpinner spinner = new JSpinner(new SpinnerNumberModel(min, min, max, step));
+		spinner.setPreferredSize(new Dimension(65, 25));
+		spinner.addChangeListener(e -> {
+			if (!updatingControls) {
+				onChange.accept((Integer) spinner.getValue());
+			}
+		});
+		return spinner;
 	}
-	
-	/**
-	 * Apply the current zoom level
-	 */
-	private void applyZoom() {
-		isUpdating = true;
-		
-		int zoom = zoomSlider.getValue();
-		zoomLabel.setText(zoom + "%");
-		
-		// Calculate new cell sizes based on zoom
-		int baseSize = 20;
-		int newSize = (int) (baseSize * zoom / 100.0);
-		newSize = Math.max(5, newSize);
-		
-		heatMap.setMinCellWidth(newSize);
-		heatMap.setMinCellHeight(newSize);
-		
-		// Update spinners
-		cellWidthSpinner.setValue(newSize);
-		cellHeightSpinner.setValue(newSize);
-		
-		isUpdating = false;
-		
-		refreshHeatMap();
+
+	private static JPanel labeledRow(String label, JComponent component, String unit) {
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+		JLabel jLabel = new JLabel(label);
+		jLabel.setPreferredSize(new Dimension(75, 20));
+		row.add(jLabel);
+		row.add(component);
+		row.add(new JLabel(unit));
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
+		return leftAligned(row);
 	}
-	
-	/**
-	 * Reset zoom to 100%
-	 */
-	private void resetZoom() {
-		zoomSlider.setValue(100);
+
+	private static JButton button(String text, String tooltip, Runnable action) {
+		JButton button = new JButton(text);
+		button.setToolTipText(tooltip);
+		button.addActionListener(e -> action.run());
+		return button;
 	}
-	
-	/**
-	 * Fit the heatmap to the window
-	 */
-	private void fitToWindow() {
-		// Calculate available space
-		int availableWidth = heatMap.getWidth() - 150; // Account for labels and color scale
-		int availableHeight = heatMap.getHeight() - 100; // Account for labels
-		
-		if (availableWidth <= 0 || availableHeight <= 0) {
-			return;
+
+	private static JMenuItem menuItem(String text, int mnemonic, KeyStroke accelerator, Runnable action) {
+		JMenuItem item = new JMenuItem(text);
+		item.setMnemonic(mnemonic);
+		if (accelerator != null) {
+			item.setAccelerator(accelerator);
 		}
-		
-		// Calculate cell sizes to fit
-		int cellWidth = Math.max(5, availableWidth / numCols);
-		int cellHeight = Math.max(5, availableHeight / numRows);
-		
-		// Use the smaller dimension to maintain square cells
-		int cellSize = Math.min(cellWidth, cellHeight);
-		cellSize = Math.max(5, Math.min(200, cellSize));
-		
-		isUpdating = true;
-		
-		heatMap.setMinCellWidth(cellSize);
-		heatMap.setMinCellHeight(cellSize);
-		
-		// Update controls
-		cellWidthSpinner.setValue(cellSize);
-		cellHeightSpinner.setValue(cellSize);
-		
-		// Update zoom slider to reflect the change
-		int zoomPercent = (int) (cellSize * 100.0 / 20);
-		zoomPercent = Math.max(10, Math.min(200, zoomPercent));
-		zoomSlider.setValue(zoomPercent);
-		zoomLabel.setText(zoomPercent + "%");
-		
-		isUpdating = false;
-		
-		refreshHeatMap();
+		item.addActionListener(e -> action.run());
+		return item;
 	}
-	
-	/**
-	 * Reset all view settings to defaults
-	 */
+
+	private static javax.swing.Action action(Runnable runnable) {
+		return new javax.swing.AbstractAction() {
+			@Override
+			public void actionPerformed(java.awt.event.ActionEvent e) {
+				runnable.run();
+			}
+		};
+	}
+
+	// =====================================================================
+	// Model -> controls synchronisation
+	// =====================================================================
+
+	/** Bring every control in line with the current state of the heat map. */
+	private void syncControls() {
+		updatingControls = true;
+		try {
+			showRowLabelsCheckBox.setSelected(heatMap.isDrawRowLabels());
+			showColumnLabelsCheckBox.setSelected(heatMap.isDrawColumnLabels());
+			showColorScaleCheckBox.setSelected(heatMap.isDrawColorScale());
+			verticalColumnLabelsCheckBox.setSelected(heatMap.isDrawColumnLabelsVertically());
+
+			cellWidthSpinner.setValue(heatMap.getMinCellWidth());
+			cellHeightSpinner.setValue(heatMap.getMinCellHeight());
+			marginSpinner.setValue(heatMap.getMargin());
+			fontSizeSpinner.setValue(clamp(heatMap.getLabelFont().getSize(), FONT_MIN, FONT_MAX));
+
+			int cellSize = Math.max(heatMap.getMinCellWidth(), heatMap.getMinCellHeight());
+			int zoom = zoomForCellSize(cellSize);
+			// Only move the slider when it does not already represent this size;
+			// avoids jitter from rounding while the user drags it.
+			if (cellSizeForZoom(zoomSlider.getValue()) != cellSize) {
+				zoomSlider.setValue(zoom);
+			}
+			zoomLabel.setText(zoom + "%");
+		} finally {
+			updatingControls = false;
+		}
+		updateStatus();
+	}
+
+	private void updateStatus() {
+		statusLabel.setText(String.format(Locale.ROOT,
+				"Size: %d \u00d7 %d  |  Cell: %d \u00d7 %d px  |  Zoom: %d%%  |  Range: %s \u2013 %s",
+				heatMap.getRowCount(), heatMap.getColumnCount(),
+				heatMap.getMinCellWidth(), heatMap.getMinCellHeight(),
+				zoomForCellSize(Math.max(heatMap.getMinCellWidth(), heatMap.getMinCellHeight())),
+				heatMap.getMinValue(), heatMap.getMaxValue()));
+	}
+
+	// =====================================================================
+	// Actions
+	// =====================================================================
+
+	private static int zoomForCellSize(int cellSize) {
+		return clamp((int) Math.round(cellSize * 100.0 / BASE_CELL_SIZE), ZOOM_MIN, ZOOM_MAX);
+	}
+
+	private static int cellSizeForZoom(int zoomPercent) {
+		return clamp((int) Math.round(BASE_CELL_SIZE * zoomPercent / 100.0), CELL_MIN, CELL_MAX);
+	}
+
+	private void applyZoom(int zoomPercent) {
+		int size = cellSizeForZoom(clamp(zoomPercent, ZOOM_MIN, ZOOM_MAX));
+		heatMap.setMinCellSize(size, size);
+		syncControls(); // in case the size did not change (no event fired) but the slider moved
+	}
+
+	private void adjustZoom(int delta) {
+		applyZoom(zoomSlider.getValue() + delta);
+	}
+
 	private void resetView() {
-		isUpdating = true;
-		
-		// Reset display options
-		showRowLabelsCheckBox.setSelected(true);
-		showColumnLabelsCheckBox.setSelected(true);
-		showColorScaleCheckBox.setSelected(true);
-		verticalColumnLabelsCheckBox.setSelected(true);
-		
-		heatMap.setDrawRowLabels(true);
-		heatMap.setDrawColumnLabels(true);
-		heatMap.setDrawColorScale(true);
-		heatMap.setDrawColumnLabelsVertically(true);
-		
-		// Reset sizes
-		cellWidthSpinner.setValue(20);
-		cellHeightSpinner.setValue(20);
-		marginSpinner.setValue(10);
-		
-		heatMap.setMinCellWidth(20);
-		heatMap.setMinCellHeight(20);
-		heatMap.setMargin(10);
-		
-		// Reset zoom
-		zoomSlider.setValue(100);
-		zoomLabel.setText("100%");
-		
-		isUpdating = false;
-		
-		refreshHeatMap();
+		initialSettings.applyTo(heatMap);
+		syncControls();
 	}
-	
-	/**
-	 * Toggle the control panel visibility
-	 */
-	private void toggleControlPanel() {
-		controlPanel.setVisible(!controlPanel.isVisible());
+
+	private void setControlPanelVisible(boolean visible) {
+		controlPanel.setVisible(visible);
+		controlPanelMenuItem.setSelected(visible);
 		revalidate();
 	}
-	
-	/**
-	 * Export the heatmap as an image
-	 */
+
+	// =====================================================================
+	// Export
+	// =====================================================================
+
 	private void exportHeatMapAsImage() {
-		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setDialogTitle("Export HeatMap as Image");
-		fileChooser.setFileFilter(new FileNameExtensionFilter("PNG Images (*.png)", "png"));
-		
-		int userSelection = fileChooser.showSaveDialog(this);
-		
-		if (userSelection == JFileChooser.APPROVE_OPTION) {
-			File fileToSave = fileChooser.getSelectedFile();
-			
-			// Ensure the file has the correct extension
-			if (!fileToSave.getName().toLowerCase().endsWith(".png")) {
-				fileToSave = new File(fileToSave.getParentFile(), fileToSave.getName() + ".png");
+		File file = chooseSaveFile("Export HeatMap as Image", "PNG Images (*.png)", "png");
+		if (file == null) {
+			return;
+		}
+		try {
+			BufferedImage image = heatMap.renderToImage(1.0);
+			if (!ImageIO.write(image, "png", file)) {
+				throw new IOException("No PNG writer available");
 			}
-			
-			// Check if file exists
-			if (fileToSave.exists()) {
-				int result = JOptionPane.showConfirmDialog(this,
-						"File already exists. Overwrite?",
-						"Confirm Overwrite",
-						JOptionPane.YES_NO_OPTION);
-				if (result != JOptionPane.YES_OPTION) {
-					return;
-				}
-			}
-			
-			saveComponentAsImage(heatMap, fileToSave);
+			showExportSuccess("Image", file);
+		} catch (IOException | OutOfMemoryError ex) {
+			showExportError("image", ex);
 		}
 	}
-	
-	/**
-	 * Export the heatmap data as CSV
-	 */
+
 	private void exportHeatMapDataAsCSV() {
-		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setDialogTitle("Export HeatMap Data as CSV");
-		fileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files (*.csv)", "csv"));
-		
-		int userSelection = fileChooser.showSaveDialog(this);
-		
-		if (userSelection == JFileChooser.APPROVE_OPTION) {
-			File fileToSave = fileChooser.getSelectedFile();
-			
-			// Ensure the file has the correct extension
-			if (!fileToSave.getName().toLowerCase().endsWith(".csv")) {
-				fileToSave = new File(fileToSave.getParentFile(), fileToSave.getName() + ".csv");
-			}
-			
-			// Check if file exists
-			if (fileToSave.exists()) {
-				int result = JOptionPane.showConfirmDialog(this,
-						"File already exists. Overwrite?",
-						"Confirm Overwrite",
-						JOptionPane.YES_NO_OPTION);
-				if (result != JOptionPane.YES_OPTION) {
-					return;
-				}
-			}
-			
-			saveDataAsCSV(heatMap.getData(), heatMap.getRowNames(), heatMap.getColumnNames(), fileToSave);
+		File file = chooseSaveFile("Export HeatMap Data as CSV", "CSV Files (*.csv)", "csv");
+		if (file == null) {
+			return;
 		}
-	}
-	
-	/**
-	 * Save data as CSV file
-	 */
-	private void saveDataAsCSV(double[][] data, String[] rowNames, String[] columnNames, File file) {
-		try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-			// Write column names header row
-			writer.write(",");
-			for (int i = 0; i < columnNames.length; i++) {
-				// Escape commas and quotes in column names
-				String name = escapeCSV(columnNames[i]);
-				writer.write(name);
-				if (i < columnNames.length - 1) {
-					writer.write(",");
-				}
-			}
-			writer.newLine();
-			
-			// Write data with row names
-			for (int i = 0; i < data.length; i++) {
-				writer.write(escapeCSV(rowNames[i]) + ",");
-				for (int j = 0; j < data[i].length; j++) {
-					writer.write(String.valueOf(data[i][j]));
-					if (j < data[i].length - 1) {
-						writer.write(",");
-					}
-				}
-				writer.newLine();
-			}
-			
-			JOptionPane.showMessageDialog(this,
-					"Data exported successfully to:\n" + file.getAbsolutePath(),
-					"Export Successful",
-					JOptionPane.INFORMATION_MESSAGE);
-			
+		try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
+			writeCSV(writer, heatMap.getData(), heatMap.getRowNames(), heatMap.getColumnNames());
+			showExportSuccess("Data", file);
 		} catch (IOException ex) {
-			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this,
-					"Error saving data: " + ex.getMessage(),
-					"Export Error",
-					JOptionPane.ERROR_MESSAGE);
+			showExportError("data", ex);
 		}
 	}
-	
-	/**
-	 * Escape a string for CSV format
-	 */
-	private String escapeCSV(String value) {
-		if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+
+	private static void writeCSV(BufferedWriter writer, double[][] data, String[] rowNames,
+			String[] columnNames) throws IOException {
+		StringBuilder line = new StringBuilder();
+		// header
+		line.append(',');
+		for (int j = 0; j < columnNames.length; j++) {
+			if (j > 0) {
+				line.append(',');
+			}
+			line.append(escapeCSV(columnNames[j]));
+		}
+		writer.write(line.toString());
+		writer.newLine();
+		// rows
+		for (int i = 0; i < data.length; i++) {
+			line.setLength(0);
+			line.append(escapeCSV(rowNames[i]));
+			for (double v : data[i]) {
+				line.append(',').append(v);
+			}
+			writer.write(line.toString());
+			writer.newLine();
+		}
+	}
+
+	private static String escapeCSV(String value) {
+		if (value == null) {
+			return "";
+		}
+		if (value.indexOf(',') >= 0 || value.indexOf('"') >= 0 || value.indexOf('\n') >= 0
+				|| value.indexOf('\r') >= 0) {
 			return "\"" + value.replace("\"", "\"\"") + "\"";
 		}
 		return value;
 	}
-	
+
 	/**
-	 * Save a component as an image file
+	 * Show a save dialog, enforce the extension and confirm overwrites.
+	 *
+	 * @return the chosen file, or null if the user cancelled
 	 */
-	private void saveComponentAsImage(Component comp, File file) {
-		// Create image with proper size
-		int width = Math.max(comp.getWidth(), 100);
-		int height = Math.max(comp.getHeight(), 100);
-		
-		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		Graphics2D g2d = image.createGraphics();
-		
-		// Set rendering hints for better quality
-		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-		g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-		
-		// Paint the component
-		comp.paint(g2d);
-		g2d.dispose();
-		
-		try {
-			ImageIO.write(image, "png", file);
-			JOptionPane.showMessageDialog(this,
-					"Image exported successfully to:\n" + file.getAbsolutePath(),
-					"Export Successful",
-					JOptionPane.INFORMATION_MESSAGE);
-		} catch (IOException ex) {
-			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this,
-					"Error saving image: " + ex.getMessage(),
-					"Export Error",
-					JOptionPane.ERROR_MESSAGE);
+	private File chooseSaveFile(String title, String description, String extension) {
+		JFileChooser chooser = new JFileChooser(lastDirectory);
+		chooser.setDialogTitle(title);
+		chooser.setFileFilter(new FileNameExtensionFilter(description, extension));
+		if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+			return null;
+		}
+		File file = chooser.getSelectedFile();
+		lastDirectory = file.getParentFile();
+		if (!file.getName().toLowerCase(Locale.ROOT).endsWith("." + extension)) {
+			file = new File(file.getParentFile(), file.getName() + "." + extension);
+		}
+		if (file.exists()) {
+			int result = JOptionPane.showConfirmDialog(this,
+					"The file \"" + file.getName() + "\" already exists. Overwrite?",
+					"Confirm Overwrite", JOptionPane.YES_NO_OPTION);
+			if (result != JOptionPane.YES_OPTION) {
+				return null;
+			}
+		}
+		return file;
+	}
+
+	private void showExportSuccess(String what, File file) {
+		JOptionPane.showMessageDialog(this,
+				what + " exported successfully to:\n" + file.getAbsolutePath(),
+				"Export Successful", JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	private void showExportError(String what, Throwable ex) {
+		ex.printStackTrace();
+		JOptionPane.showMessageDialog(this,
+				"Error saving " + what + ": " + ex.getMessage(),
+				"Export Error", JOptionPane.ERROR_MESSAGE);
+	}
+
+	private static int clamp(int v, int lo, int hi) {
+		return Math.max(lo, Math.min(hi, v));
+	}
+
+	// =====================================================================
+	// Snapshot of view settings, used for "Reset View"
+	// =====================================================================
+
+	private static final class ViewSettings {
+		private boolean rowLabels;
+		private boolean columnLabels;
+		private boolean colorScale;
+		private boolean verticalColumnLabels;
+		private int cellWidth;
+		private int cellHeight;
+		private int margin;
+		private java.awt.Font labelFont;
+
+		static ViewSettings capture(HeatMap heatMap) {
+			ViewSettings s = new ViewSettings();
+			s.rowLabels = heatMap.isDrawRowLabels();
+			s.columnLabels = heatMap.isDrawColumnLabels();
+			s.colorScale = heatMap.isDrawColorScale();
+			s.verticalColumnLabels = heatMap.isDrawColumnLabelsVertically();
+			s.cellWidth = heatMap.getMinCellWidth();
+			s.cellHeight = heatMap.getMinCellHeight();
+			s.margin = heatMap.getMargin();
+			s.labelFont = heatMap.getLabelFont();
+			return s;
+		}
+
+		void applyTo(HeatMap heatMap) {
+			heatMap.setDrawRowLabels(rowLabels);
+			heatMap.setDrawColumnLabels(columnLabels);
+			heatMap.setDrawColorScale(colorScale);
+			heatMap.setDrawColumnLabelsVertically(verticalColumnLabels);
+			heatMap.setMinCellSize(cellWidth, cellHeight);
+			heatMap.setMargin(margin);
+			heatMap.setLabelFont(labelFont);
 		}
 	}
 }

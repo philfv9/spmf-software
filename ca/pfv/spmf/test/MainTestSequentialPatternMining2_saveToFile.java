@@ -16,6 +16,8 @@ public class MainTestSequentialPatternMining2_saveToFile {
 	public static void main(String [] arg) throws IOException{ 
 		//In this example, the result is saved to a file
 		String outputFilePath = ".//output.txt";
+		
+		// Frequent closed sequential patterns with timestamps
 				
 		// Load a sequence database
 		SequenceDatabase sequenceDatabase = new SequenceDatabase(); 

@@ -27,6 +27,8 @@ import ca.pfv.spmf.patterns.itemset_list_integers_without_support.Itemset;
  *
  * You should have received a copy of the GNU General Public License
  * along with SPMF.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  */
 
 

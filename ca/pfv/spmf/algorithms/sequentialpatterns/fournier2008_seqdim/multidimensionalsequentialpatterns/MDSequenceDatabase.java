@@ -14,6 +14,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim.multidimen
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 import java.io.BufferedReader;
@@ -71,6 +73,14 @@ public class MDSequenceDatabase {
 	 */
 	public int getItemCount(){
 		return itemIDs.size();
+	}
+	
+	/**
+	 * Check if the sequence database has timestamps
+	 * @return true if it has. Otherwise, false.
+	 */
+	public boolean hasTimestamps() {
+		return sequenceDatabase.hasTimestamps();
 	}
 
 	/**
@@ -144,6 +154,7 @@ public class MDSequenceDatabase {
 		for(i++ ;i< tokens.length; i++){
 			// if the token is a timestamp of an itemset
 			if(tokens[i].codePointAt(0) == '<'){
+				sequenceDatabase.setHasTimestamps(true);
 				// set this value as the timestamp of the current itemset
 				String value = tokens[i].substring(1, tokens[i].length()-1);
 				itemset.setTimestamp(Long.parseLong(value));

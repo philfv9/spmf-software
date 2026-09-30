@@ -70,9 +70,9 @@ public class DescriptionAlgoSPPGrowth extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getInputFileTypes() {
-		return new String[]{"Database of instances","Transaction database", "Simple transaction database"};
+		return new String[]{"Database of instances","Transaction database", "Transaction database with timestamps"};
 	}
-
+	
 	@Override
 	public String[] getOutputFileTypes() {
 		return new String[]{"Patterns", "Frequent patterns", "Periodic patterns", "Periodic frequent patterns", "Stable Periodic frequent itemsets"};

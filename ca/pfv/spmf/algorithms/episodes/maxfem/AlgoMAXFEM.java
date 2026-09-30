@@ -219,6 +219,10 @@ public class AlgoMAXFEM {
 		}
 		// Create a string buffer
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Frequent episodes\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
 		StringBuilder r = new StringBuilder("");
 		// for each level (pattern having a same size)
 		for (TreeSet<EpisodeMaxEPM> tree : maxPatterns) {

@@ -80,7 +80,7 @@ public class DescriptionAlgoTSeqMiner extends DescriptionOfAlgorithm {
 		parameters[1] = new DescriptionOfParameter("Discretization threshold", "(e.g. 1)", Float.class, false);
 		parameters[2] = new DescriptionOfParameter("minInitSup", "(e.g. 0.004)", Float.class, false);
 		parameters[3] = new DescriptionOfParameter("minTailSup", "(e.g. 60)", Integer.class, false);
-		parameters[4] = new DescriptionOfParameter("minSig", "(e.g. 8.0)", Float.class, false);
+		parameters[4] = new DescriptionOfParameter("minSig", "(e.g. 8)", Float.class, false);
 		parameters[5] = new DescriptionOfParameter("Attribute count", "(e.g. 43)", Integer.class, false);
 		return parameters;
 	}
@@ -92,7 +92,8 @@ public class DescriptionAlgoTSeqMiner extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getInputFileTypes() {
-		return new String[]{"Dynamic Attributed Graph"};
+		return null;
+//		return new String[]{"Dynamic Attributed Graph"};
 	}
 
 	@Override

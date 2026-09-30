@@ -1,0 +1,7 @@
+@FILETYPE="Perfectly rare itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+4 #SUP: 2
+3 #SUP: 3
+5 #SUP: 3
+3 5 #SUP: 1
+4 5 #SUP: 2

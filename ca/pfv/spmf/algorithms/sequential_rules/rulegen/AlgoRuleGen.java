@@ -1,5 +1,5 @@
 package ca.pfv.spmf.algorithms.sequential_rules.rulegen;
-/* This file is copyright (c) 2008-2013 Philippe Fournier-Viger
+/* This file is copyright (c) 2008-2026 Philippe Fournier-Viger
 * 
 * This file is part of the SPMF DATA MINING SOFTWARE
 * (http://www.philippe-fournier-viger.com/spmf).
@@ -14,6 +14,8 @@ package ca.pfv.spmf.algorithms.sequential_rules.rulegen;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 import java.io.BufferedWriter;
@@ -31,7 +33,7 @@ import ca.pfv.spmf.tools.MemoryLogger;
  * the antecedent and consequent are sequential patterns.  The RuleGen algorithm is described in: 
  * <br/><br/>
  * 
- *    M. J. Zaki, “SPADE: An Efficient Algorithm for Mining Frequent Se-quences,”Machine Learning, vol. 42, no.1-2, pp. 31-60, 2001.
+ *    M. J. Zaki, ï¿½SPADE: An Efficient Algorithm for Mining Frequent Se-quences,ï¿½Machine Learning, vol. 42, no.1-2, pp. 31-60, 2001.
  * <br/><br/>
  * 
  * However, note that instead of using the SPADE algorithm,  we use the PrefixSpan algorithm because at the time
@@ -73,6 +75,11 @@ public class AlgoRuleGen {
 	public void runAlgorithm(int minsup, double minconf, String input, String output) throws IOException {
 		// Prepare object for writing the output file
 		writer = new BufferedWriter(new FileWriter(output)); 
+		writer.write("@FILETYPE=\"Ordered frequent sequential rules\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		// record the start time
 		startTime = System.currentTimeMillis();
 		

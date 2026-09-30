@@ -270,7 +270,11 @@ public class AlgoTKG {
 	private void writeResultToFile(String outputPath) throws IOException {
 		// Create the output file
 		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(outputPath)));
-
+		bw.write("@FILETYPE=\"Frequent subgraphs\"");
+		bw.append(System.lineSeparator());
+		bw.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		bw.append(System.lineSeparator());
+		
 		// For each frequent subgraph
 		int i = 0;
 		for (FrequentSubgraph subgraph : kSubgraphs) {
@@ -327,53 +331,62 @@ public class AlgoTKG {
 	 * @throws IOException if error reading or writing to file
 	 */
 	private List<Graph> readGraphs(String path) throws IOException {
-		if (DEBUG_MODE) {
-			System.out.println("start reading graphs...");
-		}
-		BufferedReader br = new BufferedReader(new FileReader(new File(path)));
-		List<Graph> graphDatabase = new ArrayList<>();
+	    if (DEBUG_MODE) {
+	        System.out.println("start reading graphs...");
+	    }
+	    BufferedReader br = new BufferedReader(new FileReader(new File(path)));
+	    List<Graph> graphDatabase = new ArrayList<>();
 
-		String line = br.readLine();
-		Boolean hasNextGraph = (line != null) && line.startsWith("t");
+	    // skip any header/comment lines starting with '@' before looking for the first graph
+	    String line;
+	    do {
+	        line = br.readLine();
+	    } while (line != null && line.startsWith("@"));
 
-		// For each graph of the graph database
-		while (hasNextGraph) {
-			hasNextGraph = false;
-			int gId = Integer.parseInt(line.split(" ")[2]);
-			Map<Integer, Vertex> vMap = new HashMap<>();
-			while ((line = br.readLine()) != null && !line.startsWith("t")) {
+	    Boolean hasNextGraph = (line != null) && line.startsWith("t");
 
-				String[] items = line.split(" ");
+	    // For each graph of the graph database
+	    while (hasNextGraph) {
+	        hasNextGraph = false;
+	        int gId = Integer.parseInt(line.split(" ")[2]);
+	        Map<Integer, Vertex> vMap = new HashMap<>();
+	        while ((line = br.readLine()) != null && !line.startsWith("t")) {
 
-				if (line.startsWith("v")) {
-					// If it is a vertex
-					int vId = Integer.parseInt(items[1]);
-					int vLabel = Integer.parseInt(items[2]);
-					vMap.put(vId, new Vertex(vId, vLabel));
-				} else if (line.startsWith("e")) {
-					// If it is an edge
-					int v1 = Integer.parseInt(items[1]);
-					int v2 = Integer.parseInt(items[2]);
-					int eLabel = Integer.parseInt(items[3]);
-					Edge e = new Edge(v1, v2, eLabel);
-//                    System.out.println(v1 + " " + v2 + " " + vMap.get(v1).id + " " + vMap.get(v2).id);
-					vMap.get(v1).addEdge(e);
-					vMap.get(v2).addEdge(e);
-				}
-			}
-			graphDatabase.add(new Graph(gId, vMap));
-			if (line != null) {
-				hasNextGraph = true;
-			}
-		}
+	            if (line.startsWith("@")) {
+	                continue;
+	            }
 
-		br.close();
+	            String[] items = line.split(" ");
 
-		if (DEBUG_MODE) {
-			System.out.println("read successfully, totally " + graphDatabase.size() + " graphs");
-		}
-		graphCount = graphDatabase.size();
-		return graphDatabase;
+	            if (line.startsWith("v")) {
+	                // If it is a vertex
+	                int vId = Integer.parseInt(items[1]);
+	                int vLabel = Integer.parseInt(items[2]);
+	                vMap.put(vId, new Vertex(vId, vLabel));
+	            } else if (line.startsWith("e")) {
+	                // If it is an edge
+	                int v1 = Integer.parseInt(items[1]);
+	                int v2 = Integer.parseInt(items[2]);
+	                int eLabel = Integer.parseInt(items[3]);
+	                Edge e = new Edge(v1, v2, eLabel);
+//	                    System.out.println(v1 + " " + v2 + " " + vMap.get(v1).id + " " + vMap.get(v2).id);
+	                vMap.get(v1).addEdge(e);
+	                vMap.get(v2).addEdge(e);
+	            }
+	        }
+	        graphDatabase.add(new Graph(gId, vMap));
+	        if (line != null) {
+	            hasNextGraph = true;
+	        }
+	    }
+
+	    br.close();
+
+	    if (DEBUG_MODE) {
+	        System.out.println("read successfully, totally " + graphDatabase.size() + " graphs");
+	    }
+	    graphCount = graphDatabase.size();
+	    return graphDatabase;
 	}
 
 	/**
@@ -1142,7 +1155,7 @@ public class AlgoTKG {
 	 * Print statistics about the algorithm execution to System.out.
 	 */
 	public void printStats() {
-		System.out.println("=============  TopKGSPAN v2.40 - STATS =============");
+		System.out.println("=============  TKG v2.40 - STATS =============");
 		System.out.println(" Number of graph in the input database: " + graphCount);
 		System.out.println(" Top-k subgraph count : " + patternCount);
 		System.out.println(" Minsup: " + minSup / (double) graphCount + " (i.e. " + minSup + " graphs)");

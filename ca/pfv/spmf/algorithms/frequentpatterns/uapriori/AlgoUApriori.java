@@ -88,6 +88,10 @@ public class AlgoUApriori {
 		
 		// prepare the output file
 		writer = new BufferedWriter(new FileWriter(output)); 
+		writer.write("@FILETYPE=\"Uncertain frequent itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		
 		// Generate candidates with size k = 1 (all itemsets of size 1)
 		k=1;
@@ -140,7 +144,7 @@ public class AlgoUApriori {
 	 * @throws IOException exception if error writing the itemset to the file
 	 */
 	private void saveItemsetToFile(ItemsetUApriori itemset) throws IOException{
-		writer.write(itemset.toString() + " #SUP: " + itemset.getExpectedSupport());
+		writer.write(itemset.toString() + "#SUP: " + itemset.getExpectedSupport());
 		writer.newLine();
 		itemsetCount++;
 	}

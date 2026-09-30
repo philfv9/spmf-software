@@ -47,6 +47,10 @@ public class AddTimeStampsToSequenceDatabase {
 	public void convert(String inputFile, String outputFile) throws IOException {
 		// we create an object fro writing the output file
 		BufferedWriter	writer = new BufferedWriter(new FileWriter(outputFile)); 
+		writer.write("@FILETYPE=\"Sequence database with timestamps\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		
 		SequenceDatabase database = new SequenceDatabase();
 		database.loadFile(inputFile);

@@ -32,7 +32,7 @@ public class DescriptionAlgoQCSP extends DescriptionOfAlgorithm {
 
 	@Override
 	public String getURLOfDocumentation() {
-		return "https://bitbucket.org/len_feremans/qcsp_public";
+		return "https://www.philippe-fournier-viger.com/spmf/QCSP_alg.php";
 	}
 
 	@Override

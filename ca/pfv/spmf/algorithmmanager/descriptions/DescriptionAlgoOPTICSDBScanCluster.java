@@ -101,7 +101,7 @@ public class DescriptionAlgoOPTICSDBScanCluster extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getOutputFileTypes() {
-		return new String[]{"Clusters", "Density-based clusters"};
+		return new String[]{"Clusters"};
 	}
 	
 	@Override

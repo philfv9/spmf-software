@@ -41,6 +41,8 @@ import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove the copyright and license information
  */
 /**
  * A class for developers that display the whole list of algorithms and allow to

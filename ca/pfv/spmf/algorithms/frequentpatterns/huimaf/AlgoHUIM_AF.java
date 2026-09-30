@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -227,6 +228,10 @@ public class AlgoHUIM_AF {
 		startTimestamp = System.currentTimeMillis();
 
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		// We create a map to store the TWU of each item
 		mapItemToTWU = new HashMap<Integer, Integer>();
@@ -321,6 +326,13 @@ public class AlgoHUIM_AF {
 				}
 				// Copy the transaction into database but
 				// without items with TWU < minutility
+				// sort the transaction by ascending item value so that it is in the same
+				// order as twuPattern, which calculateFitness()'s merge scan requires
+				Collections.sort(revisedTransaction, new Comparator<Pair>() {
+				    public int compare(Pair o1, Pair o2) {
+				        return o1.item - o2.item;
+				    }
+				});
 				database.add(revisedTransaction);
 			}
 		} catch (Exception e) {
@@ -356,6 +368,7 @@ public class AlgoHUIM_AF {
 				}
 			}
 		}
+		
 		// check the memory usage
 		checkMemory();
 		// Mine the database recursively

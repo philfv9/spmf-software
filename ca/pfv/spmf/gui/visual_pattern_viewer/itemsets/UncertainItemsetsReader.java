@@ -38,19 +38,32 @@ public class UncertainItemsetsReader extends ItemsetsReader {
 	 * Parse a line containing an (uncertain) itemset in SPMF format,
 	 * splitting on ") " so that "1 (0.1) 2 (0.4)" → ["1 (0.1", "2 (0.4)"].
 	 */
+	@Override
 	public List<String> parseItemset(String line, Map<String, String> itemMapping) {
-	    List<String> itemsetsItems = new ArrayList<>();
-
-	    int startPos = 0;
-	    int endPos = 0;
-	    while((endPos = line.indexOf(')', startPos)) != -1 ){
-	    	String token = line.substring(startPos, endPos+1);
-
-	    	itemsetsItems.add(token);
-	    	startPos = endPos+1;
-	    }
-
-	    return itemsetsItems;
+		List<String> itemsetsItems = new ArrayList<>();
+		int startPos = 0;
+		int endPos;
+		while ((endPos = line.indexOf(')', startPos)) != -1) {
+			String token = line.substring(startPos, endPos + 1).trim(); // no more leading space
+			int paren = token.indexOf('(');
+			if (paren > 0) {
+				String id = token.substring(0, paren).trim();
+				String probability = token.substring(paren).trim();
+				token = itemMapping.getOrDefault(id, id) + " " + probability;
+			}
+			if (!token.isEmpty()) {
+				itemsetsItems.add(token);
+			}
+			startPos = endPos + 1;
+		}
+		// Tolerate items without a probability at the end of the line
+		String rest = line.substring(startPos).trim();
+		if (!rest.isEmpty()) {
+			for (String token : rest.split("\\s+")) {
+				itemsetsItems.add(itemMapping.getOrDefault(token, token));
+			}
+		}
+		return itemsetsItems;
 	}
 
 }

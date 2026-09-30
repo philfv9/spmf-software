@@ -16,7 +16,7 @@ public class MainTestFastTIRP {
 	public static void main(String[] arg) throws IOException {
 
 		// Input file path
-		String input = fileToPath("test.csv");
+		String input = fileToPath("testTIRP.txt");
 
 		// Output file path
 		String output = ".//output.txt";

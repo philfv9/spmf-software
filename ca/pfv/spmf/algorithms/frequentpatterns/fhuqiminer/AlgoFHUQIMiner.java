@@ -131,6 +131,11 @@ public class AlgoFHUQIMiner {
 		MemoryLogger.getInstance().reset();
 		startTime = System.currentTimeMillis();
 		writer_hqui = new BufferedWriter(new FileWriter(output));
+		writer_hqui.write("@FILETYPE=\"Quantitative high utility itemsets\"");
+		writer_hqui.newLine();
+		writer_hqui.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer_hqui.newLine();
+		
 		itemsetBuffer = new Qitem[BUFFERS_SIZE];
 		coefficient = coef;
 		percent = percentage;
@@ -221,23 +226,27 @@ public class AlgoFHUQIMiner {
 		currentQitem = new Qitem(0, 0);
 		Qitem Q;
 		while ((str = br_inputDatabase.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (str.isEmpty() == true || str.charAt(0) == '#' || str.charAt(0) == '%' || str.charAt(0) == '@') {
+				continue;
+			}
+			
 			tid++;
-			String[] itemInfo = str.split(" ");// (A,2) (B, 5)
+			String[] itemInfo = str.split(" ");// 1,3 2,3 3,2 4,5
 			int transactionU = 0;
 			for (int i = 0; i < itemInfo.length; i++) {
-				currentQitem.setItem(Integer.valueOf(new String(itemInfo[i].substring(0, itemInfo[i].indexOf(',')))));
-				currentQitem.setQteMin(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
-				currentQitem.setQteMax(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
+				String[] itemSplit = itemInfo[i].split(",");
+				currentQitem.setItem(Integer.parseInt(itemSplit[0]));
+				currentQitem.setQteMin(Integer.parseInt(itemSplit[1]));
+				currentQitem.setQteMax(Integer.parseInt(itemSplit[1]));
 				transactionU += currentQitem.getQteMin() * mapItemToProfit.get(currentQitem.getItem());
 			}
 			for (int i = 0; i < itemInfo.length; i++) {
-				currentQitem.setItem(Integer.valueOf(new String(itemInfo[i].substring(0, itemInfo[i].indexOf(',')))));
-				currentQitem.setQteMin(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
-				currentQitem.setQteMax(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
+				String[] itemSplit = itemInfo[i].split(",");
+				currentQitem.setItem(Integer.parseInt(itemSplit[0]));
+				currentQitem.setQteMin(Integer.parseInt(itemSplit[1]));
+				currentQitem.setQteMax(Integer.parseInt(itemSplit[1]));
 				Q = new Qitem();
 				Q.copy(currentQitem);
 				if (!mapItemToTwu.containsKey(Q))
@@ -267,6 +276,12 @@ public class AlgoFHUQIMiner {
 		tid = 0;
 		mapFMAP = new HashMap<Qitem, Map<Qitem, Integer>>();
 		while ((str = br_inputDatabase.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (str.isEmpty() == true || str.charAt(0) == '#' || str.charAt(0) == '%' || str.charAt(0) == '@') {
+				continue;
+			}
+			
 			tid++;
 			String[] itemInfo = str.split(" ");
 			int remainingUtility = 0;
@@ -274,11 +289,10 @@ public class AlgoFHUQIMiner {
 			List<Qitem> revisedTransaction = new ArrayList<Qitem>();
 			for (int i = 0; i < itemInfo.length; i++) {
 				Q = new Qitem();
-				Q.setItem(Integer.valueOf(new String(itemInfo[i].substring(0, itemInfo[i].indexOf(',')))));
-				Q.setQteMin(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
-				Q.setQteMax(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
+				String[] itemSplit = itemInfo[i].split(",");
+				Q.setItem(Integer.parseInt(itemSplit[0]));
+				Q.setQteMin(Integer.parseInt(itemSplit[1]));
+				Q.setQteMax(Integer.parseInt(itemSplit[1]));
 				if (mapItemToUtilityList.containsKey(Q)) {
 					revisedTransaction.add(Q);
 					remainingUtility += Q.getQteMin() * mapItemToProfit.get(Q.getItem());

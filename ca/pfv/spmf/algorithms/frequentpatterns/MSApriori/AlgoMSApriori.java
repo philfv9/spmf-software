@@ -109,6 +109,12 @@ public class AlgoMSApriori {
 		startTimestamp = System.currentTimeMillis();
 		// Prepare for writing the output file
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Frequent itemsets with multiple thresholds\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+
+		
 		// Reset the number of itemset found to 0
 		itemsetCount = 0;
 		// reseter the utility for recording the max memory usage

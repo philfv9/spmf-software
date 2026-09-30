@@ -78,6 +78,7 @@ public class DescriptionAlgoFPGrowthAssociationRulesLift extends DescriptionOfAl
 		// STEP 2: Generating all rules from the set of frequent itemsets
 		// (based on Agrawal & Srikant, 94)
 		ca.pfv.spmf.algorithms.associationrules.agrawal94_association_rules.AlgoAgrawalFaster94 algoAgrawal = new ca.pfv.spmf.algorithms.associationrules.agrawal94_association_rules.AlgoAgrawalFaster94();
+		algoAgrawal.setFiletype("Association rules with lift");
 		algoAgrawal.setMaxAntecedentLength(maxAntecedentLength);
 		algoAgrawal.setMaxConsequentLength(maxConsequentLength);
 		algoAgrawal.runAlgorithm(patterns, outputFile, databaseSize,

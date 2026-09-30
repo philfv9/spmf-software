@@ -9,6 +9,8 @@ package ca.pfv.spmf.algorithms.sequenceprediction.ipredict.predictor.profile;
  * IPredict is distributed under The MIT License (MIT).
  * You may obtain a copy of the License at
  * https://opensource.org/licenses/MIT 
+ * 
+ * Do not remove license and copyright information.
  */
 public class MSNBCProfile extends Profile {
 

@@ -81,7 +81,7 @@ public class DescriptionAlgoBisectingKMeans extends DescriptionOfAlgorithm {
         
 		DescriptionOfParameter[] parameters = new DescriptionOfParameter[4];
 		parameters[0] = new DescriptionOfParameter("k", "(e.g. 3)", Integer.class, false);
-		parameters[1] = new DescriptionOfParameter("Distance function", "(e.g. euclidian, cosine...)", String.class, false);
+		parameters[1] = new DescriptionOfParameter("Distance function", "(e.g. EUCLIDIAN)", String.class, false);
 		parameters[2] = new DescriptionOfParameter("Iter", "(e.g. 10)", Integer.class, false);
 		parameters[3] = new DescriptionOfParameter("separator", "(default: ' ')", String.class, true);
 

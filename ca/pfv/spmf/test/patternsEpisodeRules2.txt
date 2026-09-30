@@ -1,0 +1,3 @@
+@FILETYPE="Episode rules"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+{1} ==> {1}{1 2} #SUP: 3.0 #CONF: 0.6666667

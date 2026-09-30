@@ -57,41 +57,47 @@ public class SequenceDatabaseConverter {
 	 * @throws IOException  an exception is thrown if there is an error reading/writing files
 	 */
 	public void convert(String input, String output, Formats inputFileformat, int lineCount, Charset charset) throws IOException {
-		
-		// we save the parameter in the class fields
-		this.input = input;
-		this.output = output;
-		this.lineCount = lineCount;
-		
-		// Use the default charset if it is null
-		if(charset == null){
-			charset = Charset.defaultCharset();
-		}
-		
-		// we create an object fro writing the output file
-		writer = new BufferedWriter(new FileWriter(output)); 
-		
-		// we call the appropriate method for converting a database
-		// according to the format of the input file
-		if(inputFileformat.equals(Formats.IBMGenerator)){
-			convertIBMGenerator();
-		}
-		else if(inputFileformat.equals(Formats.Kosarak)){
-			convertKosarak(charset);
-		}else if(inputFileformat.equals(Formats.CSV_INTEGER)){
-			convertCSV(charset);
-		}else if(inputFileformat.equals(Formats.BMS)){
-			convertBMS(charset);
-		}else if(inputFileformat.equals(Formats.Snake)){
-			convertSnake(charset);
-		}else if(inputFileformat.equals(Formats.SPMF_TRANSACTION_DB)){
-			convertTransactionDB(charset);
-		}else if(inputFileformat.equals(Formats.TEXT)){
-			convertTEXT(false, charset);
-		}
-		
-		// we close the output file
-		writer.close();
+
+	    // we save the parameter in the class fields
+	    this.input = input;
+	    this.output = output;
+	    this.lineCount = lineCount;
+
+	    // Use the default charset if it is null
+	    if (charset == null) {
+	        charset = Charset.defaultCharset();
+	    }
+
+	    if (inputFileformat.equals(Formats.TEXT)) {
+	        convertTEXT(false, charset);
+	        return;
+	    }
+
+	    // For all other formats, we create an object for writing the output file
+	    writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Simple sequence database\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+
+	    // we call the appropriate method for converting a database
+	    // according to the format of the input file
+	    if (inputFileformat.equals(Formats.IBMGenerator)) {
+	        convertIBMGenerator();
+	    } else if (inputFileformat.equals(Formats.Kosarak)) {
+	        convertKosarak(charset);
+	    } else if (inputFileformat.equals(Formats.CSV_INTEGER)) {
+	        convertCSV(charset);
+	    } else if (inputFileformat.equals(Formats.BMS)) {
+	        convertBMS(charset);
+	    } else if (inputFileformat.equals(Formats.Snake)) {
+	        convertSnake(charset);
+	    } else if (inputFileformat.equals(Formats.SPMF_TRANSACTION_DB)) {
+	        convertTransactionDB(charset);
+	    }
+
+	    // we close the output file
+	    writer.close();
 	}
 	
 	/**
@@ -111,6 +117,13 @@ public class SequenceDatabaseConverter {
 			
 			// we read the file line by line until the end of the file
 			while ((thisLine = myInput.readLine()) != null) {
+				// if the line is a comment, is empty or is a
+				// kind of metadata, skip it
+				if (thisLine.isEmpty() == true || thisLine.charAt(0) == '#' || 
+						thisLine.charAt(0) == '%' || thisLine.charAt(0) == '@') {
+					continue;
+				}
+				
 				// we split the line according to spaces
 				String[] split = thisLine.split(" ");
 				// for each item on this line
@@ -419,155 +432,140 @@ public class SequenceDatabaseConverter {
 	 * This method convert a file from the TEXT format to the SPMF format.
 	 * 
 	 * @param returnMapItemIDWord
-	 * @param charset the charset (encoding) of the input file(e.g "UTF-8")
+	 * @param charset the charset (encoding) of the input file (e.g "UTF-8")
 	 *   or null if you want to use the default text encoding.
 	 * @throws IOException  exception if error while reading/writing files.
 	 * @return a map where an entry indicates for an item (key), the corresponding attribute value (value).
 	 */
 	private Map<Integer, String> convertTEXT(boolean returnMapItemIDWord, Charset charset) throws IOException {
-		// This map will be used to store mapping from item id (key) to words (value).
-		// It is used only if returnMapItemIDValue is set to true.  This is used by the GUI of SPMF
-		// which need to keep this information in memory to avoid an extra database scan after an algorithm
-		// is applied.
-		Map<Integer, String> mapItemsIDToWords = null;
-		if(returnMapItemIDWord){
-			mapItemsIDToWords = new HashMap<Integer, String>();
-		}
-		
-		// A map that store the corresponding Item ID for each word
-		// An entry in the map is :
-		//   key  =  a word
-		//   value = Integer (item id)
-		Map<String, Integer> mapWordsToItemIDs = new HashMap<String,Integer>();;
-		
-		// object for writing the output file
-		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output),charset));; 
-		
-		// This is the first line in the output file
-		writer.write("@CONVERTED_FROM_TEXT");
+	    // Map from item id (key) to word (value). Used only if returnMapItemIDWord = true.
+	    Map<Integer, String> mapItemsIDToWords = null;
+	    if (returnMapItemIDWord) {
+	        mapItemsIDToWords = new HashMap<Integer, String>();
+	    }
+
+	    // Map from word (key) to item id (value)
+	    Map<String, Integer> mapWordsToItemIDs = new HashMap<String, Integer>();
+
+	    // Writer for the output SPMF file
+	    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output), charset));
+	    writer.write("@CONVERTED_FROM_TEXT");
+	    writer.newLine();
+		writer.write("@FILETYPE=\"Simple sequence database\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
 		writer.newLine();
 
-		// Now we will read the input file
-		BufferedReader myInput = null;
-		try {
-			// Create some objects to read the file
-			FileInputStream fin = new FileInputStream(new File(input));
-			myInput = new BufferedReader(new InputStreamReader(fin, charset));
+	    BufferedReader myInput = null;
+	    try {
+	        FileInputStream fin = new FileInputStream(new File(input));
+	        myInput = new BufferedReader(new InputStreamReader(fin, charset));
 
-			
-			// READ THE WHOLE CONTENT OF THE TEXT FILE LINE BY LINE
-			// This variable is to remember if this   is the first word of a sentence.
-			boolean isFirstWordOfSentence = true;
-			// This variable is to remember if a sentence has not been ended yet.
-			boolean someSentenceHasNotEndedYet = false;
-			
-			// Create a string builder to store the current sentence
-			StringBuilder currentSentence = new StringBuilder();
-			
-			// Variable to be used to assign item ids (integers) to words
-			int nextItemID = 1;
-			
-			// For each line in the input file
-			String thisLine;
-			while ((thisLine = myInput.readLine()) != null) {
-//				System.out.println(thisLine);
-				// if the line is too short (e.g emptylines), skip it
-				if(thisLine.length() <1){
-					continue;
-				}
-				
-				// split the line into words
-				String words[] = thisLine.split(" ");
-			
-//				// for each word
-				for(String word : words){
+	        // ------------------------------------------------------------------
+	        // STEP 1: Read the ENTIRE file into one big string.
+	        // We join lines with a space so that a sentence split across
+	        // two lines is still handled correctly.
+	        // ------------------------------------------------------------------
+	        StringBuilder fullText = new StringBuilder();
+	        String thisLine;
+	        while ((thisLine = myInput.readLine()) != null) {
+	            if (thisLine.length() > 0) {
+	                fullText.append(thisLine).append(' ');
+	            }
+	        }
+	        myInput.close();
+	        myInput = null;
 
-					// We check if this token contains some punctuation that ends a sentence
-					boolean isEndOfSentence = word.endsWith("?") || word.endsWith(".") || word.endsWith("!") 
-							|| word.endsWith("\u002e")	|| word.endsWith("\u3002")  // <-- This is the Chinese end of sentence (to support chinese text)
-					|| word.endsWith("\uFF01") // chinese "!"
-					|| word.endsWith("\u003F"); // chinese "?"
-					
-					// If this word contains punctuation, we remove it (this could include ,()"' and other punctuation symbols.
-					// We also transform the word to lowercase
-					String cleanWord = word.replaceAll("[^\\p{L}\\p{N}]+", "").toLowerCase();
-					
-					if(cleanWord.length() !=0){
+	        String text = fullText.toString();
 
-						// Convert the word to an item
-						Integer item = mapWordsToItemIDs.get(cleanWord);
-						if(item == null){
-							// Give a new ID to this item
-							item = nextItemID++;
-							// Remember the ID 
-							mapWordsToItemIDs.put(cleanWord, item);
-							if(mapItemsIDToWords != null){
-								mapItemsIDToWords.put(item, cleanWord);
-							}
-							// Write the ID to the file
-							writer.write("@ITEM=" + item + "=" + cleanWord);
-							writer.newLine();
-						}
-	
-						// First we will save the word in the output file
-						// If it is not the first word we will add a space.
-						if(isFirstWordOfSentence){
-							isFirstWordOfSentence = false;
-						}else{
-							currentSentence.append(" ");
-						}
-						currentSentence.append(item);
-						// We need to write the itemset separator between each word
-						currentSentence.append(" -1");
-					}
-					
-					// If this is the last word of a sentence
-					if(isFirstWordOfSentence == false && isEndOfSentence){
-						// We write the end of sequence and create a new line
-						currentSentence.append(" -2");
-						// We reset the variables and increase the sequence count
-						isFirstWordOfSentence = true;
-						someSentenceHasNotEndedYet = false;
-						
-						
-						// write the current sentence to the file
-						writer.write(currentSentence.toString());
-						writer.newLine();
-						currentSentence.setLength(0);
-					}else{
-						// if it is not the end of a sentence, we remember that the current
-						// sentence has not ended yet and we will need to make sure that it ends later.
-						someSentenceHasNotEndedYet = true;
-					}
-				}
-			}
-			
-			// This is a special case to be more robust.
-			// If some sentence has not ended because some punctuation is missing for the last sentence of the file
-			// We write the end of the last sequence.
-			if(someSentenceHasNotEndedYet){
-				// We write the end of sequence and create a new line
-				currentSentence.append(" -2");
-				// We reset the variables and increase the sequence count
-				isFirstWordOfSentence = true;
-				someSentenceHasNotEndedYet = false;
-				
-				
-				// write the current sentence to the file
-				writer.write(currentSentence.toString());
-				currentSentence.setLength(0);
-			}
-			
-			// close output file
-			writer.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			if (myInput != null) {
-				myInput.close();
-			}
-		}
-				
-		return mapItemsIDToWords;	
+	        // ------------------------------------------------------------------
+	        // STEP 2: Normalize punctuation that is often glued to words
+	        // (dashes, curly quotes, straight quotes) by surrounding them
+	        // with spaces. This avoids tokens like "gold?"-holding" hiding
+	        // the sentence terminator or merging two different words.
+	        // ------------------------------------------------------------------
+	        text = text.replaceAll("([\u2013\u2014\u201C\u201D\u2018\u2019\"])", " $1 ");
+
+	        // ------------------------------------------------------------------
+	        // STEP 3: Split the WHOLE text into sentences.
+	        // A sentence boundary is: a terminator (. ! ? or Chinese equivalents),
+	        // optionally followed by closing quotes/brackets, followed by
+	        // one or more whitespace characters.
+	        // The look-behind (?<=...) keeps the terminator inside the sentence
+	        // that is produced.
+	        // ------------------------------------------------------------------
+	        String[] sentences = text.split(
+	            "(?<=[.!?\u3002\uFF01\uFF1F])[\"'\u201C\u201D\u2018\u2019\\)\\]]*\\s+");
+
+	        int nextItemID = 1;
+	        int sequenceCount = 0;
+
+	        // ------------------------------------------------------------------
+	        // STEP 4: For each sentence, split into words and write it
+	        // as one SPMF sequence.
+	        // ------------------------------------------------------------------
+	        for (String sentence : sentences) {
+
+	            if (sentence.trim().length() == 0) {
+	                continue;
+	            }
+
+	            String[] words = sentence.trim().split("\\s+");
+
+	            StringBuilder currentSentence = new StringBuilder();
+	            boolean isFirstWordOfSentence = true;
+
+	            for (String word : words) {
+	                // Remove all characters that are not letters or digits
+	                String cleanWord = word.replaceAll("[^\\p{L}\\p{N}]+", "").toLowerCase();
+
+	                if (cleanWord.length() == 0) {
+	                    continue; // this token was pure punctuation (a quote, a dash, etc.)
+	                }
+
+	                // Get or create the item id for this word
+	                Integer item = mapWordsToItemIDs.get(cleanWord);
+	                if (item == null) {
+	                    item = nextItemID++;
+	                    mapWordsToItemIDs.put(cleanWord, item);
+	                    if (mapItemsIDToWords != null) {
+	                        mapItemsIDToWords.put(item, cleanWord);
+	                    }
+	                    writer.write("@ITEM=" + item + "=" + cleanWord);
+	                    writer.newLine();
+	                }
+
+	                if (isFirstWordOfSentence) {
+	                    isFirstWordOfSentence = false;
+	                } else {
+	                    currentSentence.append(" ");
+	                }
+	                currentSentence.append(item);
+	                currentSentence.append(" -1"); // itemset separator
+	            }
+
+	            // Only write a sequence if it actually contains at least one word
+	            if (currentSentence.length() > 0) {
+	                currentSentence.append(" -2"); // end of sequence
+	                writer.write(currentSentence.toString());
+	                writer.newLine();
+
+	                sequenceCount++;
+	                if (sequenceCount == lineCount) {
+	                    break;
+	                }
+	            }
+	        }
+
+	        writer.close();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        if (myInput != null) {
+	            myInput.close();
+	        }
+	    }
+
+	    return mapItemsIDToWords;
 	}
 }

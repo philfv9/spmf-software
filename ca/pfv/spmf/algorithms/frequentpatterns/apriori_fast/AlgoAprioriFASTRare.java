@@ -247,6 +247,10 @@ public class AlgoAprioriFASTRare {
 		} else {
 			// prepare object for writing the file
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Minimal rare itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 			patterns = null;
 		}
 

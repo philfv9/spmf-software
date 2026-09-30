@@ -87,7 +87,7 @@ public class DescriptionAlgoConvertTransactionDBSequenceDB extends DescriptionOf
 	public DescriptionOfParameter[] getParametersDescription() {
 
 		DescriptionOfParameter[] parameters = new DescriptionOfParameter[1];
-		parameters[0] = new DescriptionOfParameter("Sequence count count", "(e.g. 5)", Integer.class, false);
+		parameters[0] = new DescriptionOfParameter("Sequence count", "(e.g. 5)", Integer.class, false);
 		return parameters;
 	}
 

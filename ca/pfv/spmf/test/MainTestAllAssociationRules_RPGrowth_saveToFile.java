@@ -18,11 +18,11 @@ public class MainTestAllAssociationRules_RPGrowth_saveToFile {
 		// it is possible to restrict the number of items in the antecedent and
 		// consequent of rules
 		
-		int maxConsequentLength = 3;
-		int maxAntecedentLength = 2;
+		int maxConsequentLength = 100;
+		int maxAntecedentLength = 100;
 		
 		// STEP 1: Applying the RP-GROWTH algorithm to find rare itemsets
-		double minsup = 0.8;
+		double minsup = 0.5;
 		double minraresup = 0.1;		
 		AlgoRPGrowth rpgrowth = new AlgoRPGrowth();
 		rpgrowth.setMaximumPatternLength(maxAntecedentLength + maxConsequentLength);
@@ -32,7 +32,7 @@ public class MainTestAllAssociationRules_RPGrowth_saveToFile {
 		
 		// STEP 2: Generating all rules from the set of frequent itemsets (based on Agrawal & Srikant, 94)
 		double minconf = 0.60;
-		AlgoAgrawalFaster94 algoAgrawal = new AlgoAgrawalFaster94();
+		AlgoAgrawalFaster94 algoAgrawal = new AlgoAgrawalFaster94("Association rules");
 		algoAgrawal.setMaxAntecedentLength(maxAntecedentLength);
 		algoAgrawal.setMaxConsequentLength(maxConsequentLength);
 		algoAgrawal.runAlgorithm(patterns, output, databaseSize, minconf);

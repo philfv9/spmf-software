@@ -1,0 +1,8 @@
+@FILETYPE="Frequent time interval sequential patterns"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+[1] #SUP: 3 #MD: 4.666666666666667 #MHS: 1.0
+[1, 2] #SUP: 2 #MD: 6.0 #MHS: 1.0
+[2] #SUP: 3 #MD: 3.0 #MHS: 1.3333333333333333
+[3] #SUP: 3 #MD: 4.333333333333333 #MHS: 1.0
+[3, 1] #SUP: 2 #MD: 8.5 #MHS: 1.0
+[3, 2] #SUP: 3 #MD: 7.25 #MHS: 1.3333333333333333

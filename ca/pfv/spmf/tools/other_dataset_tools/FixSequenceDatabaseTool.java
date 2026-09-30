@@ -51,11 +51,24 @@ public class FixSequenceDatabaseTool {
 
 		// for stats
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(output));
+
 				BufferedReader myInput = new BufferedReader(
 						new InputStreamReader(new FileInputStream(new File(input))))) {
-			// for each line (transaction) until the end of file
+			
+			writer.write("@FILETYPE=\"Simple sequence database\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
+			
 			String thisLine;
 			while ((thisLine = myInput.readLine()) != null) {
+				// if the line is a comment, is empty or is a
+				// kind of metadata, skip it
+				if (thisLine.isEmpty() == true || thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%'
+						|| thisLine.charAt(0) == '@') {
+					continue;
+				}
+
 				// if the line is empty we skip it
 				if (thisLine.isEmpty() == true) {
 					continue;

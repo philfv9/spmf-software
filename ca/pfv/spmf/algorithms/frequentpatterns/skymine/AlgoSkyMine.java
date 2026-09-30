@@ -154,6 +154,10 @@ public class AlgoSkyMine {
 		
 		if(outputFilePath != null){
 			writer = new BufferedWriter(new FileWriter(outputFilePath));
+			writer.write("@FILETYPE=\"Skyline High-utility itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 		}
 
 		// read the utility table in the first file
@@ -171,10 +175,10 @@ public class AlgoSkyMine {
 						|| thisLine.charAt(0) == '@') {
 					continue;
 				}
-				// Split the like into two tokens (item and utility)
-				StringTokenizer dataLine = new StringTokenizer(thisLine);
-				int item = Integer.parseInt(dataLine.nextToken());
-				long internalUtility = Long.parseLong(dataLine.nextToken());
+				// Split the line into two tokens (item and utility) separated by a comma
+				String[] dataLine = thisLine.split(",");
+				int item = Integer.parseInt(dataLine[0].trim());
+				long internalUtility = Long.parseLong(dataLine[1].trim());
 				
 				// increase the number of distinct items  by 1
 				number_items++;

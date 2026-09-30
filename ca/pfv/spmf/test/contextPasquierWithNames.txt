@@ -1,4 +1,6 @@
 @CONVERTED_FROM_TEXT
+@FILETYPE="Simple transaction database"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
 @ITEM=1=apple
 @ITEM=2=orange
 @ITEM=3=tomato

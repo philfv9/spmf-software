@@ -27,6 +27,12 @@ public class MainTestPrefixSpan_saveToMemory {
         // if you set the following parameter to true, the sequence ids of the sequences where
         // each pattern appears will be shown in the result
         algo.setShowSequenceIdentifiers(true);
+        
+		// This optional parameter allows to specify the minimum pattern length:
+//		algo.setMinimumPatternLength(1);  // optional
+
+		// This optional parameter allows to specify the maximum pattern length:
+//		algo.setMaximumPatternLength(2);  // optional
 		
 		// execute the algorithm with minsup = 50 %
 		SequentialPatterns patterns = algo.runAlgorithm(inputFile, 0.4, null);    

@@ -176,6 +176,10 @@ public class AlgoNewCharm_Bitset {
             // Use try-with-resources for proper resource management
             try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(output))) {
                 this.writer = fileWriter;
+                writer.write("@FILETYPE=\"Frequent closed itemsets\"");
+    			writer.append(System.lineSeparator());
+    			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+    			writer.append(System.lineSeparator());
                 processDatabase(database, useTriangularMatrixOptimization);
             } finally {
                 this.writer = null; // Clear reference after use

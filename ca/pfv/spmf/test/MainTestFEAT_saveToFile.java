@@ -4,41 +4,42 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.BIDE_and_prefixspan.AlgoFEAT;
-import ca.pfv.spmf.input.sequence_database_list_integers.SequenceDatabase;
-
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.AlgoFEAT2;
 
 /**
  * Example of how to use the FEAT algorithm in source code.
+ * 
  * @author Philippe Fournier-Viger
  */
 public class MainTestFEAT_saveToFile {
 
-	public static void main(String [] arg) throws IOException{    
-		String outputPath = "output.txt";
-		// Load a sequence database
-		SequenceDatabase sequenceDatabase = new SequenceDatabase(); 
-		sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"));
-		// print the database to console
-		sequenceDatabase.print();
-		
-		// Create an instance of the algorithm with minsup = 50 %
-		AlgoFEAT algo = new AlgoFEAT(); 
-		
-		int minsup = 2; // we use a minimum support of 2 sequences.
-		
-        // if you set the following parameter to true, the sequence ids of the sequences where
-        // each pattern appears will be shown in the result
-        algo.setShowSequenceIdentifiers(false);
-		
-		// execute the algorithm
-		algo.runAlgorithm(sequenceDatabase, minsup);  
-		algo.writeResultTofile("output.txt");   
-		algo.printStatistics(sequenceDatabase.size());
+	public static void main(String[] arg) throws IOException {
+		// Input file
+		String inputFile = fileToPath("contextPrefixSpan.txt");
+
+		// Output file
+		String outputFile = "output.txt";
+
+		// Create an instance of the algorithm
+		AlgoFEAT2 algo = new AlgoFEAT2();
+//		algo.setMaximumPatternLength(3);
+
+		// minimum support (40% = 2 sequences)
+		double minSup = 0.4;
+
+		// if you set the following parameter to true, the sequence ids of the sequences
+		// where
+		// each pattern appears will be shown in the result
+		algo.setShowSequenceIdentifiers(false);
+
+		// execute the algorithm with minsup = 50 %
+		algo.runAlgorithm(inputFile, minSup, outputFile);
+		algo.printStatistics();
+
 	}
-	
-	public static String fileToPath(String filename) throws UnsupportedEncodingException{
+
+	public static String fileToPath(String filename) throws UnsupportedEncodingException {
 		URL url = MainTestFEAT_saveToFile.class.getResource(filename);
-		 return java.net.URLDecoder.decode(url.getPath(),"UTF-8");
+		return java.net.URLDecoder.decode(url.getPath(), "UTF-8");
 	}
 }

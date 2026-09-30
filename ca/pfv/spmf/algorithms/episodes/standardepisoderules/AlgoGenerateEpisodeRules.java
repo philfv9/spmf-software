@@ -163,6 +163,10 @@ public class AlgoGenerateEpisodeRules {
 	public void writeRulesToFileSPMFFormat(String outputPath) {
 		try {
 			PrintWriter writer = new PrintWriter(outputPath, "UTF-8");
+			writer.write("@FILETYPE=\"Episode rules\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 			writer.write(rulesAsString());
 			writer.close();
 		} catch (FileNotFoundException | UnsupportedEncodingException e) {

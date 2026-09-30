@@ -56,17 +56,17 @@ public class DescriptionAlgoSRPFPM extends DescriptionOfAlgorithm {
 	@Override
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
 		double minsup = getParamAsDouble(parameters[0]);
-		double minPeriod = getParamAsInteger(parameters[1]);  // transactions
-		double maxPeriod = getParamAsInteger(parameters[2]);  // transactions
-		double minAverage = getParamAsInteger(parameters[3]);  // transactions
-		double maxAverage = getParamAsInteger(parameters[4]);  // transactions
+		double minPeriod = getParamAsDouble(parameters[1]);  // transactions
+		double maxPeriod = getParamAsDouble(parameters[2]);  // transactions
+		double minAverage = getParamAsDouble(parameters[3]);  // transactions
+		double maxAverage = getParamAsDouble(parameters[4]);  // transactions
 		AlgoSRPFPM algorithm = new AlgoSRPFPM();
 		
-		if (parameters.length >=2 && "".equals(parameters[1]) == false) {
-			algorithm.setMaximumPatternLength(getParamAsInteger(parameters[1]));
+		if (parameters.length >5 && "".equals(parameters[5]) == false) {
+			algorithm.setMaximumPatternLength(getParamAsInteger(parameters[5]));
 		}
-		if (parameters.length >=3 && "".equals(parameters[2]) == false) {
-			algorithm.setMinimumPatternLength(getParamAsInteger(parameters[2]));
+		if (parameters.length >6 && "".equals(parameters[6]) == false) {
+			algorithm.setMinimumPatternLength(getParamAsInteger(parameters[6]));
 		}
 		algorithm. runAlgorithm(inputFile, outputFile, minsup, minAverage, maxAverage, minPeriod, maxPeriod);
 		algorithm.printStats();
@@ -77,10 +77,10 @@ public class DescriptionAlgoSRPFPM extends DescriptionOfAlgorithm {
 
 		DescriptionOfParameter[] parameters = new DescriptionOfParameter[7];
 		parameters[0] = new DescriptionOfParameter("Minsup (%)", "(e.g. 0.4 or 40%)", Double.class, false);
-		parameters[1] = new DescriptionOfParameter("Minimum periodicity", "(e.g. 1 transactions)", Integer.class, false);
-		parameters[2] = new DescriptionOfParameter("Maximum periodicity", "(e.g. 3 transactions)", Integer.class, false);
-		parameters[3] = new DescriptionOfParameter("Minimum average periodicity", "(e.g. 1 transactions)", Integer.class, false);
-		parameters[4] = new DescriptionOfParameter("Maximum average periodicity", "(e.g. 2 transactions)", Integer.class, false);
+		parameters[1] = new DescriptionOfParameter("Minimum periodicity", "(e.g. 1 transactions)", Double.class, false);
+		parameters[2] = new DescriptionOfParameter("Maximum periodicity", "(e.g. 3 transactions)", Double.class, false);
+		parameters[3] = new DescriptionOfParameter("Minimum average periodicity", "(e.g. 1 transactions)", Double.class, false);
+		parameters[4] = new DescriptionOfParameter("Maximum average periodicity", "(e.g. 2 transactions)", Double.class, false);
 		// optional parameters
 		parameters[5] = new DescriptionOfParameter("Minimum number of items", "(e.g. 1 items)", Integer.class, true);
 		parameters[6] = new DescriptionOfParameter("Maximum number of items", "(e.g. 5 items)", Integer.class, true);
@@ -99,7 +99,7 @@ public class DescriptionAlgoSRPFPM extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getOutputFileTypes() {
-		return new String[]{"Patterns", "Frequent patterns", "Frequent itemsets"};
+		return new String[]{"Patterns", "Frequent patterns", "Periodic frequent itemsets"};
 	}
 	
 	@Override

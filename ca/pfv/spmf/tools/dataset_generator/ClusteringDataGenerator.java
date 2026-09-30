@@ -51,7 +51,11 @@ public class ClusteringDataGenerator {
 			throws IOException {
 		// We create a BufferedWriter to write the dataset to disk
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output)); 
-
+		writer.write("@FILETYPE=\"Database of double vectors\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+		
 //		// We write the attribute definitions
 //		for (int i = 0; i < attributeCount; i++) {
 //			writer.write("@ATTRIBUTEDEF=A" + (i + 1));

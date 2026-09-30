@@ -1,0 +1,16 @@
+@FILETYPE="Minimal non-redundant association rules"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+1 ==> 3 #SUP: 3 #CONF: 0.75
+1 ==> 2 5 #SUP: 3 #CONF: 0.75
+3 ==> 1 #SUP: 3 #CONF: 0.75
+3 ==> 2 5 #SUP: 3 #CONF: 0.75
+1 2 ==> 5 #SUP: 3 #CONF: 1.0
+1 5 ==> 2 #SUP: 3 #CONF: 1.0
+2 3 ==> 5 #SUP: 3 #CONF: 1.0
+3 5 ==> 2 #SUP: 3 #CONF: 1.0
+2 ==> 1 5 #SUP: 3 #CONF: 0.75
+2 ==> 3 5 #SUP: 3 #CONF: 0.75
+2 ==> 5 #SUP: 4 #CONF: 1.0
+5 ==> 1 2 #SUP: 3 #CONF: 0.75
+5 ==> 2 3 #SUP: 3 #CONF: 0.75
+5 ==> 2 #SUP: 4 #CONF: 1.0

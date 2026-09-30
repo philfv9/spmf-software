@@ -14,6 +14,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 import java.io.BufferedReader;
@@ -51,6 +53,17 @@ public class SequenceDatabase{
 	/** maximum item id */
 	private int maxItemID = 0;
 	
+	/** Flag set to true if the database has some timestamps */
+	private boolean hasTimestamps = false;
+	
+	/**
+	 * Check if the sequence database has timestamps
+	 * @return true if it has. Otherwise, false.
+	 */
+	public boolean hasTimestamps() {
+		return hasTimestamps;
+	}
+
 	/**
 	 * Load a sequence database from an input file
 	 * @param path the input file path
@@ -104,6 +117,7 @@ public class SequenceDatabase{
 				// of the current itemset
 				String value = integer.substring(1, integer.length()-1);
 				itemset.setTimestamp(Long.parseLong(value));
+				hasTimestamps = true;
 			}else if(integer.equals("-1")){ 
 				// If -1, this indicate the end of the current itemset,
 				// so we add the itemset to the sequence, and
@@ -259,5 +273,13 @@ public class SequenceDatabase{
 	 */
 	public int getMaxItemID() {
 		return maxItemID;
+	}
+
+	/**
+	 * Set that this database has timestamps to true or false
+	 * @param b a boolean (true/false)
+	 */
+	public void setHasTimestamps(boolean b) {
+		hasTimestamps = true;
 	}
 }

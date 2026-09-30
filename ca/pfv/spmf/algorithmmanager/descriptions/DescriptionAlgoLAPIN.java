@@ -55,6 +55,12 @@ public class DescriptionAlgoLAPIN extends DescriptionOfAlgorithm {
 	@Override
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
 		AlgoLAPIN_LCI algo = new AlgoLAPIN_LCI();
+		if (parameters.length >=2 && "".equals(parameters[1]) == false) {
+			algo.setMinimumPatternLength(getParamAsInteger(parameters[1]));
+		}
+		if (parameters.length >=3 && "".equals(parameters[2]) == false) {
+			algo.setMaximumPatternLength(getParamAsInteger(parameters[2]));
+		}
 		// execute the algorithm
 		algo.runAlgorithm(inputFile, outputFile, getParamAsDouble(parameters[0]));
 		algo.printStatistics();
@@ -63,8 +69,10 @@ public class DescriptionAlgoLAPIN extends DescriptionOfAlgorithm {
 	@Override
 	public DescriptionOfParameter[] getParametersDescription() {
         
-		DescriptionOfParameter[] parameters = new DescriptionOfParameter[1];
+		DescriptionOfParameter[] parameters = new DescriptionOfParameter[3];
 		parameters[0] = new DescriptionOfParameter("Minsup (%)", "(e.g. 0.4 or 40%)", Double.class, false);
+		parameters[1] = new DescriptionOfParameter("Min pattern length", "(e.g. 1 items)", Integer.class, true);
+		parameters[2] = new DescriptionOfParameter("Max pattern length", "(e.g. 10 items)", Integer.class, true);
 		return parameters;
 	}
 

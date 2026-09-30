@@ -1,4 +1,7 @@
 package ca.pfv.spmf.gui.visuals.timeline;
+
+import java.awt.Color;
+
 /*
  * Copyright (c) 2022 Philippe Fournier-Viger
  *
@@ -17,30 +20,56 @@ package ca.pfv.spmf.gui.visuals.timeline;
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
  */
+
 /**
  * Represents an event as used by the TimelineViewer of SPMF
- * 
+ *
  * @author Philippe Fournier-Viger
  */
-public class EventT extends ElementT{
-    /** The timestamp of the event **/
-    private final long time; 
+public class EventT extends ElementT {
 
-    /**
-     * Constructor
-     * @param name the event name
-     * @param time the timestamp
-     */
-    public EventT(String name, long time) {
-        super(name);
-        this.time = time;
-    }
+	/** The timestamp of the event */
+	private final long time;
 
-    /**
-     * Get the timestamp of the event
-     * @return the timestamp
-     */
-    public long getTime() {
-        return time;
-    }
+	/** Optional colour (null = colour chosen automatically from the event name) */
+	private final Color color;
+
+	/**
+	 * Constructor
+	 * @param name the event name
+	 * @param time the timestamp
+	 */
+	public EventT(String name, long time) {
+		this(name, time, null);
+	}
+
+	/**
+	 * Constructor
+	 * @param name the event name
+	 * @param time the timestamp
+	 * @param color the colour of the event marker (null = automatic)
+	 */
+	public EventT(String name, long time, Color color) {
+		super(name);
+		this.time = time;
+		this.color = color;
+	}
+
+	/**
+	 * Get the timestamp of the event
+	 * @return the timestamp
+	 */
+	public long getTime() {
+		return time;
+	}
+
+	/** @return the colour of this event, or null if automatic */
+	public Color getColor() {
+		return color;
+	}
+
+	@Override
+	public String toString() {
+		return getName() + "@" + time;
+	}
 }

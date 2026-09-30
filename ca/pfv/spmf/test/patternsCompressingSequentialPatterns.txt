@@ -1,0 +1,15 @@
+@FILETYPE="Compressing sequential patterns"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+support vector machin  #SUP: 1922.0710148279322
+real world  #SUP: 598.4753133154009
+machin learn  #SUP: 514.3586664227769
+state art  #SUP: 412.9730013575172
+high dimension  #SUP: 362.7776787300827
+reproduc hilbert space  #SUP: 359.42939766764175
+neural network  #SUP: 210.35608129308093
+experiment result  #SUP: 187.4169747827109
+compon analysi  #SUP: 176.54417917714454
+supervis learn  #SUP: 160.87427082075737
+support vector  #SUP: 148.74911007808987
+well known  #SUP: 138.22464635269716
+hilbert space  #SUP: 21.132125171017833

@@ -11,6 +11,8 @@ import java.util.HashMap;
  * IPredict is distributed under The MIT License (MIT).
  * You may obtain a copy of the License at
  * https://opensource.org/licenses/MIT 
+ * 
+ * Do not remove license and copyright information.
  */
 //Represent a list of statistics and their values
 public class Result {

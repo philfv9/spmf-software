@@ -309,6 +309,11 @@ public class AlgoHTKMiner {
 		Collections.sort(results, (a, b) -> b.support - a.support);
 
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
+			writer.write("@FILETYPE=\"Frequent itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
+			
 			for (TopKItemset res : results) {
 				StringBuilder sb = new StringBuilder();
 				for (int i = 0; i < res.items.length; i++) {

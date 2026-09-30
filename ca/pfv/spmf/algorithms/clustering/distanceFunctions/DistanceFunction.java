@@ -51,6 +51,10 @@ public abstract class DistanceFunction {
 	 * @return the distance function
 	 */
 	public static DistanceFunction getDistanceFunctionByName(String name){
+		if(name == null) {
+			return null;
+		}
+		name = name.toLowerCase();
 		if(DistanceCorrelation.NAME.equals(name)) {
 			return new DistanceCorrelation();
 		}else if(DistanceCosine.NAME.equals(name)) {

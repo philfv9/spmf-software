@@ -1,0 +1,747 @@
+package ca.pfv.spmf.algorithms.graph_mining.tkg;
+
+import ca.pfv.spmf.tools.MemoryLogger;
+
+import java.io.IOException;
+import java.util.*;
+
+/**
+ * This file is copyright (c) 2022 by Shaul Zevin
+ * <p>
+ * This is implementation of the CGSPAN algorithm with closed subgraphs frequency defined by MNI (Minimum Node Image)
+ * For MNI definition please check Bringmann, B, Nijssen, S. What is frequent in a single graph?. In: Proc. 12th PacificAsia Conference on Knowledge Discovery and Data Mining, Osaka, Japan, May 20-23, 2008:858–863. <br/>
+ * MNI should be used when graphs database consists of a single graph.
+ * <br/>
+ * <p>
+ * The cgspan algorithm is described in : <br/>
+ * <br/>
+ * <p>
+ * cgSpan: Closed Graph-Based Substructure Pattern Mining, by Zevin Shaul, Sheikh Naaz
+ * IEEE BigData 2021 7th Special Session on Intelligent Data Mining
+ * <br/>
+ * <br/>
+ * <p>
+ * The cgspan algorithm finds all the closed subgraphs and their MNI in a
+ * graph provided by the user. <br/>
+ * <br/>
+ * <p>
+ * This implementation saves the result to a file
+ *
+ * @author Shaul Zevin
+ */
+public class AlgoCGSPANMNI extends AlgoCGSPANAbstract {
+    /**
+     * the minimum number of projected nodes for a frequent node
+     */
+    private int minMNI;
+
+    /**
+     * Run the cgSpan algorithm
+     *
+     * @param inPath               the input file
+     * @param outPath              the output file
+     * @param minMNI               the minimum node image, minimum number of projected nodes of a frequent node
+     * @param outputSingleVertices if true, closed subgraphs containing a single
+     *                             vertex will be output
+     * @param outputDotFile        if true, a graphviz DOT file will be generated to
+     *                             visualize the patterns
+     * @param maxNumberOfEdges     an integer indicating a maximum number of edges
+     *                             for each frequent subgraph
+     * @param outputGraphIds       Output the ids of graph containing each frequent
+     *                             subgraph
+     * @throws IOException            if error while writing to file
+     * @throws ClassNotFoundException
+     */
+    public void runAlgorithm(String inPath, String outPath, int minMNI, boolean outputSingleVertices,
+                             boolean outputDotFile, int maxNumberOfEdges, boolean outputGraphIds)
+            throws IOException, ClassNotFoundException, InterruptedException {
+
+        // if maximum size is 0
+        if (maxNumberOfEdges <= 0) {
+            return;
+        }
+
+        // Save minimum node image
+        this.minMNI = minMNI;
+
+        // Save the maximum number of edges
+        this.maxNumberOfEdges = maxNumberOfEdges;
+
+        // Save parameter
+        this.outputGraphIds = outputGraphIds;
+
+        // initialize variables for statistics
+        infrequentVertexPairsRemoved = 0;
+        infrequentVerticesRemovedCount = 0;
+        edgeRemovedByLabel = 0;
+        eliminatedWithMaxSize = 0;
+        emptyGraphsRemoved = 0;
+        pruneByEdgeCountCount = 0;
+        earlyTerminationAppliedCount = 0;
+        earlyTerminationFailureDetectedCount = 0;
+
+        // initialize structure to store results
+        closedSubgraphs = new ArrayList<ClosedSubgraph>();
+
+        // Initialize the tool to check memory usage
+        MemoryLogger.getInstance().reset();
+
+        // reset the number of patterns found
+        patternCount = 0;
+
+        // Record the start time
+        Long t1 = System.currentTimeMillis();
+
+        // read graphs
+        List<DatabaseGraph> graphDB = readGraphs(inPath);
+
+        // Create early termination failure handler
+        IEarlyTerminationFailureHandler earlyTerminationFailureHandler = new EarlyTerminationFailureHandlerMNI(graphDB, minMNI);
+
+        // projections automorphism optimization is enabled by default
+        pdfsAutomorphismOptimization = true;
+
+        if (!DEBUG_MODE) {
+            outputProjections = false;
+        }
+
+        // mining
+        cgSpan(graphDB, outputSingleVertices, earlyTerminationFailureHandler);
+
+        // check the memory usage
+        MemoryLogger.getInstance().checkMemory();
+
+        // output
+        writeResultToFile(outPath);
+
+        Long t2 = System.currentTimeMillis();
+
+        runtime = (t2 - t1) / 1000;
+
+        maxmemory = MemoryLogger.getInstance().getMaxMemory();
+
+        patternCount = closedSubgraphs.size();
+
+        if (outputDotFile) {
+            outputDotFile(outPath);
+        }
+
+        ThreadPool.shutdown();
+    }
+
+    /**
+     * Create the pruning matrix
+     */
+    protected void removeInfrequentVertexPairs(List<DatabaseGraph> graphDB) {
+
+        SparseTriangularMatrix matrix;
+        if (ELIMINATE_INFREQUENT_VERTEX_PAIRS) {
+            if (DEBUG_MODE) {
+                System.out.println("Calculating the pruning matrix...");
+            }
+            matrix = new SparseTriangularMatrix();
+        }
+
+        Map<Integer, Map<Pair, Integer>> mapEdgeLabelToPairCount;
+        if (ELIMINATE_INFREQUENT_EDGE_LABELS) {
+            mapEdgeLabelToPairCount = new HashMap<Integer, Map<Pair, Integer>>();
+        }
+
+        // CALCULATE THE SUPPORT OF EACH ENTRY
+        for (DatabaseGraph g : graphDB) {
+            Vertex[] vertices = g.getAllVertices();
+
+            for (int i = 0; i < vertices.length; i++) {
+                Vertex v1 = vertices[i];
+                int labelV1 = v1.getLabel();
+
+                for (Edge edge : v1.getEdgeList()) {
+                    int v2 = edge.another(v1.getId());
+                    int labelV2 = g.getVLabel(v2);
+
+                    if (ELIMINATE_INFREQUENT_VERTEX_PAIRS) {
+                        // count each pair once
+                        if (v1.getId() < v2) {
+                            matrix.incrementCount(labelV1, labelV2);
+                            if (labelV1 != labelV2) {
+                                matrix.incrementCount(labelV1, labelV2);
+                            }
+                            matrix.incrementCount(labelV2, labelV1);
+                            if (labelV1 != labelV2) {
+                                matrix.incrementCount(labelV2, labelV1);
+                            }
+                        }
+                    }
+
+                    if (ELIMINATE_INFREQUENT_EDGE_LABELS) {
+                        // count each pair once
+                        if (v1.getId() < v2) {
+                            // Update edge pair count
+                            Pair pair = new Pair(labelV1, labelV2);
+                            int edgeLabel = edge.getEdgeLabel();
+                            if (mapEdgeLabelToPairCount.get(edgeLabel) == null) {
+                                mapEdgeLabelToPairCount.put(edgeLabel, new HashMap<Pair, Integer>());
+                            }
+
+                            Map<Pair, Integer> mapPairCount = mapEdgeLabelToPairCount.get(edgeLabel);
+                            if (mapPairCount.get(pair) == null) {
+                                mapPairCount.put(pair, 0);
+                            }
+
+                            mapPairCount.put(pair, mapPairCount.get(pair) + 1);
+
+                            if (labelV1 != labelV2) {
+                                mapPairCount.put(pair, mapPairCount.get(pair) + 1);
+                            }
+
+                            pair = new Pair(labelV2, labelV1);
+
+                            if (mapPairCount.get(pair) == null) {
+                                mapPairCount.put(pair, 0);
+                            }
+
+                            mapPairCount.put(pair, mapPairCount.get(pair) + 1);
+
+                            if (labelV1 != labelV2) {
+                                mapPairCount.put(pair, mapPairCount.get(pair) + 1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // REMOVE INFREQUENT ENTRIES FROM THE MATRIX
+        if (ELIMINATE_INFREQUENT_VERTEX_PAIRS) {
+            if (DEBUG_MODE) {
+                System.out.println("Removing infrequent pairs...  MNI = " + minMNI);
+            }
+            matrix.removeInfrequentEntriesFromMatrix(minMNI);
+        }
+
+        Set<Integer> infrequentEdgeLabels = new HashSet<Integer>();
+        if (ELIMINATE_INFREQUENT_EDGE_LABELS) {
+            for (Integer edgeLabel : mapEdgeLabelToPairCount.keySet()) {
+                boolean infrequent = true;
+                Map<Pair, Integer> mapPairCount = mapEdgeLabelToPairCount.get(edgeLabel);
+                for (Integer count : mapPairCount.values()) {
+                    if (count >= minMNI) {
+                        infrequent = false;
+                        break;
+                    }
+                }
+
+                if (infrequent) {
+                    infrequentEdgeLabels.add(edgeLabel);
+                }
+            }
+        }
+
+        // REMOVE INFREQUENT EDGES
+        if (ELIMINATE_INFREQUENT_VERTEX_PAIRS || ELIMINATE_INFREQUENT_EDGE_LABELS) {
+            // CALCULATE THE SUPPORT OF EACH ENTRY
+            for (DatabaseGraph g : graphDB) {
+                Vertex[] vertices = g.getAllVertices();
+
+                for (int i = 0; i < vertices.length; i++) {
+                    Vertex v1 = vertices[i];
+                    int labelV1 = v1.getLabel();
+
+                    Iterator<Edge> iter = v1.getEdgeList().iterator();
+                    while (iter.hasNext()) {
+                        Edge edge = (Edge) iter.next();
+                        int v2 = edge.another(v1.getId());
+                        int labelV2 = g.getVLabel(v2);
+
+                        int count = matrix.getSupportForItems(labelV1, labelV2);
+                        if (ELIMINATE_INFREQUENT_VERTEX_PAIRS && count < minMNI) {
+                            iter.remove();
+
+                            infrequentVertexPairsRemoved++;
+                        } else if (ELIMINATE_INFREQUENT_EDGE_LABELS
+                                && infrequentEdgeLabels.contains(edge.getEdgeLabel())) {
+                            iter.remove();
+                            edgeRemovedByLabel++;
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Recursive method to perform the depth-first search
+     *
+     * @param c                              the current DFS code
+     * @param graphDB                        the graph database
+     * @param graphIds                       the ids of graph where the graph "c" appears
+     * @param projected                      projections of the current DFS code into database graphs
+     * @param earlyTerminationFailureHandler early termination failure detector
+     * @throws IOException            exception if error writing/reading to file
+     * @throws ClassNotFoundException if error casting a class
+     */
+    protected void cgSpanDFS(DFSCode c, List<DatabaseGraph> graphDB, Set<Integer> graphIds, ProjectedCompact projected, IEarlyTerminationFailureHandler earlyTerminationFailureHandler)
+            throws IOException, ClassNotFoundException, InterruptedException {
+        // check if DFS tree should not be further extended
+        EarlyTerminationResult earlyTerminationResult = earlyTermination(graphIds, projected, earlyTerminationFailureHandler);
+        if (earlyTerminationResult.isEarlyTerminationFailure()) {
+            earlyTerminationFailureDetectedCount++;
+        }
+        if (earlyTerminationResult.isEarlyTermination()) {
+            // terminate further DFS tree extension
+            earlyTerminationAppliedCount++;
+            return;
+        }
+
+        // If we have reached the maximum size, we do not extend this graph any further, but we still evaluate and
+        // save the current graph below (it is a valid frequent subgraph of the maximum allowed size).
+        boolean atMaximumSize = (c.size() == maxNumberOfEdges - 1);
+
+        // Find all the extensions of this graph, with their support values
+        // They are stored in a map where the key is an extended edge, and the value is
+        // the
+        // is the list of graph ids where this edge extends the current subgraph c.
+        Map<ExtendedEdge, ProjectedCompact> extensions = atMaximumSize ? null : rightMostPathExtensions(c, graphDB, projected);
+
+        // remember how many closed subgraphs were already found before extending "c";
+        // every closed subgraph discovered by the recursive calls below is a supergraph of "c"
+        int closedCountBeforeExtensions = closedSubgraphs.size();
+
+        // For each extension
+        if (extensions != null) {
+            // sort extension by lexicographical order
+            List<ExtendedEdge> orderedExtensions = new ArrayList<ExtendedEdge>(extensions.keySet());
+            Collections.sort(orderedExtensions, new ExtendedEdgeLexicographicalComparator());
+
+            for (ExtendedEdge extension : orderedExtensions) {
+                ProjectedCompact newProjected = extensions.get(extension);
+                // Get the support
+                Set<Integer> newGraphIDs = newProjected.getGraphIds();
+
+                int nmi = newProjected.MNI();
+                // if the nmi is enough
+                if (nmi >= minMNI) {
+
+                    // Create the new DFS code of this graph
+                    DFSCode newC = newProjected.getDfsCode();
+
+                    // if the resulting graph is canonical (it means that the graph is non
+                    // redundant)
+                    if (isCanonical(newC)) {
+                        // Try to extend this graph to generate larger frequent subgraphs
+                        cgSpanDFS(newC, graphDB, newGraphIDs, newProjected, earlyTerminationFailureHandler);
+                    }
+                }
+            }
+        }
+
+        if (c.size() > 0) {
+            // analyze current DFS code for early termination failure conditions
+            // (only when the graph was actually extended; at the maximum size there are no extensions to analyze)
+            if (detectEarlyTerminationFailure && !atMaximumSize) {
+                earlyTerminationFailureHandler.analyze(c, projected, extensions);
+            }
+
+            // if early termination failure was detected, the current DFS code has equivalent occurrence with some closed subgraph
+            // and therefore is not a closed graph
+            if (earlyTerminationResult.isEarlyTerminationFailure()) {
+                return;
+            }
+
+            // check if one of the extensions has equivalent occurrence with current DFS code
+            boolean hasEquivalentOccurrence = false;
+            if (extensions != null) {
+                for (ProjectedCompact extendedProjected : extensions.values()) {
+                    if (extendedProjected.isExtendedEquivalentOccurrence()) {
+                        hasEquivalentOccurrence = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!hasEquivalentOccurrence) {
+      // MNI of the current (cgSpan closed) subgraph
+                int mni = projected.MNI();
+
+                // Save the graph
+                ClosedSubgraph subgraph = new ClosedSubgraph(c, graphIds, graphIds.size(), projected, mni);
+
+                // Determine whether this cgSpan closed subgraph is also closed by the threshold based (CloGraMi)
+                // definition, but only when the output is restricted to threshold based closed subgraphs. When the
+                // restriction is disabled, the flag is not computed (it stays true) and every cgSpan closed subgraph
+                // is output.
+                if (closedByThreshold) {
+                    // Case 1: if a supergraph with the same MNI was already discovered by the recursive extension above,
+                    // then "c" is not closed by threshold. Every closed subgraph added since closedCountBeforeExtensions
+                    // is a supergraph of "c", and MNI is anti-monotone, so an equal MNI value breaks the closure of "c".
+                    boolean subgraphClosedByThreshold = true;
+                    for (int i = closedCountBeforeExtensions; i < closedSubgraphs.size(); i++) {
+                        if (closedSubgraphs.get(i).getThresholdValue() == mni) {
+                            subgraphClosedByThreshold = false;
+                            break;
+                        }
+                    }
+
+                    // Case 2: otherwise, examine all one edge extensions from every vertex and check whether any of them
+                    // yields an extended graph with the same MNI as "c". This is skipped when "c" already has the
+                    // maximum number of edges, because a supergraph would exceed the size limit and is therefore not
+                    // part of the frequent set.
+                    if (subgraphClosedByThreshold && !atMaximumSize) {
+                        subgraphClosedByThreshold = isClosedByThreshold(c, projected, graphIds);
+                    }
+                    subgraph.setClosedByThreshold(subgraphClosedByThreshold);
+                }
+
+                closedSubgraphs.add(subgraph);
+                updateClosedSubgraphsHashTable(subgraph);
+            }
+        }
+
+        // check the memory usage
+        MemoryLogger.getInstance().checkMemory();
+    }
+
+    /**
+     * Determines whether a cgSpan closed subgraph is also closed according to the threshold based definition for the
+     * single large graph (MNI) setting, i.e. the CloGraMi definition: "c" is closed when no proper supergraph has the
+     * same MNI.
+     * <p>
+     * Unlike the support setting (see {@link AlgoCGSPANAbstract#isClosedByThreshold(DFSCode, ProjectedCompact, Set)}),
+     * the MNI of a one edge supergraph cannot be decided by intersecting per graph extension sets, because MNI is not
+     * a count of database graphs but the minimum, over the subgraph vertices, of the number of distinct database
+     * vertices onto which the vertex is projected. Therefore, for every candidate one edge extension we accumulate,
+     * per subgraph vertex, the set of distinct database vertices covered by the isomorphisms of "c" that support the
+     * extension (and, for a forward extension, the distinct database vertices of the newly added vertex). The MNI of
+     * the extended graph is then the minimum of these set sizes.
+     * <p>
+     * By the anti-monotonicity of MNI, a one edge supergraph never has an MNI greater than the MNI of "c". If some one
+     * edge extension yields an extended graph with an MNI equal to the MNI of "c", then "c" has a proper supergraph
+     * with the same MNI and is NOT closed by threshold; otherwise "c" is closed by threshold. Checking only one edge
+     * extensions is sufficient because if a larger supergraph had equal MNI, every intermediate one edge supergraph
+     * would have equal MNI as well.
+     * <p>
+     * The isomorphisms of "c" are not recomputed from scratch: the already available projections of "c" are streamed
+     * with the same consumer/producer machinery used by {@link RightPathExtender}. The automorphism optimization
+     * callback is deliberately not installed here, so that every isomorphism is enumerated and the distinct database
+     * vertices are counted correctly. Extensions from <b>every</b> vertex are considered (not only the rightmost
+     * path), as required to test the closure condition.
+     *
+     * @param c         the DFS code of the cgSpan closed subgraph
+     * @param projected the projections of "c" into the graph database
+     * @param graphIds  the ids of the database graphs in the support of "c"
+     * @return true if "c" is also closed according to the CloGraMi (MNI) definition, false otherwise
+     */
+    @Override
+    protected boolean isClosedByThreshold(DFSCode c, ProjectedCompact projected, Set<Integer> graphIds) {
+        // MNI of "c": a one edge supergraph breaks the closure of "c" only if it has this exact MNI value
+        int targetMNI = projected.MNI();
+
+        // for each candidate one edge extension, the distinct database vertices covered by each subgraph vertex
+        // (key: DFS vertex index of the extended graph, value: set of database vertex ids)
+        Map<ExtendedEdge, Map<Integer, Set<Integer>>> extensionVertexImages = new HashMap<ExtendedEdge, Map<Integer, Set<Integer>>>();
+
+        // index used for the new vertex of a forward extension (next free DFS vertex index)
+        int newVertexIndex = c.getAllVLabels().size();
+
+        // stream all projections (isomorphisms) of "c" using the consumer/producer iterator, without the automorphism
+        // optimization callback, so that every isomorphism is enumerated
+        ThreadPool threadPool = ThreadPool.getProjectedIteratorProducersInstance();
+        ProjectedIteratorConsumer iterator = projected.iterator(threadPool.getThreadCount() * 10, threadPool.getThreadCount());
+
+        while (iterator.hasNext()) {
+            PDFSCompact pdfs = iterator.next();
+            if (pdfs == null) {
+                break;
+            }
+
+            DatabaseGraph g = pdfs.getDatabaseGraph();
+            if (!graphIds.contains(g.getId())) {
+                // projection from a graph outside the support (should not happen)
+                continue;
+            }
+
+            // isomorphism of "c" for this projection, obtained from the projection itself (no recomputation)
+            Map<Integer, Integer> isom = pdfs.subgraphIsomorphism(c);
+            Map<Integer, Integer> invertedISOM = new HashMap<Integer, Integer>();
+            for (Map.Entry<Integer, Integer> entry : isom.entrySet()) {
+                invertedISOM.put(entry.getValue(), entry.getKey());
+            }
+
+            // for each vertex of the subgraph
+            for (Map.Entry<Integer, Integer> entry : isom.entrySet()) {
+                int v = entry.getKey();
+                int mappedV = entry.getValue();
+                int mappedVlabel = g.getVLabel(mappedV);
+
+                // for each neighbor of the vertex corresponding to v in g
+                for (Vertex x : g.getAllNeighbors(mappedV)) {
+                    int edgeLabel = g.getEdgeLabel(mappedV, x.getId());
+                    Integer mappedNeighborIndex = invertedISOM.get(x.getId());
+
+                    ExtendedEdge ee;
+                    boolean forward;
+                    if (mappedNeighborIndex == null) {
+                        // forward extension: x is a vertex not belonging to the subgraph projection
+                        ee = new ExtendedEdge(v, newVertexIndex, mappedVlabel, x.getLabel(), edgeLabel);
+                        forward = true;
+                    } else {
+                        // backward extension: both endpoints belong to the subgraph projection
+                        int u = mappedNeighborIndex;
+                        // skip edges that are already part of the subgraph
+                        if (c.containEdge(v, u)) {
+                            continue;
+                        }
+                        int a = Math.min(v, u);
+                        int b = Math.max(v, u);
+                        ee = new ExtendedEdge(a, b, g.getVLabel(isom.get(a)), g.getVLabel(isom.get(b)), edgeLabel);
+                        forward = false;
+                    }
+
+                    // this isomorphism of "c", together with the extension edge, is an isomorphism of the extended
+                    // graph: record the database vertices covered by every vertex of the extended graph
+                    Map<Integer, Set<Integer>> vertexImages = extensionVertexImages.get(ee);
+                    if (vertexImages == null) {
+                        vertexImages = new HashMap<Integer, Set<Integer>>();
+                        extensionVertexImages.put(ee, vertexImages);
+                    }
+                    for (Map.Entry<Integer, Integer> vertexEntry : isom.entrySet()) {
+                        Set<Integer> images = vertexImages.get(vertexEntry.getKey());
+                        if (images == null) {
+                            images = new HashSet<Integer>();
+                            vertexImages.put(vertexEntry.getKey(), images);
+                        }
+                        images.add(vertexEntry.getValue());
+                    }
+                    if (forward) {
+                        Set<Integer> images = vertexImages.get(newVertexIndex);
+                        if (images == null) {
+                            images = new HashSet<Integer>();
+                            vertexImages.put(newVertexIndex, images);
+                        }
+                        images.add(x.getId());
+                    }
+                }
+            }
+        }
+
+        // "c" is NOT closed by threshold if some one edge extension has an extended graph MNI equal to the MNI of "c"
+        for (Map<Integer, Set<Integer>> vertexImages : extensionVertexImages.values()) {
+            int extensionMNI = Integer.MAX_VALUE;
+            for (Set<Integer> images : vertexImages.values()) {
+                if (images.size() < extensionMNI) {
+                    extensionMNI = images.size();
+                }
+            }
+            if (extensionMNI == targetMNI) {
+                return false;
+            }
+        }
+
+        // no one edge extension preserves the MNI of "c", so "c" is closed by threshold
+        return true;
+    }
+
+    /**
+     * This method finds all frequent vertex labels from a graph database.
+     *
+     * @param graphDB a graph database
+     */
+    protected void findAllOnlyOneVertex(List<DatabaseGraph> graphDB) {
+
+        frequentVertexLabels = new ArrayList<Integer>();
+
+        // Create a map (key = vertex label, value = graph ids)
+        // to count the support of each vertex
+        Map<Integer, Set<Integer>> labelM = new HashMap<>();
+
+        // Create a map (key = vertex label, value = count of label in all graphs)
+        // to count each vertex label
+        Map<Integer, Integer> labelCountsM = new HashMap<>();
+
+        // For each graph
+        for (DatabaseGraph g : graphDB) {
+            // For each vertex
+            for (Vertex v : g.getNonPrecalculatedAllVertices()) {
+
+                // if it has some edges
+                if (!v.getEdgeList().isEmpty()) {
+
+                    // Get the vertex label
+                    Integer vLabel = v.getLabel();
+
+                    // Store the graph id in the map entry for this label
+                    // if it is not there already
+                    Set<Integer> set = labelM.get(vLabel);
+                    if (set == null) {
+                        set = new HashSet<>();
+                        labelM.put(vLabel, set);
+                    }
+                    set.add(g.getId());
+
+                    // Increment label count
+                    Integer labelCount = labelCountsM.get(vLabel);
+                    if (labelCount == null) {
+                        labelCountsM.put(vLabel, 0);
+                    }
+                    labelCountsM.put(vLabel, labelCountsM.get(vLabel) + 1);
+                }
+            }
+        }
+
+        // For each vertex label
+        for (Map.Entry<Integer, Set<Integer>> entry : labelM.entrySet()) {
+            int label = entry.getKey();
+
+            // if it is a frequent vertex, then record that as a frequent subgraph
+            Set<Integer> tempSupG = entry.getValue();
+            int labelCount = labelCountsM.get(label);
+
+            if (labelCount >= minMNI) {
+                frequentVertexLabels.add(label);
+            } else if (ELIMINATE_INFREQUENT_VERTICES) {
+                // for each graph
+                for (Integer graphid : tempSupG) {
+                    Graph g = graphDB.get(graphid);
+
+                    g.removeInfrequentLabel(label);
+                    infrequentVerticesRemovedCount += labelCountsM.get(label);
+                }
+            }
+        }
+    }
+
+    /**
+     * This method outputs vertices that do not have equivalent occurrence with any closed subgraph.
+     *
+     * @param graphDB                a graph database
+     * @param projected              empty projections
+     */
+    protected void outputClosedOneVertex(List<DatabaseGraph> graphDB, ProjectedCompact projected) throws IOException, ClassNotFoundException, InterruptedException {
+        // Create a map (key = vertex label, value = graph ids)
+        // to count the support of each vertex
+        Map<Integer, Set<Integer>> labelM = new HashMap<>();
+        // count vertices with label in graphs database
+        labelCountM = new HashMap<Integer, Integer>();
+        // count vertices with label for each graph in graphs database
+        labelInGraphCountM = new HashMap<Integer, Map<Integer, Integer>>();
+
+        Set<Integer> gids = projected.getGraphIds();
+
+        // For each graph
+        for (DatabaseGraph g : graphDB) {
+            if (!gids.contains(g.getId())) {
+                continue;
+            }
+            // For each vertex
+            for (Vertex v : g.getAllVertices()) {
+
+                // if it has some edges
+                if (!v.getEdgeList().isEmpty()) {
+
+                    // Get the vertex label
+                    Integer vLabel = v.getLabel();
+
+                    // Store the graph id in the map entry for this label
+                    // if it is not there already
+                    Set<Integer> set = labelM.get(vLabel);
+                    if (set == null) {
+                        set = new HashSet<>();
+                        labelM.put(vLabel, set);
+                    }
+                    set.add(g.getId());
+
+                    // increase label count
+                    if (!labelCountM.containsKey(vLabel)) {
+                        labelCountM.put(vLabel, 0);
+                    }
+                    labelCountM.put(vLabel, labelCountM.get(vLabel) + 1);
+
+                    if (!labelInGraphCountM.containsKey(g.getId())) {
+                        labelInGraphCountM.put(g.getId(), new HashMap<Integer, Integer>());
+                    }
+
+                    if (!labelInGraphCountM.get(g.getId()).containsKey(vLabel)) {
+                        labelInGraphCountM.get(g.getId()).put(vLabel, 0);
+                    }
+
+                    labelInGraphCountM.get(g.getId()).put(vLabel, labelInGraphCountM.get(g.getId()).get(vLabel) + 1);
+                }
+            }
+        }
+
+        Map<ExtendedEdge, ProjectedCompact> extensions = rightMostPathExtensions(new DFSCode(), graphDB, projected);
+
+        // For each vertex label
+        for (Map.Entry<Integer, Set<Integer>> entry : labelM.entrySet()) {
+            int label = entry.getKey();
+
+            // if it is a frequent vertex, then record that as a frequent subgraph
+            Set<Integer> tempSupG = entry.getValue();
+            int mni = labelCountM.get(label);
+            if (mni >= minMNI) {
+                boolean output = true;
+
+                int labelCount = labelCountM.get(label);
+
+                for (ExtendedEdge extendedEdge : extensions.keySet()) {
+                    if (extendedEdge.vLabel1 != label && extendedEdge.vLabel2 != label) {
+                        continue;
+                    }
+                    ProjectedCompact extensionProjected = extensions.get(extendedEdge);
+                    int labelCountInProjections = extensionProjected.verticesWithLabelCount(label, graphDB);
+                    if (labelCountInProjections == labelCount) {
+                        output = false;
+                        break;
+                    }
+                }
+
+                if (output) {
+                    DFSCode tempD = new DFSCode();
+                    tempD.add(new ExtendedEdge(0, 0, label, label, -1));
+
+                    closedSubgraphs.add(new ClosedSubgraph(tempD, tempSupG, tempSupG.size(), new ProjectedCompact(tempD, graphDB),mni));
+                }
+            }
+        }
+    }
+
+    /**
+     * Print statistics about the algorithm execution to System.out.
+     */
+    public void printStats() {
+        System.out.println("=============  CGSPAN v2.53 - STATS =============");
+        System.out.println(" Number of graph in the input database: " + graphCount);
+        System.out.println(" Frequent subgraph count : " + patternCount);
+        System.out.println(" Total time ~ " + runtime + " s");
+        System.out.println(" MinMNI : " + minMNI + " nodes");
+        System.out.println(" Maximum memory usage : " + maxmemory + " mb");
+
+        if (DEBUG_MODE) {
+            if (ELIMINATE_INFREQUENT_VERTEX_PAIRS || ELIMINATE_INFREQUENT_VERTICES) {
+                System.out.println("  -------------------");
+            }
+            if (ELIMINATE_INFREQUENT_VERTICES) {
+                System.out.println("  Number of infrequent vertices pruned : " + infrequentVerticesRemovedCount);
+                System.out.println("  Empty graphs removed : " + emptyGraphsRemoved);
+            }
+            if (ELIMINATE_INFREQUENT_VERTEX_PAIRS) {
+                System.out.println("  Number of infrequent vertex pairs pruned : " + infrequentVertexPairsRemoved);
+            }
+            if (ELIMINATE_INFREQUENT_EDGE_LABELS) {
+                System.out.println("  Number of infrequent edge labels pruned : " + edgeRemovedByLabel);
+            }
+            if (EDGE_COUNT_PRUNING) {
+                System.out.println("  Extensions skipped (edge count pruning) : " + pruneByEdgeCountCount);
+            }
+            if (SKIP_STRATEGY) {
+                System.out.println("  Skip strategy count : " + skipStrategyCount);
+            }
+            System.out.println("early termination was applied " + earlyTerminationAppliedCount + " times");
+            System.out.println("early termination failure was detected " + earlyTerminationFailureDetectedCount + " times");
+        }
+        System.out.println("===================================================");
+    }
+
+}

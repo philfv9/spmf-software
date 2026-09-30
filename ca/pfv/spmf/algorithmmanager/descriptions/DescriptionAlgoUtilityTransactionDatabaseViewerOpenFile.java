@@ -41,7 +41,6 @@ public class DescriptionAlgoUtilityTransactionDatabaseViewerOpenFile extends Des
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
 		boolean runAsStandalone = false;
 		UtilityTransactionDatabaseViewer tool = new UtilityTransactionDatabaseViewer(runAsStandalone, inputFile);
-
 	}
 
 	@Override
@@ -65,11 +64,6 @@ public class DescriptionAlgoUtilityTransactionDatabaseViewerOpenFile extends Des
 	public String[] getOutputFileTypes() {
 		return null;
 	}
-//
-//	@Override
-//	String[] getSpecialInputFileTypes() {
-//		return null; //new String[]{"ARFF"};
-//	}
 
 	@Override
 	public AlgorithmType getAlgorithmType() {

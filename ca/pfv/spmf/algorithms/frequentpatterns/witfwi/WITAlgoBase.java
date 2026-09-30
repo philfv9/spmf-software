@@ -96,6 +96,10 @@ abstract class WITAlgoBase {
 		this.candidateCount = 0;
 
 		writer = new BufferedWriter(new FileWriter(output), 65536);
+		writer.write("@FILETYPE=\"Frequent weighted itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 	}
 
 	/**

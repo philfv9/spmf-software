@@ -151,6 +151,10 @@ public class AlgoEFIM {
 		// create object for writing the output file
 		if (outputPath != null) {
 			writer = new BufferedWriter(new FileWriter(outputPath));
+			writer.write("@FILETYPE=\"High-utility itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 		} else {
 			// if the user choose to save to memory
 			writer = null;

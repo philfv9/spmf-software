@@ -88,9 +88,13 @@ public class DescriptionAlgoOccur extends DescriptionOfAlgorithm {
 		return "Philippe Fournier-Viger";
 	}
 
+	/**
+	 * Returns the types of input files supported by this algorithm.
+	 * @return an array of input file type names
+	 */
 	@Override
 	public String[] getInputFileTypes() {
-		return new String[]{"Sequential patterns"};
+		return new String[]{"Database of instances","Sequence database", "Simple sequence database"};
 	}
 
 	@Override

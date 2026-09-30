@@ -5,23 +5,7 @@ import java.io.IOException;
 import ca.pfv.spmf.algorithmmanager.AlgorithmType;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
-import ca.pfv.spmf.algorithms.sequentialpatterns.BIDE_and_prefixspan.AlgoTSP_nonClosed;
-/* This file is copyright (c) 2008-2016 Philippe Fournier-Viger
-* 
-* This file is part of the SPMF DATA MINING SOFTWARE
-* (http://www.philippe-fournier-viger.com/spmf).
-* 
-* SPMF is free software: you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation, either version 3 of the License, or (at your option) any later
-* version.
-* 
-* SPMF is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License along with
-* SPMF. If not, see <http://www.gnu.org/licenses/>.
-*/
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.AlgoTSP_nonClosed2;
 
 /**
  * This class describes the TSP algorithm parameters. It is designed to be used by the graphical and command line interface.
@@ -57,29 +41,38 @@ public class DescriptionAlgoTSP extends DescriptionOfAlgorithm {
 
 		int k = getParamAsInteger(parameters[0]);
 		
-		boolean outputSeqIdentifiers = false;
+		AlgoTSP_nonClosed2 algo = new AlgoTSP_nonClosed2();
+
 		if (parameters.length >=2 && "".equals(parameters[1]) == false) {
-			outputSeqIdentifiers = getParamAsBoolean(parameters[1]);
+			algo.setMinimumPatternLength(getParamAsInteger(parameters[1]));
+		}
+		if (parameters.length >=3 && "".equals(parameters[2]) == false) {
+			algo.setMaximumPatternLength(getParamAsInteger(parameters[2]));
+		}
+		
+		boolean outputSeqIdentifiers = false;
+		if (parameters.length >=4 && "".equals(parameters[3]) == false) {
+			outputSeqIdentifiers = getParamAsBoolean(parameters[3]);
 		}
 
 		ca.pfv.spmf.input.sequence_database_list_integers.SequenceDatabase sequenceDatabase = new ca.pfv.spmf.input.sequence_database_list_integers.SequenceDatabase();
 		sequenceDatabase.loadFile(inputFile);
 
-		AlgoTSP_nonClosed algo = new AlgoTSP_nonClosed();
-
 		// execute the algorithm
 		algo.setShowSequenceIdentifiers(outputSeqIdentifiers);
-		algo.runAlgorithm(sequenceDatabase, k);
-		algo.writeResultTofile(outputFile); // to save results to file
-		algo.printStatistics(sequenceDatabase.size());
+		algo.runAlgorithm(inputFile, k);
+		algo.writeResultTofile(outputFile);
+		algo.printStatistics();
 	}
 
 	@Override
 	public DescriptionOfParameter[] getParametersDescription() {
         
-		DescriptionOfParameter[] parameters = new DescriptionOfParameter[2];
+		DescriptionOfParameter[] parameters = new DescriptionOfParameter[4];
 		parameters[0] = new DescriptionOfParameter("k ", "(e.g. 5 patterns)", Double.class, false);
-		parameters[1] = new DescriptionOfParameter("Show sequence ids?", "(default: false)", Boolean.class, true);
+		parameters[1] = new DescriptionOfParameter("Min pattern length", "(e.g. 1 items)", Integer.class, true);
+		parameters[2] = new DescriptionOfParameter("Max pattern length", "(e.g. 10 items)", Integer.class, true);
+		parameters[3] = new DescriptionOfParameter("Show sequence ids?", "(default: false)", Boolean.class, true);
 		return parameters;
 	}
 

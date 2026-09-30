@@ -1,0 +1,5 @@
+@FILETYPE="Top-k High-Utility episodes"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+3 -1 5 -1 2 -1 #UTIL: 36.0
+3 -1 5 4 -1 2 -1 #UTIL: 39.0
+5 3 -1 3 -1 5 4 -1 #UTIL: 37.0

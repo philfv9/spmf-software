@@ -112,6 +112,10 @@ public class AlgoD2HUP {
 		
 		// create a writer object to write results to file
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		
 		// save the minimum utility threshold
 		this.minUtility = minUtility;
@@ -622,7 +626,7 @@ public class AlgoD2HUP {
 			buffer.append(' ');
 		}
 		// append the utility value
-		buffer.append(" #UTIL: ");
+		buffer.append("#UTIL: ");
 		buffer.append(utility);
 		// write to file
 		writer.write(buffer.toString());

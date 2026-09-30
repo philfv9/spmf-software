@@ -14,6 +14,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 import java.util.ArrayList;
@@ -376,7 +378,7 @@ class PseudoSequence {
 
 		for(int i=decalageItemset; i< size(); i++){
 			boolean firstTime = indexItemset ==0;
-			if(!firstTime && getTimeStamp(i)-itemsetShift != prefix.get(indexItemset).getTimestamp()){  // VÉRIFIER DÉCALAGE TEMPS
+			if(!firstTime && getTimeStamp(i)-itemsetShift != prefix.get(indexItemset).getTimestamp()){  // Vï¿½RIFIER Dï¿½CALAGE TEMPS
 				continue;
 			}
 			int indexItem =0;
@@ -387,7 +389,7 @@ class PseudoSequence {
 				int id = getItemAtInItemsetAt(j, i).getId();
 				if(id == iDCourant){// l'item match
 					listPositions.add(new Position(i,j));
-					if(listPositions.size()+ listPositionsTotal.size()	== prefix.getItemOccurencesTotalCount())  // si on a trouvé tout le préfix
+					if(listPositions.size()+ listPositionsTotal.size()	== prefix.getItemOccurencesTotalCount())  // si on a trouvï¿½ tout le prï¿½fix
 					{
 						List<Position> newList = new ArrayList<Position>(listPositionsTotal);
 						newList.addAll(listPositions);
@@ -465,7 +467,7 @@ class PseudoSequence {
 	 *                                          LL1 =  second A in S and 
 	 *                                          LL2 = third C in S
 	 * @param prefix : le prefix
-	 * @param i : le ième élément du préfixe.
+	 * @param i : le iï¿½me ï¿½lï¿½ment du prï¿½fixe.
 	 * @return the ith last-in-last appearance
 	 */
 	Position getIthLastInLastApearanceWithRespectToPrefix(Sequence prefix, int i, boolean withTimeStamps){
@@ -656,7 +658,7 @@ class PseudoSequence {
 	 * If 0 <= i < n, it is the last appearance of ei in the first instance of Sp, and LFi must appear
 	 *   before LFi+1.
 	 * @param prefix : the prefix
-	 * @param i : the ième element of the prefix.
+	 * @param i : the iï¿½me element of the prefix.
 	 * @return the ith first-in-last appearance.
 	 */
 	Position getIthLastInFirstApearanceWithRespectToPrefix(Sequence prefix, int i, boolean withTimestamps){

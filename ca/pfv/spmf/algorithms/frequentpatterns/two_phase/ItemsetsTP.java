@@ -96,6 +96,10 @@ public class ItemsetsTP {
 	public void saveResultsToFile(String output, int transactionCount) throws IOException {
 		// Prepare to write the output file
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		// for each level
 		for (List<ItemsetTP> level : levels) {
@@ -103,9 +107,9 @@ public class ItemsetsTP {
 			for (ItemsetTP itemset : level) {
 				// write the itemset with its support and utility
 				writer.write(itemset.toString());
+				writer.write("#UTIL: " + itemset.getUtility());
 				writer.write(" #SUP: "
 						+ itemset.getRelativeSupport(transactionCount));
-				writer.write(" #UTIL: " + itemset.getUtility());
 //				writer.write(" tidset : " + itemset.getTIDset());
 				// write new line
 				writer.newLine();

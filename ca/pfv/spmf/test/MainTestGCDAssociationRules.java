@@ -4,7 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.Calendar;
 
-import ca.pfv.spmf.algorithms.associationrules.gcd.GCDAssociationRules;
+import ca.pfv.spmf.algorithms.associationrules.gcd.AlgoGCDAssociationRules;
 
 /**
  * Example of how to use the GCD algorithm 
@@ -22,7 +22,7 @@ public class MainTestGCDAssociationRules {
 		double inputFreqThreshold = 0.47;
 		double inputConfThreshold = 0.47;
 		int combinationsElementsLimit = 3;
-		GCDAssociationRules gcdRunner = new GCDAssociationRules(input, output, inputFreqThreshold,
+		AlgoGCDAssociationRules gcdRunner = new AlgoGCDAssociationRules(input, output, inputFreqThreshold,
 				inputConfThreshold, combinationsElementsLimit);
 
 		long start = Calendar.getInstance().getTimeInMillis();

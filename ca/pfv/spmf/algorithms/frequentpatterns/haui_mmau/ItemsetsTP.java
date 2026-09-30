@@ -85,6 +85,10 @@ public class ItemsetsTP {
 	public void saveResultsToFile(String output, int transactionCount, int GLMAU) throws IOException {
 		// Prepare to write the output file
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High average-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		// for each level
 		for (List<ItemsetTP> level : levels) {

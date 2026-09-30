@@ -136,6 +136,10 @@ public class AlgoAprioriTopK {
 		} else { // if the user wants to save the result to a file
 			patterns = null;
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Frequent itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 		}
 
 		// ======================================
@@ -538,7 +542,7 @@ public class AlgoAprioriTopK {
 
 		// if the result should be saved to a file
 		if (writer != null) {
-			writer.write(itemset.toString() + " #SUP: " + itemset.getAbsoluteSupport());
+			writer.write(itemset.toString() + "#SUP: " + itemset.getAbsoluteSupport());
 			writer.newLine();
 		} // otherwise the result is kept into memory
 		else {

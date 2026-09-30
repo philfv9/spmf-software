@@ -47,7 +47,7 @@ public class DescriptionAlgoRPGrowthAssociationRules extends DescriptionOfAlgori
 
 	@Override
 	public String getURLOfDocumentation() {
-		return "http://www.philippe-fournier-viger.com/spmf/rpgrowthalgo.php";
+		return "http://www.philippe-fournier-viger.com/spmf/rpgrowthalgo_assoc.php";
 	}
 
 	@Override
@@ -76,6 +76,7 @@ public class DescriptionAlgoRPGrowthAssociationRules extends DescriptionOfAlgori
 		// (based on Agrawal & Srikant, 94)
 
 		ca.pfv.spmf.algorithms.associationrules.agrawal94_association_rules.AlgoAgrawalFaster94 algoAgrawal = new ca.pfv.spmf.algorithms.associationrules.agrawal94_association_rules.AlgoAgrawalFaster94();
+		algoAgrawal.setFiletype("Association rules");
 		algoAgrawal.setMaxAntecedentLength(maxAntecedentLength);
 		algoAgrawal.setMaxConsequentLength(maxConsequentLength);
 		algoAgrawal.runAlgorithm(patterns, outputFile, databaseSize, minconf);

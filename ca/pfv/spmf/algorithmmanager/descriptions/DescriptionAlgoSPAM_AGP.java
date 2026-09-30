@@ -5,109 +5,163 @@ import java.io.IOException;
 import ca.pfv.spmf.algorithmmanager.AlgorithmType;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
-import ca.pfv.spmf.algorithms.sequentialpatterns.prefixSpan_AGP.AlgoPrefixSpan_AGP;
-/* This file is copyright (c) 2008-2016 Philippe Fournier-Viger
-* 
-* This file is part of the SPMF DATA MINING SOFTWARE
-* (http://www.philippe-fournier-viger.com/spmf).
-* 
-* SPMF is free software: you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation, either version 3 of the License, or (at your option) any later
-* version.
-* 
-* SPMF is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-* You should have received a copy of the GNU General Public License along with
-* SPMF. If not, see <http://www.gnu.org/licenses/>.
-*/
-import ca.pfv.spmf.algorithms.sequentialpatterns.spade_spam_AGP.idLists.creators.IdListCreator;
-import ca.pfv.spmf.algorithms.sequentialpatterns.spade_spam_AGP.idLists.creators.IdListCreator_FatBitmap;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.AlgoSPAM_AGP;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.SequenceDatabase;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.idLists.creators.IdListCreator;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.idLists.creators.IdListCreator_FatBitmap;
 
 /**
  * This class describes the SPAM algorithm parameters (version implemented by
  * Antonio G.P.). It is designed to be used by the graphical and command line
  * interface.
  * 
- * @see AlgoPrefixSpan_AGP
+ * @see AlgoSPAM_AGP
  * @author Philippe Fournier-Viger
  */
 public class DescriptionAlgoSPAM_AGP extends DescriptionOfAlgorithm {
 
 	/**
-	 * Default constructor
+	 * Default constructor.
 	 */
 	public DescriptionAlgoSPAM_AGP() {
 	}
 
+	/**
+	 * Gets the name of the algorithm.
+	 * 
+	 * @return the algorithm name
+	 */
 	@Override
 	public String getName() {
 		return "SPAM_AGP";
 	}
 
+	/**
+	 * Gets the category of the algorithm.
+	 * 
+	 * @return the algorithm category
+	 */
 	@Override
 	public String getAlgorithmCategory() {
 		return "SEQUENTIAL PATTERN MINING";
 	}
 
+	/**
+	 * Gets the URL of the documentation for this algorithm.
+	 * 
+	 * @return the documentation URL
+	 */
 	@Override
 	public String getURLOfDocumentation() {
 		return "http://www.philippe-fournier-viger.com/spmf/SPAM.php";
 	}
 
+	/**
+	 * Runs the SPAM_AGP algorithm with the given parameters on an input file and writes the result to an output file.
+	 * 
+	 * @param parameters the algorithm parameters
+	 * @param inputFile  the path to the input file
+	 * @param outputFile the path to the output file
+	 * @throws IOException if an I/O error occurs
+	 */
 	@Override
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
-		ca.pfv.spmf.algorithms.sequentialpatterns.spade_spam_AGP.dataStructures.creators.AbstractionCreator abstractionCreator = ca.pfv.spmf.algorithms.sequentialpatterns.spade_spam_AGP.dataStructures.creators.AbstractionCreator_Qualitative
-				.getInstance();
+		// create the id-list creator
 		IdListCreator idListCreator = IdListCreator_FatBitmap.getInstance();
 
+		// read the minimum support threshold
 		double minSupport = getParamAsDouble(parameters[0]);
 
-		boolean outputSeqIdentifiers = false;
+		// read the optional minimum pattern length
+		int minPatternLength = 0;
 		if (parameters.length >= 2 && "".equals(parameters[1]) == false) {
-			outputSeqIdentifiers = getParamAsBoolean(parameters[1]);
+			minPatternLength = getParamAsInteger(parameters[1]);
 		}
 
-		ca.pfv.spmf.algorithms.sequentialpatterns.spade_spam_AGP.AlgoSPAM_AGP algo = new ca.pfv.spmf.algorithms.sequentialpatterns.spade_spam_AGP.AlgoSPAM_AGP(
-				minSupport);
+		// read the optional maximum pattern length
+		int maxPatternLength = Integer.MAX_VALUE;
+		if (parameters.length >= 3 && "".equals(parameters[2]) == false) {
+			maxPatternLength = getParamAsInteger(parameters[2]);
+		}
+
+		// read the optional flag to output sequence identifiers
+		boolean outputSeqIdentifiers = false;
+		if (parameters.length >= 4 && "".equals(parameters[3]) == false) {
+			outputSeqIdentifiers = getParamAsBoolean(parameters[3]);
+		}
+
+		// create the algorithm instance
+		AlgoSPAM_AGP algo = new AlgoSPAM_AGP(minSupport);
+
+		// set the optional pattern length constraints
+		algo.setMinimumPatternLength(minPatternLength);
+		algo.setMaximumPatternLength(maxPatternLength);
 
 		/*
 		 * if("".equals(parameters[1]) == false){
 		 * algo.setMaximumPatternLength(getParamAsInteger(parameters[1])); }
 		 */
-		ca.pfv.spmf.algorithms.sequentialpatterns.spade_spam_AGP.dataStructures.database.SequenceDatabase sd = new ca.pfv.spmf.algorithms.sequentialpatterns.spade_spam_AGP.dataStructures.database.SequenceDatabase(
-				abstractionCreator, idListCreator);
+
+		// load the sequence database
+		SequenceDatabase sd = new SequenceDatabase(idListCreator);
 		sd.loadFile(inputFile, minSupport);
 
+		// run the algorithm and print statistics
 		algo.runAlgorithm(sd, true, false, outputFile, outputSeqIdentifiers);
 		System.out.println(algo.printStatistics());
 	}
 
+	/**
+	 * Gets the description of all algorithm parameters.
+	 * 
+	 * @return an array describing the parameters
+	 */
 	@Override
 	public DescriptionOfParameter[] getParametersDescription() {
 
-		DescriptionOfParameter[] parameters = new DescriptionOfParameter[2];
+		DescriptionOfParameter[] parameters = new DescriptionOfParameter[4];
 		parameters[0] = new DescriptionOfParameter("Minsup (%)", "(e.g. 0.4 or 40%)", Double.class, false);
-		parameters[1] = new DescriptionOfParameter("Show sequence ids?", "(default: false)", Boolean.class, true);
+		parameters[1] = new DescriptionOfParameter("Min pattern length", "(e.g. 1 items)", Integer.class, true);
+		parameters[2] = new DescriptionOfParameter("Max pattern length", "(e.g. 10 items)", Integer.class, true);
+		parameters[3] = new DescriptionOfParameter("Show sequence ids?", "(default: false)", Boolean.class, true);
 		return parameters;
 	}
 
+	/**
+	 * Gets the names of the authors of this implementation.
+	 * 
+	 * @return the implementation author names
+	 */
 	@Override
 	public String getImplementationAuthorNames() {
 		return "Antonio Gomariz Penalver";
 	}
 
+	/**
+	 * Gets the accepted input file types.
+	 * 
+	 * @return an array of input file type descriptions
+	 */
 	@Override
 	public String[] getInputFileTypes() {
 		return new String[] { "Database of instances", "Sequence database", "Simple sequence database" };
 	}
 
+	/**
+	 * Gets the output file types produced by this algorithm.
+	 * 
+	 * @return an array of output file type descriptions
+	 */
 	@Override
 	public String[] getOutputFileTypes() {
 		return new String[] { "Patterns", "Sequential patterns", "Frequent sequential patterns" };
 	}
 
+	/**
+	 * Gets the type of this algorithm.
+	 * 
+	 * @return the algorithm type
+	 */
 	@Override
 	public AlgorithmType getAlgorithmType() {
 		return AlgorithmType.DATA_MINING;

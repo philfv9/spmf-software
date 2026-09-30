@@ -21,9 +21,13 @@ package ca.pfv.spmf.gui.itemset_matrix_viewer;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -44,11 +48,34 @@ import java.util.Set;
  * </ul>
  * <p>
  * Items within each itemset are sorted (numerically if all items are integers,
- * otherwise lexicographically) for consistent display.
+ * otherwise case-insensitively) for consistent display. Files are read as
+ * UTF-8 (a leading byte-order mark is ignored).
+ * <p>
+ * This class also provides the sorting logic shared by the viewer
+ * ({@link #sort(List, String)}).
  *
  * @author Philippe Fournier-Viger, 2024
  */
 public class ItemsetReader {
+
+    // ---------------------------------------------------------------
+    // Sorting order names
+    // ---------------------------------------------------------------
+
+    public static final String SORT_SIZE_ASC = "Size (asc)";
+    public static final String SORT_SIZE_DESC = "Size (desc)";
+    public static final String SORT_LEX_ASC = "Lexicographical (asc)";
+    public static final String SORT_LEX_DESC = "Lexicographical (desc)";
+
+    private static final String SUFFIX_ASC = " (asc)";
+    private static final String SUFFIX_DESC = " (desc)";
+
+    private static final List<String> DEFAULT_SORTING_ORDERS = Collections.unmodifiableList(
+            Arrays.asList(SORT_SIZE_ASC, SORT_SIZE_DESC, SORT_LEX_ASC, SORT_LEX_DESC));
+
+    // ---------------------------------------------------------------
+    // Fields
+    // ---------------------------------------------------------------
 
     /** The file path to read from */
     private final String filePath;
@@ -56,7 +83,7 @@ public class ItemsetReader {
     /** The parsed itemsets */
     private final List<Itemset> itemsets = new ArrayList<>();
 
-    /** The set of all measure names discovered while reading (preserves insertion order) */
+    /** The set of all measure names discovered while reading (insertion order) */
     private final Set<String> availableMeasures = new LinkedHashSet<>();
 
     /** Item ID-to-name mapping parsed from {@code @ITEM=id=name} lines */
@@ -64,6 +91,9 @@ public class ItemsetReader {
 
     /** The available sorting orders, built after reading */
     private final List<String> sortingOrders = new ArrayList<>();
+
+    /** Number of non-empty, non-comment lines that yielded no itemset */
+    private int ignoredLineCount;
 
     /**
      * Creates a reader for the given file.
@@ -89,17 +119,30 @@ public class ItemsetReader {
         availableMeasures.clear();
         itemMapping.clear();
         sortingOrders.clear();
+        ignoredLineCount = 0;
 
         File file = new File(filePath);
+        if (!file.isFile()) {
+            throw new IOException("File not found: " + filePath);
+        }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
             String line;
+            boolean first = true;
             while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty()) continue;
-                if (line.startsWith("#") || line.startsWith("%")) continue;
+                if (first) {
+                    first = false;
+                    if (!line.isEmpty() && line.charAt(0) == '\uFEFF') {
+                        line = line.substring(1); // strip UTF-8 BOM
+                    }
+                }
+                String trimmed = line.trim();
+                if (trimmed.isEmpty()) continue;
+                if (trimmed.startsWith("#") || trimmed.startsWith("%")) continue;
 
-                if (line.startsWith("@ITEM=")) {
-                    String remainder = line.substring(6);
+                if (trimmed.startsWith("@ITEM=")) {
+                    String remainder = trimmed.substring(6);
                     String[] parts = remainder.split("=", 2);
                     if (parts.length == 2) {
                         itemMapping.put(parts[0].trim(), parts[1].trim());
@@ -107,11 +150,13 @@ public class ItemsetReader {
                     continue;
                 }
 
-                if (line.startsWith("@")) continue;
+                if (trimmed.startsWith("@")) continue;
 
-                Itemset itemset = parseLine(line);
+                Itemset itemset = parseLine(trimmed);
                 if (itemset != null && !itemset.getItems().isEmpty()) {
                     itemsets.add(itemset);
+                } else {
+                    ignoredLineCount++;
                 }
             }
         }
@@ -123,7 +168,7 @@ public class ItemsetReader {
     /**
      * Parses a single data line into an Itemset.
      *
-     * @param line the line to parse
+     * @param line the (trimmed) line to parse
      * @return the parsed itemset, or null if the line contains no items
      */
     private Itemset parseLine(String line) {
@@ -134,7 +179,6 @@ public class ItemsetReader {
 
         List<String> items = new ArrayList<>();
         for (String token : itemsPart.split("\\s+")) {
-            token = token.trim();
             if (!token.isEmpty()) {
                 items.add(itemMapping.getOrDefault(token, token));
             }
@@ -158,81 +202,130 @@ public class ItemsetReader {
     }
 
     /**
-     * Sorts a list of item names in place.
+     * Sorts a list of item names in place (numerically when possible).
      *
      * @param items the list of item names to sort
      */
     private void sortItems(List<String> items) {
         if (items.size() <= 1) return;
 
-        boolean allNumeric = true;
+        Map<String, Long> numeric = new HashMap<>();
         for (String item : items) {
             try {
-                Integer.parseInt(item);
+                numeric.put(item, Long.parseLong(item));
             } catch (NumberFormatException e) {
-                allNumeric = false;
+                numeric = null;
                 break;
             }
         }
 
-        if (allNumeric) {
-            items.sort(Comparator.comparingInt(Integer::parseInt));
+        if (numeric != null) {
+            final Map<String, Long> num = numeric;
+            items.sort(Comparator.comparing(num::get));
         } else {
-            items.sort(Comparator.comparing((String s) -> s.toLowerCase())
-                    .thenComparing(Comparator.naturalOrder()));
+            items.sort(String.CASE_INSENSITIVE_ORDER.thenComparing(Comparator.naturalOrder()));
         }
     }
 
     /** Builds the list of available sorting orders */
     private void buildSortingOrders() {
         for (String measure : availableMeasures) {
-            sortingOrders.add(measure + " (asc)");
-            sortingOrders.add(measure + " (desc)");
+            sortingOrders.add(measure + SUFFIX_ASC);
+            sortingOrders.add(measure + SUFFIX_DESC);
         }
-        sortingOrders.add("Size (asc)");
-        sortingOrders.add("Size (desc)");
-        sortingOrders.add("Lexicographical (asc)");
-        sortingOrders.add("Lexicographical (desc)");
+        sortingOrders.addAll(DEFAULT_SORTING_ORDERS);
     }
 
+    // ---------------------------------------------------------------
+    // Sorting (shared with the viewer)
+    // ---------------------------------------------------------------
+
     /**
-     * Sorts the itemsets in place according to the given sorting order string.
+     * Sorts the itemsets read by this reader in place.
      *
      * @param sortingOrder the sorting order string
      */
     public void sortItemsets(String sortingOrder) {
-        if (sortingOrder == null) return;
+        sort(itemsets, sortingOrder);
+    }
 
-        if ("Size (asc)".equals(sortingOrder)) {
-            itemsets.sort(Comparator.comparingInt(r -> r.getItems().size()));
-        } else if ("Size (desc)".equals(sortingOrder)) {
-            itemsets.sort(Comparator.comparingInt((Itemset r) -> r.getItems().size()).reversed());
-        } else if ("Lexicographical (asc)".equals(sortingOrder)) {
-            itemsets.sort(Comparator.comparing(r -> String.join(" ", r.getItems())));
-        } else if ("Lexicographical (desc)".equals(sortingOrder)) {
-            itemsets.sort(Comparator.comparing((Itemset r) -> String.join(" ", r.getItems())).reversed());
-        } else if (sortingOrder.endsWith("(asc)")) {
-            String measure = sortingOrder.substring(0, sortingOrder.length() - 6).trim();
-            sortItemsetsByMeasure(measure, true);
-        } else if (sortingOrder.endsWith("(desc)")) {
-            String measure = sortingOrder.substring(0, sortingOrder.length() - 7).trim();
-            sortItemsetsByMeasure(measure, false);
+    /**
+     * Sorts a list of itemsets in place according to a sorting order string
+     * such as {@code "Size (asc)"}, {@code "Lexicographical (desc)"} or
+     * {@code "SUP (desc)"}.
+     *
+     * @param list         the list to sort
+     * @param sortingOrder the sorting order string (unknown orders are ignored)
+     */
+    public static void sort(List<Itemset> list, String sortingOrder) {
+        if (list == null || list.size() < 2 || sortingOrder == null) return;
+        Comparator<Itemset> cmp = comparatorFor(sortingOrder);
+        if (cmp != null) {
+            list.sort(cmp);
         }
     }
 
-    private void sortItemsetsByMeasure(String measure, boolean ascending) {
-        itemsets.sort((a, b) -> {
-            String sa = a.getMeasures().getOrDefault(measure, "");
-            String sb = b.getMeasures().getOrDefault(measure, "");
-            try {
-                double va = Double.parseDouble(sa);
-                double vb = Double.parseDouble(sb);
-                return ascending ? Double.compare(va, vb) : Double.compare(vb, va);
-            } catch (NumberFormatException e) {
-                int cmp = sa.compareTo(sb);
-                return ascending ? cmp : -cmp;
+    /**
+     * Returns the comparator corresponding to a sorting order string.
+     *
+     * @param sortingOrder the sorting order string
+     * @return the comparator, or null if the order is unknown
+     */
+    public static Comparator<Itemset> comparatorFor(String sortingOrder) {
+        if (SORT_SIZE_ASC.equals(sortingOrder)) return BY_SIZE;
+        if (SORT_SIZE_DESC.equals(sortingOrder)) return BY_SIZE.reversed();
+        if (SORT_LEX_ASC.equals(sortingOrder)) return BY_LEX;
+        if (SORT_LEX_DESC.equals(sortingOrder)) return BY_LEX.reversed();
+        if (sortingOrder.endsWith(SUFFIX_ASC)) {
+            return byMeasure(sortingOrder.substring(0,
+                    sortingOrder.length() - SUFFIX_ASC.length()).trim(), true);
+        }
+        if (sortingOrder.endsWith(SUFFIX_DESC)) {
+            return byMeasure(sortingOrder.substring(0,
+                    sortingOrder.length() - SUFFIX_DESC.length()).trim(), false);
+        }
+        return null;
+    }
+
+    private static final Comparator<Itemset> BY_SIZE = Comparator.comparingInt(Itemset::size);
+
+    private static final Comparator<Itemset> BY_LEX = (a, b) -> {
+        List<String> x = a.getItems();
+        List<String> y = b.getItems();
+        int n = Math.min(x.size(), y.size());
+        for (int i = 0; i < n; i++) {
+            int c = x.get(i).compareTo(y.get(i));
+            if (c != 0) return c;
+        }
+        return Integer.compare(x.size(), y.size());
+    };
+
+    /**
+     * Comparator on a measure. Numeric values are compared numerically;
+     * non-numeric values are compared as strings after all numeric values;
+     * itemsets without the measure always come last, regardless of direction.
+     */
+    private static Comparator<Itemset> byMeasure(String measure, boolean ascending) {
+        return (a, b) -> {
+            String sa = a.getMeasure(measure);
+            String sb = b.getMeasure(measure);
+            if (sa == null && sb == null) return 0;
+            if (sa == null) return 1;
+            if (sb == null) return -1;
+            Double va = a.getNumericMeasure(measure);
+            Double vb = b.getNumericMeasure(measure);
+            int cmp;
+            if (va != null && vb != null) {
+                cmp = Double.compare(va, vb);
+            } else if (va != null) {
+                return -1;
+            } else if (vb != null) {
+                return 1;
+            } else {
+                cmp = sa.compareTo(sb);
             }
-        });
+            return ascending ? cmp : -cmp;
+        };
     }
 
     // ---------------------------------------------------------------
@@ -250,4 +343,10 @@ public class ItemsetReader {
 
     /** Returns the list of available sorting orders, built after reading. */
     public List<String> getSortingOrders() { return sortingOrders; }
+
+    /** Returns the default sorting orders (without measure-based orders). */
+    public static List<String> getDefaultSortingOrders() { return DEFAULT_SORTING_ORDERS; }
+
+    /** Returns the number of data lines that could not be parsed into an itemset. */
+    public int getIgnoredLineCount() { return ignoredLineCount; }
 }

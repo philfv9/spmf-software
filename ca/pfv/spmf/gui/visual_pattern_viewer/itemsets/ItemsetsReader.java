@@ -72,9 +72,10 @@ public class ItemsetsReader extends PatternsReader {
             while ((line = reader.readLine()) != null) {
 
                 // Skip empty or comment/metadata lines
-                if (line.isEmpty() || line.startsWith("#") || line.startsWith("%")) {
-                    continue;
-                }
+				if (line.isEmpty() || line.startsWith("#") || line.startsWith("%") || line.startsWith("@FILETYPE")
+						|| line.startsWith("@SOURCE")) {
+					continue;
+				}
                 // Parse extended mapping lines: "@ITEM=id=name"
                 if (line.startsWith("@ITEM=")) {
                     String[] parts = line.substring(6).split("=", 2);
@@ -181,31 +182,25 @@ public class ItemsetsReader extends PatternsReader {
      * 
      * @param sortingOrder the sorting order selected by the user
      */
-    public void sortPatterns(String sortingOrder) {
-        // If ascending sort
-    	if ("Size (asc)".equals(sortingOrder)) {
-            // If sort by size ascending
-            itemsets.sort(Comparator.comparingInt(r -> r.getItems().size()));
-        } else if ("Size (desc)".equals(sortingOrder)) {
-            // If sort by size descending
-            itemsets.sort(Comparator.comparingInt((Itemset r) -> r.getItems().size()).reversed());
-        }if ("Lexicographical (asc)".equals(sortingOrder)) {
-            // Ascending lexicographical order of items
-            itemsets.sort(Comparator.comparing(r -> String.join(" ", r.getItems())));
-        } else if ("Lexicographical (desc)".equals(sortingOrder)) {
-            // Descending lexicographical order of items
-            itemsets.sort(
-                Comparator.comparing((Itemset r) -> String.join(" ", r.getItems()))
-                          .reversed());
-        }else if (sortingOrder.endsWith("(asc)")) {
-            String measure = sortingOrder.substring(0, sortingOrder.length() - 6);
-            sortPatternsByMeasure(measure, true);
-        } else if (sortingOrder.endsWith("(desc)")) {
-            // If descending sort
-            String measure = sortingOrder.substring(0, sortingOrder.length() - 7);
-            sortPatternsByMeasure(measure, false);
-        }  
-    }
+	public void sortPatterns(String sortingOrder) {
+		if (sortingOrder == null) {
+			return;
+		}
+		if ("Size (asc)".equals(sortingOrder)) {
+			itemsets.sort(Comparator.comparingInt(r -> r.getItems().size()));
+		} else if ("Size (desc)".equals(sortingOrder)) {
+			itemsets.sort(Comparator.comparingInt((Itemset r) -> r.getItems().size()).reversed());
+		} else if ("Lexicographical (asc)".equals(sortingOrder)) {
+			itemsets.sort(Comparator.comparing(r -> String.join(" ", r.getItems())));
+		} else if ("Lexicographical (desc)".equals(sortingOrder)) {
+			itemsets.sort(Comparator.comparing((Itemset r) -> String.join(" ", r.getItems())).reversed());
+		} else if (sortingOrder.endsWith(" (asc)")) {
+			// Note: previously a missing "else" made "Size (asc)" fall through here
+			sortPatternsByMeasure(sortingOrder.substring(0, sortingOrder.length() - 6), true);
+		} else if (sortingOrder.endsWith(" (desc)")) {
+			sortPatternsByMeasure(sortingOrder.substring(0, sortingOrder.length() - 7), false);
+		}
+	}
     
     /**
      * Iterates over all itemsets and, for each measure in 'availableMeasures',

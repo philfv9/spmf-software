@@ -244,6 +244,10 @@ public class AlgoPNAR {
 			rules = new RulesPNAR("POSITIVE AND NEGATIVE ASSOCIATION RULES");
 		} else {
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Association rules\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 			rules = null;
 		}
 		outputBuffer = new StringBuilder(256);

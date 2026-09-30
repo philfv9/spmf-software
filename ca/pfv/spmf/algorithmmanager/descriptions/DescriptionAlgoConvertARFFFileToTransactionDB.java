@@ -68,7 +68,7 @@ public class DescriptionAlgoConvertARFFFileToTransactionDB extends DescriptionOf
 
 	@Override
 	public String getURLOfDocumentation() {
-		return "http://www.philippe-fournier-viger.com/spmf/Using_the_ARFF_format.php";
+		return "http://www.philippe-fournier-viger.com/spmf/ARFF_to_TDB.php";
 	}
 
 	@Override

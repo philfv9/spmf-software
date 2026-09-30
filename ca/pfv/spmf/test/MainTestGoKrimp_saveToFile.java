@@ -17,7 +17,7 @@ public class MainTestGoKrimp_saveToFile {
 		String inputDatabase = fileToPath("test_goKrimp.dat");  // the database
 		String inputLabelFile = fileToPath("test_goKrimp.lab");  // the label file
 //		String inputLabelFile = "";  // use this if no label file
-		String output = ".//outputK.txt";  // the path for saving the frequent itemsets found
+		String output = ".//output.txt";  // the path for saving the frequent itemsets found
 
         DataReader d=new DataReader();
         //GoKrimp g=d.readData(inputDatabase, inputLabelFile);

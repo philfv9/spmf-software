@@ -71,6 +71,10 @@ public class AlgoAgrawalFaster94 {
 
 	/** maximum antecedent length */
 	private int maxAntecedentLength = Integer.MAX_VALUE;
+	
+	/** filetype */
+	String filetype = "Association rules";
+
 
 	// parameters
 	protected double minconf;
@@ -78,7 +82,7 @@ public class AlgoAgrawalFaster94 {
 	protected boolean usingLift = true;
 
 	/** Reusable string builder */
-	private StringBuilder ruleBuffer;
+	private StringBuilder ruleBuffer = new StringBuilder(256);
 
 	/** Itemset comparator */
 	private static final Comparator<Itemset> ITEMSET_COMPARATOR = (o1, o2) -> ArraysAlgos.comparatorItemsetSameSize
@@ -89,6 +93,14 @@ public class AlgoAgrawalFaster94 {
 	 */
 	public AlgoAgrawalFaster94() {
 
+	}
+	
+	/**
+	 * Constructor with filetype
+	 * @param filetype the type of patterns
+	 */
+	public AlgoAgrawalFaster94(String filetype) {
+		this.filetype = filetype;
 	}
 
 	/**
@@ -162,10 +174,14 @@ public class AlgoAgrawalFaster94 {
 			// if the user wants to save the result to a file
 			rules = null;
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"" + filetype + "\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 		}
-
-		// Initialize reusable buffer
-		ruleBuffer = new StringBuilder(256);
+//
+//		// Initialize reusable buffer
+//		ruleBuffer = new StringBuilder(256);
 
 		this.databaseSize = databaseSize;
 
@@ -279,7 +295,7 @@ public class AlgoAgrawalFaster94 {
 			writer.close();
 		}
 
-		ruleBuffer = null;
+//		ruleBuffer = null;
 		// record the end time of the algorithm execution
 		endTimeStamp = System.currentTimeMillis();
 
@@ -569,5 +585,13 @@ public class AlgoAgrawalFaster94 {
 	 */
 	public void setMaxConsequentLength(int maxConsequentLength) {
 		this.maxConsequentLength = maxConsequentLength;
+	}
+	
+
+	/** Set the filetype to be written in the output file 
+	 * @param filetype the file type
+	 * */
+	public void setFiletype(String filetype) {
+		this.filetype = filetype;
 	}
 }

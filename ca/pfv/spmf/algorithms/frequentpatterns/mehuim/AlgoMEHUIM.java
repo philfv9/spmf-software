@@ -121,6 +121,10 @@ public class AlgoMEHUIM {
 
         if (outputPath != null) {
             writer = new BufferedWriter(new FileWriter(outputPath));
+			writer.write("@FILETYPE=\"High-utility itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
         } else {
             writer = null;
             this.highUtilityItemsets = new Itemsets("Itemsets");

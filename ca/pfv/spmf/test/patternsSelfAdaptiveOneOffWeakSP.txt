@@ -1,0 +1,30 @@
+@FILETYPE="Self-adaptive one-off weak-gap strong sequential patterns"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+E #SUP:4
+F #SUP:3
+O #SUP:2
+P #SUP:2
+R #SUP:2
+S #SUP:4
+T #SUP:2
+c #SUP:7
+e #SUP:6
+f #SUP:2
+h #SUP:2
+i #SUP:5
+m #SUP:2
+n #SUP:3
+o #SUP:2
+p #SUP:5
+r #SUP:4
+s #SUP:3
+t #SUP:6
+u #SUP:2
+SO #SUP:2
+cc #SUP:2
+er #SUP:2
+ie #SUP:2
+tc #SUP:2
+tt #SUP:2
+ier #SUP:2
+tcc #SUP:2

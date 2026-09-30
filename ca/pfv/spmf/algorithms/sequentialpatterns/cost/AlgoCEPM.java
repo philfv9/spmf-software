@@ -9,6 +9,8 @@ O* This is an implementation of the CEPB, corCEPB, CEPN algorithms.
 *
 * You should have received a copy of the GNU General Public License along with * SPMF. If not, see .
 *
+* Do not remove copyright and license information.
+*
 *  Copyright (c) 2019 Jiaxuan Li
 */
 
@@ -69,10 +71,10 @@ import ca.pfv.spmf.tools.MemoryLogger;
  */
 
 public class AlgoCEPM {
-	/** the abreviation of the  average cost */
+	/** the abreviation of the average cost */
 	private static final String AVGCOST = " #AVGCOST: ";
 
-	/** the abreviation of the  trade-off */
+	/** the abreviation of the trade-off */
 	private static final String TRADE = " #TRADE: ";
 
 	/** the abreviation of the support */
@@ -80,7 +82,7 @@ public class AlgoCEPM {
 
 	/** the abreviation of the utility */
 	private static final String UTIL = " #UTIL: ";
-	
+
 	/** the abreviation of the occupancy */
 	private static final String OCCUP = " #OCCUP: ";
 
@@ -92,8 +94,8 @@ public class AlgoCEPM {
 
 	/** input sequential event logs database */
 	private SequenceDatabase sequenceDatabase;
-	
-	/** the three algorithm types implemented by this class*/
+
+	/** the three algorithm types implemented by this class */
 	enum AlgorithmType {
 		CEPB, CEPN, CORCEPB
 	}
@@ -106,10 +108,10 @@ public class AlgoCEPM {
 
 	/** maximum cost threshold */
 	private double maximumCost;
-	
+
 	/** minimum occupancy threshold */
 	private double minimumOccpuancy;
-	
+
 	/** the number of found cost-effective patterns */
 	private int patternCount;
 
@@ -130,10 +132,9 @@ public class AlgoCEPM {
 
 	/** the array of the pattern buffer */
 	private final int[] patternBuffer = new int[BUFFERSSIZE];
-	
+
 	/** DEBUG MODE if set to true */
 	private static final boolean DEBUGMODE = false;
-	
 
 	/**
 	 * the map of the sequence id and its utility key: sequence id in the database
@@ -147,61 +148,65 @@ public class AlgoCEPM {
 
 	/** whether use the pruning strategy lower-bound */
 	private boolean useLowerBound;
-	
-	/** if true, patterns in the output file are sorted by utility  */
+
+	/** if true, patterns in the output file are sorted by utility */
 	private boolean sortByUtilityForCEPN = false;
-	/** if true, only patterns with lowest trade-off are output for each utility value */
+	/**
+	 * if true, only patterns with lowest trade-off are output for each utility
+	 * value
+	 */
 	private boolean outputLowestTradeOffForCEPN = false;
-	
+
 	/** if true, patterns in the output file are sorted by correlation */
 	private boolean sortByCorrelationCORCEPB = false;
-	
-	
+
 	/**
-	 * Run the CEPB algorithm
-	 * setting parameters
+	 * Run the CEPB algorithm setting parameters
 	 * 
-	 * @param inputFile     the sequential event logs database
-	 * @param outputFile    the path of the file for writing results (if not null)
-	 * @param minsup        the minimum support threshold
-	 * @param maxcost       the maximum cost threshold
+	 * @param inputFile  the sequential event logs database
+	 * @param outputFile the path of the file for writing results (if not null)
+	 * @param minsup     the minimum support threshold
+	 * @param maxcost    the maximum cost threshold
 	 * 
 	 * @return satisfied cost-effective patterns
 	 * @throws IOException
 	 */
-	public SequentialPatterns runAlgorithmCEPB(String inputFile, String outputFile, int minsup, double maxcost, double minoccupancy)
-			throws IOException {
+	public SequentialPatterns runAlgorithmCEPB(String inputFile, String outputFile, int minsup, double maxcost,
+			double minoccupancy) throws IOException {
 
 		this.algorithmName = AlgorithmType.CEPB;
 		runAlgorithm(inputFile, outputFile, minsup, maxcost, minoccupancy);
 		return patterns;
 	}
-	
+
 	/**
-	 * Run the CEPB algorithm
-	 * setting parameters
+	 * Run the CEPB algorithm setting parameters
 	 * 
-	 * @param inputFile     the sequential event logs database
-	 * @param outputFile    the path of the file for writing results (if not null)
-	 * @param minsup        the minimum support threshold
-	 * @param maxcost       the maximum cost threshold
-	 * @param outputLowestTradeOffForCEPN  if true, patterns in the output file are sorted by utility 
-	 * @param sortByUtilityForCEPN if true, only patterns with lowest trade-off are output for each utility value
+	 * @param inputFile                   the sequential event logs database
+	 * @param outputFile                  the path of the file for writing results
+	 *                                    (if not null)
+	 * @param minsup                      the minimum support threshold
+	 * @param maxcost                     the maximum cost threshold
+	 * @param outputLowestTradeOffForCEPN if true, patterns in the output file are
+	 *                                    sorted by utility
+	 * @param sortByUtilityForCEPN        if true, only patterns with lowest
+	 *                                    trade-off are output for each utility
+	 *                                    value
 	 * 
 	 * @return satisfied cost-effective patterns
 	 * @throws IOException
 	 */
-	public SequentialPatterns runAlgorithmCEPN(String inputFile, String outputFile, int minsup, double maxcost, double minoccupancy, 
-			boolean sortByUtilityForCEPN, boolean outputLowestTradeOffForCEPN) throws IOException {
-		
+	public SequentialPatterns runAlgorithmCEPN(String inputFile, String outputFile, int minsup, double maxcost,
+			double minoccupancy, boolean sortByUtilityForCEPN, boolean outputLowestTradeOffForCEPN) throws IOException {
+
 		this.outputLowestTradeOffForCEPN = outputLowestTradeOffForCEPN;
-		this.sortByUtilityForCEPN = sortByUtilityForCEPN; 
-		
+		this.sortByUtilityForCEPN = sortByUtilityForCEPN;
+
 		this.algorithmName = AlgorithmType.CEPN;
 		runAlgorithm(inputFile, outputFile, minsup, maxcost, minoccupancy);
 		return patterns;
 	}
-	
+
 	/**
 	 * Run the corCEPB algorithm setting parameters
 	 * 
@@ -210,37 +215,37 @@ public class AlgoCEPM {
 	 *                          null)
 	 * @param minsup            the minimum support threshold
 	 * @param maxcost           the maximum cost threshold
-	 * @param sortByCorrelation if true, patterns in the output file are sorted by correlation
+	 * @param sortByCorrelation if true, patterns in the output file are sorted by
+	 *                          correlation
 	 * 
 	 * @return satisfied cost-effective patterns
 	 * @throws IOException
 	 */
-	public SequentialPatterns runAlgorithmCorCEPB(String inputFile, String outputFile, int minsup, double maxcost, double minoccupancy, 
-			boolean sortByCorrelationCORCEPB) throws IOException {
+	public SequentialPatterns runAlgorithmCorCEPB(String inputFile, String outputFile, int minsup, double maxcost,
+			double minoccupancy, boolean sortByCorrelationCORCEPB) throws IOException {
 
 		this.sortByCorrelationCORCEPB = sortByCorrelationCORCEPB;
 		this.algorithmName = AlgorithmType.CORCEPB;
 		runAlgorithm(inputFile, outputFile, minsup, maxcost, minoccupancy);
 		return patterns;
 	}
-	
 
 	/**
-	 * Run the algorithm
-	 * setting parameters
+	 * Run the algorithm setting parameters
 	 * 
-	 * @param inputFile     the sequential event logs database
-	 * @param outputFile    the path of the file for writing results (if not null)
-	 * @param minsup        the minimum support threshold
-	 * @param maxcost       the maximum cost threshold
+	 * @param inputFile  the sequential event logs database
+	 * @param outputFile the path of the file for writing results (if not null)
+	 * @param minsup     the minimum support threshold
+	 * @param maxcost    the maximum cost threshold
 	 * 
 	 * @return satisfied cost-effective patterns
-	 * @throws IOException if error while reading the input file or writing the output file
+	 * @throws IOException if error while reading the input file or writing the
+	 *                     output file
 	 */
 
-	public SequentialPatterns runAlgorithm(String inputFile, String outputFile, int minsup, double maxcost, double minoccupancy)
-			throws IOException {
-		
+	public SequentialPatterns runAlgorithm(String inputFile, String outputFile, int minsup, double maxcost,
+			double minoccupancy) throws IOException {
+
 		// Save the parameters
 		this.minimumSupport = minsup;
 		this.maximumCost = maxcost;
@@ -248,49 +253,54 @@ public class AlgoCEPM {
 
 		// Reset the tool to record memory usage
 		MemoryLogger.getInstance().reset();
-		
+
 		// Record the start time
 		startTime = System.currentTimeMillis();
-		
+
 		// Read the database from text file
 		sequenceDatabase = new SequenceDatabase();
 		sequenceDatabase.loadFile(inputFile);
-		
+
 		// Get sequence utility information
 		sequenceIdUtility = sequenceDatabase.sequenceIdUtility;
-		
+
 		// Run the algorithm
 		patterns = new SequentialPatterns("SEQUENTIAL LOWER BOUND PATTERN MINING");
 		Map<Integer, Map<Integer, Pair>> mapSequenceID = findSequencesContainingItems();
 		prefixSpanWithSingleItem(mapSequenceID);
 		sequenceDatabase = null;
-		
+
 		// Write results to file
-		if(outputFile != null) {
+		if (outputFile != null) {
 			if (AlgorithmType.CEPB.equals(algorithmName)) {
 				writeResultsToFileCEPB(outputFile);
-			}else if (AlgorithmType.CEPN.equals(algorithmName)) {
+			} else if (AlgorithmType.CEPN.equals(algorithmName)) {
 				writeResultsToFileCEPN(outputFile);
-			}else { // CorCEPB
+			} else { // CorCEPB
 				writeResultsToFileCORCEPB(outputFile);
 			}
 		}
-		
+
 		// Record the end time
 		endTime = System.currentTimeMillis();
-		
+
 		// Returns the patterns found
 		return patterns;
 	}
 
 	/**
 	 * Write results to an output file (CEPB algorithm)
+	 * 
 	 * @param outputFile the path to save the results
 	 * @throws IOException if error while writing to file
 	 */
 	private void writeResultsToFileCEPB(String outputFile) throws IOException {
 
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+		writer.write("@FILETYPE=\"Cost-efficient Sequential patterns\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		try {
 			DecimalFormat df = new DecimalFormat("0.000");
@@ -311,16 +321,20 @@ public class AlgoCEPM {
 			writer.close();
 		}
 	}
-	
+
 	/**
 	 * Write results to an output file (CEPN algorithm)
+	 * 
 	 * @param outputFile the path to save the results
 	 * @throws IOException if error while writing to file
 	 */
 	private void writeResultsToFileCEPN(String outputFile) throws IOException {
 
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
-
+		writer.write("@FILETYPE=\"Cost-efficient Sequential patterns\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		try {
 			DecimalFormat df = new DecimalFormat("0.000");
 
@@ -334,7 +348,7 @@ public class AlgoCEPM {
 						writer.write(UTIL + df.format(pattern.getUtility()));
 						writer.write(SUP + pattern.getAbsoluteSupport());
 						writer.write(TRADE + df.format(pattern.getTradeOff()));
-						writer.write(OCCUP + df.format(pattern.getOccupancy()));				
+						writer.write(OCCUP + df.format(pattern.getOccupancy()));
 						writer.write(AVGCOST + df.format(pattern.getAverageCost()));
 						writer.newLine();
 					}
@@ -379,15 +393,20 @@ public class AlgoCEPM {
 			writer.close();
 		}
 	}
-	
+
 	/**
 	 * Write results to an output file (CORCEPB algorithm)
+	 * 
 	 * @param outputFile the path to save the results
 	 * @throws IOException if error while writing to file
 	 */
 	private void writeResultsToFileCORCEPB(String outputFile) throws IOException {
-		
+
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+		writer.write("@FILETYPE=\"Cost-efficient Sequential patterns\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		try {
 			DecimalFormat df = new DecimalFormat("0.000");
@@ -428,7 +447,7 @@ public class AlgoCEPM {
 			writer.close();
 		}
 	}
-	
+
 	/**
 	 * FOR CEPN: grouping cost-effective patterns in terms of their obtained utility
 	 * 
@@ -455,8 +474,8 @@ public class AlgoCEPM {
 
 	/**
 	 * 
-	 * FOR CEPN:  grouping cost-effective patterns by their utility, and output the pattern
-	 * with the smallest trade-off in each utility
+	 * FOR CEPN: grouping cost-effective patterns by their utility, and output the
+	 * pattern with the smallest trade-off in each utility
 	 * 
 	 * @param patterns found cost-effective patterns
 	 * @return the pattern with the smallest trade-off in each utility
@@ -477,9 +496,9 @@ public class AlgoCEPM {
 
 		return smallestTraPattern;
 	}
-	
+
 	/**
-	 * FOR CorCEPB:  sorting patterns in terms of their correlation
+	 * FOR CorCEPB: sorting patterns in terms of their correlation
 	 * 
 	 * @param patterns found cost-effective patterns
 	 * @return cost-effective patterns sorted by correlation
@@ -501,10 +520,9 @@ public class AlgoCEPM {
 		}
 		return treeMap;
 	}
-	
-	
+
 	/**
-	 * FOR CEPN:  sorting patterns in terms of their utility
+	 * FOR CEPN: sorting patterns in terms of their utility
 	 * 
 	 * @param patterns found cost-effective patterns
 	 * @return cost-effective patterns sorted by utility
@@ -526,7 +544,6 @@ public class AlgoCEPM {
 		}
 		return treeMap;
 	}
-
 
 	/**
 	 * This method finds single events and recording the map of their sequence id
@@ -551,11 +568,11 @@ public class AlgoCEPM {
 				if (token.getId() >= 0) {
 					if (mapSequenceID.get(token.getId()) == null) {
 						Map<Integer, Pair> seqIdCost = new HashMap<>();
-						seqIdCost.put(i, new Pair(token.getCost(), sequence.length, i+1));
+						seqIdCost.put(i, new Pair(token.getCost(), sequence.length, i + 1));
 						mapSequenceID.put(token.getId(), seqIdCost);
 					} else {
 						if (!mapSequenceID.get(token.getId()).keySet().contains(i))
-							mapSequenceID.get(token.getId()).put(i, new Pair(token.getCost(), sequence.length, i+1));
+							mapSequenceID.get(token.getId()).put(i, new Pair(token.getCost(), sequence.length, i + 1));
 					}
 				}
 			}
@@ -631,7 +648,8 @@ public class AlgoCEPM {
 					// ASC lowerbound
 					// double lowerBound = lowerSupportCost / support;
 					double upperBoundOfOccupancy = getUpperBoundOccupancyWithSingleEvnet(entry.getValue());
-					if ((lowerBoundOfCost <= maximumCost && upperBoundOfOccupancy >= minimumOccpuancy) || (useLowerBound == false)) {
+					if ((lowerBoundOfCost <= maximumCost && upperBoundOfOccupancy >= minimumOccpuancy)
+							|| (useLowerBound == false)) {
 						// Create the prefix for this projected database by copying the item in the
 						// buffer
 						patternBuffer[0] = event;
@@ -642,7 +660,7 @@ public class AlgoCEPM {
 							projectedDatabaseCount++;
 							recursionSingleEvents(projectedDatabase, 2, 0);
 						}
-					} 
+					}
 				}
 			}
 		} // end Case1, case3
@@ -682,9 +700,11 @@ public class AlgoCEPM {
 					if (averageCost <= maximumCost && occupancy >= minimumOccpuancy) {
 						// save pattern which has one event
 						this.costUtilityPairs = getListOfCostUtility(entry.getValue());
-						savePattern(event, averageCost,occupancy, entry.getValue(), isEventAllInClass1, costUtilityPairs);
+						savePattern(event, averageCost, occupancy, entry.getValue(), isEventAllInClass1,
+								costUtilityPairs);
 					}
-					if ((lowerBoundOfCost <= maximumCost && upperBoundOfOccupancy >= minimumOccpuancy) || (useLowerBound == false) ) {
+					if ((lowerBoundOfCost <= maximumCost && upperBoundOfOccupancy >= minimumOccpuancy)
+							|| (useLowerBound == false)) {
 						// Create the prefix for this projected database by copying the item in the
 						// buffer
 						patternBuffer[0] = event;
@@ -703,10 +723,10 @@ public class AlgoCEPM {
 
 		}
 	}
-	
 
 	/**
 	 * Set the maximum pattern length
+	 * 
 	 * @param maximumPatternLength maximum pattern length
 	 */
 	public void setMaximumPatternLength(int maximumPatternLength) {
@@ -864,12 +884,12 @@ public class AlgoCEPM {
 
 		return lowerBound;
 	}
-	
+
 	/**
 	 * This method calculates the single event's occupancy
 	 * 
-	 * @param sequenceIDLength key:sequenceID, value: event's cost and sequence's 
-	 * 						   length in the sequences where the event appears
+	 * @param sequenceIDLength key:sequenceID, value: event's cost and sequence's
+	 *                         length in the sequences where the event appears
 	 * @return event's occupancy
 	 */
 	private double getOccupancyWithSingleEvent(Map<Integer, Pair> sequenceIDLength) {
@@ -881,16 +901,17 @@ public class AlgoCEPM {
 		}
 		return occupancy / sequenceIDLength.size();
 	}
-	
+
 	/**
-	 * This method calculates the occupancy of the pattern containing more than two events
+	 * This method calculates the occupancy of the pattern containing more than two
+	 * events
 	 * 
 	 * @param pseudoSequenceList list of pseudo sequences
-	 * @param patternLength the pattern's length
+	 * @param patternLength      the pattern's length
 	 * 
 	 * @return the pattern's occupancy
 	 */
-	private double getOccupancyWithMultipleEvents(List<PseudoSequence>pseudoSequenceList,float patternLength) {
+	private double getOccupancyWithMultipleEvents(List<PseudoSequence> pseudoSequenceList, float patternLength) {
 		double occupancy = 0.0;
 		for (PseudoSequence token : pseudoSequenceList) {
 			int lengthOfSeq = token.getSequenceLength() - 1;
@@ -898,7 +919,7 @@ public class AlgoCEPM {
 		}
 		return occupancy / pseudoSequenceList.size();
 	}
-	
+
 	private double getUpperBoundOccupancyWithSingleEvnet(Map<Integer, Pair> sequenceIDLength) {
 		double upperOccupancy = 0;
 		ArrayList<Double> upperOccupList = new ArrayList<>();
@@ -934,7 +955,7 @@ public class AlgoCEPM {
 		}
 		return upperOccupancy / minimumSupport;
 	}
-	
+
 	/**
 	 * This method creates a new projected database
 	 * 
@@ -1001,19 +1022,21 @@ public class AlgoCEPM {
 					double lowerboundOfCost = lowerSupportCost / minimumSupport;
 					double averageCost = getAverageCostWithMulEvents(lastBufferPositionOfPattern, entry.getValue(),
 							entry.getKey());
-					double occupancy = getOccupancyWithMultipleEvents(entry.getValue(),k);
+					double occupancy = getOccupancyWithMultipleEvents(entry.getValue(), k);
 					double upperBoundOfOccupancy = getOccupancyWithMultipleEvents(entry.getValue(), k);
 					if (averageCost <= maximumCost && occupancy >= minimumOccpuancy) {
 						this.costUtilityPairs = setListOfCostUtility(lastBufferPositionOfPattern + 2, entry.getValue());
-						savePattern(lastBufferPositionOfPattern + 2, entry.getValue(), averageCost, occupancy, costUtilityPairs);
+						savePattern(lastBufferPositionOfPattern + 2, entry.getValue(), averageCost, occupancy,
+								costUtilityPairs);
 					}
-					if ((lowerboundOfCost <= maximumCost && upperBoundOfOccupancy >= minimumOccpuancy) || (!useLowerBound)) {
+					if ((lowerboundOfCost <= maximumCost && upperBoundOfOccupancy >= minimumOccpuancy)
+							|| (!useLowerBound)) {
 						// make a recursive call
 						if (k < maximumPatternLength) {
 							projectedDatabaseCount++;
 							recursionSingleEvents(entry.getValue(), k + 1, lastBufferPositionOfPattern + 2);
 						}
-					} 
+					}
 				}
 				MemoryLogger.getInstance().checkMemory();
 			}
@@ -1041,7 +1064,7 @@ public class AlgoCEPM {
 					double averageCost = getAverageCostWithMulEvents(lastBufferPositionOfPattern, entry.getValue(),
 							entry.getKey());
 					double occupancy = getOccupancyWithMultipleEvents(entry.getValue(), k);
-					double upperBoundOfOccupancy = getUpperBoundOccupancyWithMultipeEvents(entry.getValue(), k);			
+					double upperBoundOfOccupancy = getUpperBoundOccupancyWithMultipeEvents(entry.getValue(), k);
 					patternBuffer[lastBufferPositionOfPattern + 1] = -1;
 					patternBuffer[lastBufferPositionOfPattern + 2] = entry.getKey();
 					if (averageCost <= maximumCost && occupancy >= minimumOccpuancy) {
@@ -1050,7 +1073,8 @@ public class AlgoCEPM {
 						savePattern(lastBufferPositionOfPattern + 2, eventsPseudoSequence.get(entry.getKey()),
 								isPatternAllInPosSeq, averageCost, occupancy, costUtilityPairs);
 					}
-					if ((lowerboundOfCost <= maximumCost && upperBoundOfOccupancy >= minimumOccpuancy) || (useLowerBound == false)) {
+					if ((lowerboundOfCost <= maximumCost && upperBoundOfOccupancy >= minimumOccpuancy)
+							|| (useLowerBound == false)) {
 						// make a recursive call
 						if (k < maximumPatternLength) {
 							projectedDatabaseCount++;
@@ -1116,8 +1140,8 @@ public class AlgoCEPM {
 	/**
 	 * This method gets the projected database of the event
 	 * 
-	 * @param sequences          the list of last event's sequence id and its index
-	 *                           in each sequence
+	 * @param sequences the list of last event's sequence id and its index in each
+	 *                  sequence
 	 * @return event's projected database, key:event, value: list of sequence_id and
 	 *         the event's starting index in the sequence
 	 */
@@ -1219,8 +1243,8 @@ public class AlgoCEPM {
 	 * @param costUtilityPairs   the list of pattern's cost and utility information
 	 * @throws IOException
 	 */
-	private void savePattern(int lastBufferPosition, List<PseudoSequence> pseudoSequences, double averageCost, double occupancy, 
-			ArrayList<CostUtilityPair> costUtilityPairs) {
+	private void savePattern(int lastBufferPosition, List<PseudoSequence> pseudoSequences, double averageCost,
+			double occupancy, ArrayList<CostUtilityPair> costUtilityPairs) {
 		// increase the number of pattern found for statistics purposes
 		patternCount++;
 		// create a set to record events before currentEvent
@@ -1278,8 +1302,8 @@ public class AlgoCEPM {
 	 * @throws IOException
 	 */
 	private void savePattern(int lastBufferPosition, List<PseudoSequence> pseudoSequences,
-			boolean isPatternAllInPositiveSeq, double averageCost, double occupancy, ArrayList<CostUtilityPair> costUtilityPairs)
- {
+			boolean isPatternAllInPositiveSeq, double averageCost, double occupancy,
+			ArrayList<CostUtilityPair> costUtilityPairs) {
 		// increase the number of pattern found for statistics purposes
 		patternCount++;
 		// create a set to record eventId before currentEvent
@@ -1511,14 +1535,14 @@ public class AlgoCEPM {
 		r.append(" Max memory (mb) : ");
 		r.append(MemoryLogger.getInstance().getMaxMemory());
 		r.append(System.lineSeparator());
-		if(DEBUGMODE){
+		if (DEBUGMODE) {
 			r.append("  Projected Database Count: ");
 			r.append(projectedDatabaseCount);
 			r.append('\n');
 			r.append("  Considered pattern count: ");
 			r.append(consideredPatternCount);
-			 r.append('\n');
-			 r.append(" Frequent sequences count : " + patterns.sequenceCount);
+			r.append('\n');
+			r.append(" Frequent sequences count : " + patterns.sequenceCount);
 			r.append('\n');
 		}
 		r.append("===================================================");
@@ -1527,11 +1551,11 @@ public class AlgoCEPM {
 		System.out.println(r.toString());
 	}
 
-
-    /**
-     * Set to use the lower bound or not
-     * @param useLowerBound if true, will use the lower bound, otherwise not
-     */
+	/**
+	 * Set to use the lower bound or not
+	 * 
+	 * @param useLowerBound if true, will use the lower bound, otherwise not
+	 */
 	public void setUseLowerBound(boolean useLowerBound) {
 		this.useLowerBound = useLowerBound;
 	}

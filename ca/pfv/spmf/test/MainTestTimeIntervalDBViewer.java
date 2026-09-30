@@ -19,7 +19,7 @@ public class MainTestTimeIntervalDBViewer {
 	public static void main(String[] arg) throws IOException {
 
 		// Input file path
-		String input = fileToPath("test.csv");
+		String input = fileToPath("testTIRP.txt");
 
 		// Applying the Sequence Database viewer
 		TimeIntervalDatabaseViewer algorithm = new TimeIntervalDatabaseViewer(false, input);

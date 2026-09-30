@@ -74,6 +74,12 @@ public class Algo_estDec {
 //		int n=0;
 		// for each line (transaction)
 		while (((line = reader.readLine()) != null)) { 
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+				continue;
+			}
+			
 			String[] lineSplited = line.split(" ");
 			
 			// convert the array of strings to an array of integers (items)

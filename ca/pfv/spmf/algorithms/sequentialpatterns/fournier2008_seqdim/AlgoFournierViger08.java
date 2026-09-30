@@ -14,6 +14,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 import java.io.BufferedWriter;
@@ -128,9 +130,19 @@ public class AlgoFournierViger08 extends AbstractAlgoPrefixSpan{
 	 * @throws IOException throw exception if error creating output file
 	 */
 	public void runAlgorithm(SequenceDatabase database, String outputFilePath) throws IOException {
-    	// if the user want to save the result to a file
+		
+		// if the user want to save the result to a file
 		// create output file
 		writer = new BufferedWriter(new FileWriter(outputFilePath)); 
+		if(findClosedPatterns) {
+			writer.write("@FILETYPE=\"Frequent closed sequential patterns with timestamps\"");
+		}else {
+			writer.write("@FILETYPE=\"Frequent sequential patterns with timestamps\"");			
+		}
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		patterns = null;
 		
 		// run the algorithm
@@ -1111,7 +1123,7 @@ public class AlgoFournierViger08 extends AbstractAlgoPrefixSpan{
 	private Sequence appendItemToSequence(Sequence prefix, ItemSimple item, long timestamp) {
 		Sequence newPrefix = prefix.cloneSequence();  // isSuffix
 		long decalage = newPrefix.get(newPrefix.size()-1).getTimestamp();
-		newPrefix.addItemset(new Itemset(item, timestamp + decalage));  // créé un nouvel itemset   + decalage
+		newPrefix.addItemset(new Itemset(item, timestamp + decalage));  // crï¿½ï¿½ un nouvel itemset   + decalage
 		return newPrefix;
 	}
 	

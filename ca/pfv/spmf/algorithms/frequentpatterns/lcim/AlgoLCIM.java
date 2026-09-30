@@ -160,6 +160,10 @@ public class AlgoLCIM {
 		
 		// Create an object to write result to a file
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		// We create a map to store the support of each item
 		mapItemToSupport  = new HashMap<Integer, Integer>();

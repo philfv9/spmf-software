@@ -203,6 +203,10 @@ public class AlgoLinearTable {
 			frequentItemsets = new Itemsets("FREQUENT ITEMSETS");
 		} else {
 			writer = new BufferedWriter(new FileWriter(output), FILE_BUFFER_SIZE);
+			writer.write("@FILETYPE=\"Frequent itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 		}
 
 		try {

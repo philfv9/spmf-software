@@ -33,7 +33,7 @@ public class MainTestHMG_SA {
 	public static void main(String[] args) throws IOException {
 		
 		// Input file
-		String dataset = fileToPath("AeCa");
+		String dataset = fileToPath("AeCa.seq");
 		
 		// Output file    
 		String outputFile = ("output_AeCa.txt");

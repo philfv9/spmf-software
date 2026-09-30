@@ -444,26 +444,43 @@ public class ProjectedIteratorProducer implements Runnable {
 
     @Override
     public void run() {
-        advance();
-        while(true) {
-            PDFSCompact pdfsCompact = next();
-            try {
+        // whether this producer has already emitted its (single) poison pill
+        boolean poisoned = false;
+        try {
+            advance();
+            while (true) {
+                PDFSCompact pdfsCompact = next();
                 if (pdfsCompact == null) {
+                    // this producer has no more projections
                     pdfsQueue.put(PDFSCompact.POISON_PDFSCompact);
+                    poisoned = true;
+                    return;
                 }
-                else {
-                    pdfsQueue.put(pdfsCompact);
-                    if (!control.runFlag) {
-                        pdfsQueue.put(PDFSCompact.POISON_PDFSCompact);
-                        return;
-                    }
+                pdfsQueue.put(pdfsCompact);
+                if (!control.runFlag) {
+                    // consumer asked producers to stop
+                    pdfsQueue.put(PDFSCompact.POISON_PDFSCompact);
+                    poisoned = true;
+                    return;
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             }
-
-            if (pdfsCompact == null) {
-                return;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (RuntimeException | Error e) {
+            // record the first unrecoverable failure so the consumer can surface it and fail fast,
+            // rather than the exception being silently swallowed by the executor
+            if (control.producerError == null) {
+                control.producerError = e;
+            }
+        } finally {
+            // ALWAYS emit exactly one poison pill so the consumer's running-producer count reaches
+            // zero and no consumer thread blocks forever waiting on a producer that has stopped
+            if (!poisoned) {
+                try {
+                    pdfsQueue.put(PDFSCompact.POISON_PDFSCompact);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }

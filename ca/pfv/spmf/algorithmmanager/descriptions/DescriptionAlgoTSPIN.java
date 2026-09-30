@@ -68,8 +68,9 @@ public class DescriptionAlgoTSPIN extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getInputFileTypes() {
-		return new String[]{"Database of instances","Transaction database", "Simple transaction database"};
+		return new String[]{"Database of instances","Transaction database", "Transaction database with timestamps"};
 	}
+
 
 	@Override
 	public String[] getOutputFileTypes() {

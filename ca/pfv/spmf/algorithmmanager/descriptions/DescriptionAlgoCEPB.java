@@ -34,7 +34,7 @@ public class DescriptionAlgoCEPB extends DescriptionOfAlgorithm {
 
 	@Override
 	public String getURLOfDocumentation() {
-		return "http://www.philippe-fournier-viger.com/spmf/CEPBalgo.php";
+		return "https://www.philippe-fournier-viger.com/spmf/CEPBalgo.php";
 	}
 
 	@Override

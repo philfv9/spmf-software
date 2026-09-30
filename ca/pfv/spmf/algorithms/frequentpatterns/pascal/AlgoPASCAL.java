@@ -111,6 +111,11 @@ public class AlgoPASCAL {
 
 		// prepare object for writing the file
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Frequent itemsets and generator itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+
 
 		// reset statistics
 		itemsetCount = 0;

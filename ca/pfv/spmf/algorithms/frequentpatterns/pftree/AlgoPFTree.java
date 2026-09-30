@@ -107,6 +107,11 @@ public class AlgoPFTree {
         patternCount = 0;
 
         writer = new BufferedWriter(new FileWriter(output));
+        writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Periodic frequent itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
         // ============================================================
         // FIRST SCAN: compute support and max periodicity for each item

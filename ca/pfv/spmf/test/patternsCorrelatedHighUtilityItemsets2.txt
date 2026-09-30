@@ -1,0 +1,5 @@
+@FILETYPE="Correlated High-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+4 2 #UTIL: 30 #BOND: 0.5
+2 5 #UTIL: 31 #BOND: 0.75
+2 5 3 #UTIL: 37 #BOND: 0.6

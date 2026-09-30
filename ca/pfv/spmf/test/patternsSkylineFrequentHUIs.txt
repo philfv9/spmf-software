@@ -1,0 +1,5 @@
+@FILETYPE="Skyline Frequent High-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+2 1 4 #SUP:3 #UTIL:41
+5 4 #SUP:4 #UTIL:40
+4 #SUP:7 #UTIL:35

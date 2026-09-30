@@ -1,0 +1,14 @@
+@FILETYPE="Closed and generator high-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+CLOSED: 
+2 3 5 #UTIL: 37 #SUP: 3
+GENERATOR: 
+2 5 #UTIL: 31 #SUP: 3
+CLOSED: 
+1 3 5 #UTIL: 31 #SUP: 2
+CLOSED: 
+2 3 4 5 #UTIL: 40 #SUP: 2
+GENERATOR: 
+2 4 #UTIL: 30 #SUP: 2
+CLOSED: 
+1 2 3 4 5 6 #UTIL: 30 #SUP: 1

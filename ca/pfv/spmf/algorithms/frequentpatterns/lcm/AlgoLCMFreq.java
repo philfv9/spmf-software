@@ -108,6 +108,11 @@ public class AlgoLCMFreq {
 		// create object for writing the output file
 		if(outputPath != null) {
 			writer = new BufferedWriter(new FileWriter(outputPath));
+			writer.write("@FILETYPE=\"Frequent itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
+			
 			itemsetOutputBuffer = new int[BUFFERS_SIZE];
 		}else {
 			// if the user choose to save to memory

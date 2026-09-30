@@ -3,22 +3,21 @@ package ca.pfv.spmf.gui.visual_pattern_viewer.subgraphs;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.RenderingHints;
-import java.util.ArrayList;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.swing.BorderFactory;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
 
+import ca.pfv.spmf.gui.visual_pattern_viewer.MeasureTable;
+import ca.pfv.spmf.gui.visual_pattern_viewer.ViewerStyle;
 import ca.pfv.spmf.gui.visual_pattern_viewer.subgraphs.Subgraph.Edge;
 import ca.pfv.spmf.gui.visual_pattern_viewer.subgraphs.Subgraph.Vertex;
 
@@ -44,305 +43,302 @@ import ca.pfv.spmf.gui.visual_pattern_viewer.subgraphs.Subgraph.Vertex;
  * Do not remove copyright and license information.
  */
 /**
- * A Swing panel that visualizes a single subgraph pattern. Vertices are drawn
- * as circles arranged in a circular layout and edges are drawn as lines between
- * them. Measure values are shown as labelled bars below the graph drawing area.
+ * Displays a subgraph pattern as a compact card. Vertices are circles arranged
+ * on a circle whose size adapts to the number of vertices and to the length of
+ * their labels (vertices with the same label share the same color), edges are
+ * lines with their label at the midpoint, and the measures are listed below in
+ * aligned columns.
  *
  * @author Philippe Fournier-Viger
  */
 public class SubgraphPanel extends JPanel {
 
-    private static final long serialVersionUID = 7312945670193847561L;
+	private static final long serialVersionUID = 7312945670193847561L;
 
-    /** Colours cycled through when drawing measure bars. */
-    private static final List<Color> MEASURE_COLORS = List.of(
-            Color.BLUE, Color.RED, Color.GREEN, Color.MAGENTA,
-            Color.ORANGE, Color.CYAN, Color.PINK, Color.YELLOW,
-            new Color(128, 0, 128),   // Purple
-            new Color(0, 128, 128)    // Teal
-    );
+	/** Padding between the card border and its content */
+	private static final int PAD = 10;
+	/** Minimum radius of a vertex */
+	private static final int MIN_VERTEX_RADIUS = 14;
+	/** Horizontal space between the label and the circle border */
+	private static final int VERTEX_TEXT_PAD = 6;
+	/** Space kept between neighboring vertices on the layout circle */
+	private static final int VERTEX_SPACING = 16;
+	/** Extra room around the drawing */
+	private static final int GRAPH_PAD = 4;
+	/** Minimum width of the content area */
+	private static final int MIN_CONTENT_WIDTH = 150;
 
-    /** Radius of each vertex circle in pixels. */
-    private static final int VERTEX_RADIUS = 20;
+	private static final BasicStroke EDGE_STROKE = new BasicStroke(1.5f);
+	private static final BasicStroke VERTEX_STROKE = new BasicStroke(1.5f);
 
-    /** Margin around the panel content. */
-    private static final int CONTENT_MARGIN = 20;
+	/** The subgraph to display */
+	private final Subgraph subgraph;
+	/** Min values of the measures */
+	private final Map<String, Double> minValues;
+	/** Max values of the measures */
+	private final Map<String, Double> maxValues;
 
-    /** Vertical gap used between items (e.g. measure rows). */
-    private static final int VERTICAL_GAP = 5;
+	private boolean hover;
+	private Dimension cachedPreferredSize;
+	private MeasureTable measureTable;
 
-    /** Width of the measure progress bar. */
-    private static final int BAR_WIDTH = 100;
+	/** Positions and radii of the vertices, relative to the drawing origin */
+	private static final class GraphLayout {
+		final Map<Integer, Point> centers = new HashMap<>();
+		final Map<Integer, Integer> radii = new HashMap<>();
+		int size; // the drawing area is a square
+	}
 
-    /** Height of the measure progress bar. */
-    private static final int BAR_HEIGHT = 10;
+	/**
+	 * Constructor
+	 *
+	 * @param subgraph  the subgraph to display (not null)
+	 * @param minValues map of minimum measure values, or null
+	 * @param maxValues map of maximum measure values, or null
+	 */
+	public SubgraphPanel(Subgraph subgraph, Map<String, Double> minValues, Map<String, Double> maxValues) {
+		this.subgraph = Objects.requireNonNull(subgraph, "subgraph must not be null");
+		this.minValues = minValues;
+		this.maxValues = maxValues;
+		setOpaque(false);
+		setFont(ViewerStyle.itemFont());
+		setToolTipText(buildToolTip());
+		addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				hover = true;
+				repaint();
+			}
 
-    /** Preferred side length of the graph drawing area (square). */
-    private static final int GRAPH_AREA_SIZE = 200;
+			@Override
+			public void mouseExited(MouseEvent e) {
+				hover = false;
+				repaint();
+			}
+		});
+	}
 
-    /** Consistent font across the panel. */
-    private static final Font DEFAULT_FONT =
-            UIManager.getFont("Label.font").deriveFont(Font.PLAIN);
+	private MeasureTable measures() {
+		if (measureTable == null) {
+			measureTable = new MeasureTable(this, subgraph.getMeasures(), minValues, maxValues);
+		}
+		return measureTable;
+	}
 
-    /** Stroke used to draw edges. */
-    private static final BasicStroke EDGE_STROKE = new BasicStroke(1.5f);
+	private static String labelOf(Vertex v) {
+		return v.getLabel() == null ? "" : v.getLabel();
+	}
 
-    /** Stroke used to draw the vertex circle border. */
-    private static final BasicStroke VERTEX_STROKE = new BasicStroke(1.5f);
+	// ------------------------------------------------------------------
+	// Layout
+	// ------------------------------------------------------------------
 
-    /** The subgraph to display. */
-    private final Subgraph subgraph;
+	private GraphLayout layoutGraph(FontMetrics fm) {
+		GraphLayout layout = new GraphLayout();
+		List<Vertex> vertices = subgraph.getVertices();
+		int n = vertices.size();
+		if (n == 0) {
+			return layout;
+		}
 
-    /** Pre-computed centre positions for each vertex (keyed by vertex id). */
-    private final Map<Integer, Point> vertexPositions = new HashMap<>();
+		int maxR = 0;
+		for (Vertex v : vertices) {
+			int r = Math.max(MIN_VERTEX_RADIUS, fm.stringWidth(labelOf(v)) / 2 + VERTEX_TEXT_PAD);
+			layout.radii.put(v.getId(), r);
+			maxR = Math.max(maxR, r);
+		}
 
-    /** Minimum observed value for each numeric measure (for bar scaling). */
-    private final Map<String, Double> minValues;
+		if (n == 1) {
+			layout.size = 2 * (maxR + GRAPH_PAD);
+			layout.centers.put(vertices.get(0).getId(), new Point(layout.size / 2, layout.size / 2));
+			return layout;
+		}
 
-    /** Maximum observed value for each numeric measure (for bar scaling). */
-    private final Map<String, Double> maxValues;
+		// Radius of the layout circle: enough room so neighbors do not touch,
+		// and so an edge label fits between two vertices.
+		double circumference = n * (2.0 * maxR + VERTEX_SPACING);
+		double radius = Math.max(circumference / (2 * Math.PI), maxR + VERTEX_SPACING);
+		if (!subgraph.getEdges().isEmpty()) {
+			radius = Math.max(radius, maxR + 24);
+		}
+		int r = (int) Math.ceil(radius);
+		layout.size = 2 * (r + maxR + GRAPH_PAD);
+		int c = layout.size / 2;
+		for (int i = 0; i < n; i++) {
+			double angle = 2.0 * Math.PI * i / n - Math.PI / 2.0;
+			int x = (int) Math.round(c + r * Math.cos(angle));
+			int y = (int) Math.round(c + r * Math.sin(angle));
+			layout.centers.put(vertices.get(i).getId(), new Point(x, y));
+		}
+		return layout;
+	}
 
-    /**
-     * Constructs a panel for visualising the given subgraph.
-     *
-     * @param subgraph  the subgraph pattern to display (must not be null)
-     * @param minValues map of measure name → minimum numeric value, or null
-     * @param maxValues map of measure name → maximum numeric value, or null
-     * @throws NullPointerException if subgraph is null
-     */
-    public SubgraphPanel(Subgraph subgraph,
-            Map<String, Double> minValues,
-            Map<String, Double> maxValues) {
-        this.subgraph = Objects.requireNonNull(subgraph, "subgraph must not be null");
-        this.minValues = minValues;
-        this.maxValues = maxValues;
-        setBackground(Color.WHITE);
-        setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        setFont(DEFAULT_FONT);
-    }
+	@Override
+	public Dimension getPreferredSize() {
+		if (cachedPreferredSize == null) {
+			FontMetrics fm = getFontMetrics(ViewerStyle.itemFont());
+			GraphLayout layout = layoutGraph(fm);
+			int contentW = Math.max(MIN_CONTENT_WIDTH, Math.max(layout.size, measures().getPreferredWidth()));
+			int contentH = layout.size + measures().getSectionHeight();
+			cachedPreferredSize = new Dimension(contentW + 2 * PAD + ViewerStyle.SHADOW_DX,
+					contentH + 2 * PAD + ViewerStyle.SHADOW_DY);
+		}
+		return new Dimension(cachedPreferredSize);
+	}
 
-    /**
-     * Calculates the preferred size based on the graph drawing area and the space
-     * required for measure rows below it.
-     *
-     * @return preferred panel dimensions
-     */
-    @Override
-    public Dimension getPreferredSize() {
-        FontMetrics fm = getFontMetrics(DEFAULT_FONT);
-        int measureHeight = subgraph.getMeasures().size() * (fm.getHeight() + VERTICAL_GAP);
-        int totalWidth  = GRAPH_AREA_SIZE + 2 * CONTENT_MARGIN;
-        int totalHeight = GRAPH_AREA_SIZE + 2 * CONTENT_MARGIN + measureHeight + CONTENT_MARGIN;
-        return new Dimension(Math.max(totalWidth, 250), Math.max(totalHeight, 120));
-    }
+	@Override
+	public Dimension getMinimumSize() {
+		return getPreferredSize();
+	}
 
-    /**
-     * Paints the subgraph (edges then vertices) and the measure bars below.
-     *
-     * @param g the Graphics context provided by Swing
-     */
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g2.setFont(DEFAULT_FONT);
+	// ------------------------------------------------------------------
+	// Painting
+	// ------------------------------------------------------------------
 
-        computeVertexPositions();
-        drawEdges(g2);
-        drawVertices(g2);
-        drawMeasureValues(g2, g2.getFontMetrics());
+	@Override
+	protected void paintComponent(Graphics g) {
+		super.paintComponent(g);
+		Graphics2D g2 = (Graphics2D) g.create();
+		try {
+			ViewerStyle.applyRenderingHints(g2);
+			int w = getWidth();
+			int h = getHeight();
+			ViewerStyle.paintCard(g2, 0, 0, w, h, hover);
 
-        g2.dispose();
-    }
+			int cardW = w - ViewerStyle.SHADOW_DX;
+			int cardH = h - ViewerStyle.SHADOW_DY;
+			int contentX = PAD;
+			int contentW = cardW - 2 * PAD;
+			if (contentW <= 0 || cardH <= 2 * PAD) {
+				return;
+			}
 
-    /**
-     * Computes the (x, y) centre position for each vertex using a circular layout.
-     * When there is only one vertex it is placed at the centre of the drawing area.
-     */
-    private void computeVertexPositions() {
-        vertexPositions.clear();
+			MeasureTable mt = measures();
+			int bodyTop = PAD;
+			int bodyBottom = cardH - PAD - mt.getSectionHeight();
 
-        List<Vertex> vertices = subgraph.getVertices();
-        int n = vertices.size();
-        if (n == 0) {
-            return;
-        }
+			FontMetrics fm = g2.getFontMetrics(ViewerStyle.itemFont());
+			GraphLayout layout = layoutGraph(fm);
+			int ox = contentX + Math.max(0, (contentW - layout.size) / 2);
+			int oy = bodyTop + Math.max(0, (bodyBottom - bodyTop - layout.size) / 2);
 
-        // Centre of the drawing area
-        int cx = CONTENT_MARGIN + GRAPH_AREA_SIZE / 2;
-        int cy = CONTENT_MARGIN + GRAPH_AREA_SIZE / 2;
+			paintEdges(g2, layout, ox, oy);
+			paintVertices(g2, layout, ox, oy, fm);
 
-        if (n == 1) {
-            vertexPositions.put(vertices.get(0).getId(), new Point(cx, cy));
-            return;
-        }
+			mt.paintAtBottom(g2, contentX, cardH - PAD, contentW);
+		} finally {
+			g2.dispose();
+		}
+	}
 
-        // Radius of the circle on which vertices are arranged
-        int layoutRadius = GRAPH_AREA_SIZE / 2 - VERTEX_RADIUS - 5;
+	private void paintEdges(Graphics2D g2, GraphLayout layout, int ox, int oy) {
+		g2.setStroke(EDGE_STROKE);
+		g2.setFont(ViewerStyle.smallFont());
+		FontMetrics sfm = g2.getFontMetrics();
+		for (Edge edge : subgraph.getEdges()) {
+			Point a = layout.centers.get(edge.getSourceId());
+			Point b = layout.centers.get(edge.getTargetId());
+			if (a == null || b == null) {
+				continue;
+			}
+			int x1 = ox + a.x;
+			int y1 = oy + a.y;
+			int x2 = ox + b.x;
+			int y2 = oy + b.y;
+			g2.setColor(ViewerStyle.EDGE_COLOR);
+			g2.drawLine(x1, y1, x2, y2);
 
-        for (int i = 0; i < n; i++) {
-            double angle = 2.0 * Math.PI * i / n - Math.PI / 2.0;
-            int x = (int) Math.round(cx + layoutRadius * Math.cos(angle));
-            int y = (int) Math.round(cy + layoutRadius * Math.sin(angle));
-            vertexPositions.put(vertices.get(i).getId(), new Point(x, y));
-        }
-    }
+			String label = edge.getLabel();
+			if (label != null && !label.isEmpty()) {
+				int midX = (x1 + x2) / 2;
+				int midY = (y1 + y2) / 2;
+				int lw = sfm.stringWidth(label) + 6;
+				int lh = sfm.getHeight();
+				int lx = midX - lw / 2;
+				int ly = midY - lh / 2;
+				g2.setColor(ViewerStyle.CARD_BG);
+				g2.fillRoundRect(lx, ly, lw, lh, lh, lh);
+				g2.setColor(ViewerStyle.SEPARATOR);
+				g2.drawRoundRect(lx, ly, lw - 1, lh - 1, lh, lh);
+				g2.setColor(ViewerStyle.TEXT_SECONDARY);
+				g2.drawString(label, lx + 3, ly + sfm.getAscent());
+			}
+		}
+	}
 
-    /**
-     * Draws all edges of the subgraph as lines between the pre-computed vertex
-     * centres. The edge label is drawn at the midpoint of each edge.
-     *
-     * @param g2 the Graphics2D context
-     */
-    private void drawEdges(Graphics2D g2) {
-        g2.setStroke(EDGE_STROKE);
-        FontMetrics fm = g2.getFontMetrics();
+	private void paintVertices(Graphics2D g2, GraphLayout layout, int ox, int oy, FontMetrics fm) {
+		g2.setStroke(VERTEX_STROKE);
+		g2.setFont(ViewerStyle.itemFont());
+		for (Vertex v : subgraph.getVertices()) {
+			Point c = layout.centers.get(v.getId());
+			Integer r = layout.radii.get(v.getId());
+			if (c == null || r == null) {
+				continue;
+			}
+			String label = labelOf(v);
+			Color[] colors = ViewerStyle.chipColors(label);
+			int x = ox + c.x - r;
+			int y = oy + c.y - r;
+			int d = 2 * r;
+			g2.setColor(colors[0]);
+			g2.fillOval(x, y, d, d);
+			g2.setColor(colors[1]);
+			g2.drawOval(x, y, d, d);
+			g2.setColor(colors[2]);
+			int tx = ox + c.x - fm.stringWidth(label) / 2;
+			int ty = oy + c.y + (fm.getAscent() - fm.getDescent()) / 2;
+			g2.drawString(label, tx, ty);
+		}
+	}
 
-        for (Edge edge : subgraph.getEdges()) {
-            Point src = vertexPositions.get(edge.getSourceId());
-            Point dst = vertexPositions.get(edge.getTargetId());
-            if (src == null || dst == null) {
-                continue;
-            }
+	// ------------------------------------------------------------------
+	// Tooltip
+	// ------------------------------------------------------------------
 
-            // Draw the line
-            g2.setColor(Color.DARK_GRAY);
-            g2.drawLine(src.x, src.y, dst.x, dst.y);
+	private String buildToolTip() {
+		List<Vertex> vertices = subgraph.getVertices();
+		List<Edge> edges = subgraph.getEdges();
+		StringBuilder sb = new StringBuilder("<html><b>Subgraph</b> (");
+		sb.append(vertices.size()).append(vertices.size() == 1 ? " vertex, " : " vertices, ");
+		sb.append(edges.size()).append(edges.size() == 1 ? " edge)" : " edges)");
 
-            // Draw the edge label at the midpoint
-            String edgeLabel = edge.getLabel();
-            if (edgeLabel != null && !edgeLabel.isEmpty()) {
-                int midX = (src.x + dst.x) / 2;
-                int midY = (src.y + dst.y) / 2;
-                int labelW = fm.stringWidth(edgeLabel);
-                // Small white background pill behind the label for readability
-                g2.setColor(Color.WHITE);
-                g2.fillRect(midX - labelW / 2 - 2,
-                        midY - fm.getAscent(),
-                        labelW + 4,
-                        fm.getHeight());
-                g2.setColor(new Color(80, 80, 80));
-                g2.drawString(edgeLabel, midX - labelW / 2, midY);
-            }
-        }
-    }
+		Map<Integer, String> labelById = new HashMap<>();
+		StringBuilder vs = new StringBuilder();
+		for (Vertex v : vertices) {
+			labelById.put(v.getId(), labelOf(v));
+			if (vs.length() > 0) {
+				vs.append(", ");
+			}
+			vs.append(v.getId()).append(':').append(labelOf(v));
+		}
+		sb.append("<br><b>Vertices:</b> ").append(ViewerStyle.escapeHtml(ViewerStyle.abbreviate(vs.toString(), 300)));
 
-    /**
-     * Draws all vertices as filled circles with their labels centred inside.
-     *
-     * @param g2 the Graphics2D context
-     */
-    private void drawVertices(Graphics2D g2) {
-        g2.setStroke(VERTEX_STROKE);
-        FontMetrics fm = g2.getFontMetrics();
+		if (!edges.isEmpty()) {
+			StringBuilder es = new StringBuilder();
+			for (Edge e : edges) {
+				if (es.length() > 0) {
+					es.append(", ");
+				}
+				es.append(labelById.getOrDefault(e.getSourceId(), "?")).append('\u2013')
+						.append(labelById.getOrDefault(e.getTargetId(), "?"));
+				if (e.getLabel() != null && !e.getLabel().isEmpty()) {
+					es.append(" (").append(e.getLabel()).append(')');
+				}
+			}
+			sb.append("<br><b>Edges:</b> ").append(ViewerStyle.escapeHtml(ViewerStyle.abbreviate(es.toString(), 300)));
+		}
+		if (!subgraph.getMeasures().isEmpty()) {
+			sb.append("<br><br>").append(MeasureTable.toHtmlRows(subgraph.getMeasures()));
+		}
+		return sb.append("</html>").toString();
+	}
 
-        for (Vertex vertex : subgraph.getVertices()) {
-            Point centre = vertexPositions.get(vertex.getId());
-            if (centre == null) {
-                continue;
-            }
-
-            int x = centre.x - VERTEX_RADIUS;
-            int y = centre.y - VERTEX_RADIUS;
-            int d = VERTEX_RADIUS * 2;
-
-            // Fill
-            g2.setColor(new Color(180, 210, 255));
-            g2.fillOval(x, y, d, d);
-
-            // Border
-            g2.setColor(new Color(60, 100, 180));
-            g2.drawOval(x, y, d, d);
-
-            // Vertex label centred in circle
-            String label = vertex.getLabel();
-            int textX = centre.x - fm.stringWidth(label) / 2;
-            int textY = centre.y + (fm.getAscent() - fm.getDescent()) / 2;
-            g2.setColor(Color.BLACK);
-            g2.drawString(label, textX, textY);
-        }
-    }
-
-    /**
-     * Draws the measure labels and progress bars below the graph drawing area.
-     *
-     * @param g2      the Graphics2D context
-     * @param metrics font metrics for the current font
-     */
-    private void drawMeasureValues(Graphics2D g2, FontMetrics metrics) {
-        g2.setFont(DEFAULT_FONT);
-        int lineHeight = metrics.getHeight() + VERTICAL_GAP;
-        int measureCount = subgraph.getMeasures().size();
-        int totalMeasuresHeight = measureCount * lineHeight;
-
-        // Place measures so the last one sits CONTENT_MARGIN above the bottom edge
-        int y = getHeight() - CONTENT_MARGIN - totalMeasuresHeight + metrics.getAscent();
-        int x = CONTENT_MARGIN;
-
-        int measureIndex = 0;
-        for (Map.Entry<String, String> entry : subgraph.getMeasures().entrySet()) {
-            String name     = entry.getKey();
-            String strValue = entry.getValue();
-
-            boolean isDouble = false;
-            double value = 0;
-            try {
-                value = Double.parseDouble(strValue);
-                isDouble = true;
-            } catch (NumberFormatException e) {
-                // non-numeric: fall through
-            }
-
-            if (isDouble) {
-                String text = name + ": " + formatValue(value);
-                g2.setColor(Color.BLACK);
-                g2.drawString(text, x, y);
-
-                Double min = (minValues != null) ? minValues.get(name) : null;
-                Double max = (maxValues != null) ? maxValues.get(name) : null;
-                if (min != null && max != null && max > min) {
-                    double ratio    = (value - min) / (max - min);
-                    int    barLength = (int) (ratio * BAR_WIDTH);
-                    int    barX      = x + metrics.stringWidth(text) + 10;
-                    int    barY      = y - metrics.getAscent()
-                            + (metrics.getAscent() + metrics.getDescent() - BAR_HEIGHT) / 2;
-
-                    Color color = MEASURE_COLORS.get(measureIndex % MEASURE_COLORS.size());
-                    g2.setColor(color);
-                    g2.fillRect(barX, barY, barLength, BAR_HEIGHT);
-                    g2.setColor(Color.GRAY);
-                    g2.drawRect(barX, barY, BAR_WIDTH, BAR_HEIGHT);
-                }
-            } else {
-                g2.setColor(Color.BLACK);
-                g2.drawString(name + ": " + strValue, x, y);
-            }
-
-            y += lineHeight;
-            measureIndex++;
-        }
-    }
-
-    /**
-     * Formats a double value to four decimal places.
-     *
-     * @param val the value to format
-     * @return formatted string
-     */
-    private String formatValue(double val) {
-        return String.format("%.4f", val);
-    }
-
-    /**
-     * Returns the subgraph displayed by this panel.
-     *
-     * @return the subgraph
-     */
-    public Subgraph getSubgraph() {
-        return subgraph;
-    }
+	/**
+	 * Returns the subgraph displayed by this panel.
+	 *
+	 * @return the subgraph
+	 */
+	public Subgraph getSubgraph() {
+		return subgraph;
+	}
 }

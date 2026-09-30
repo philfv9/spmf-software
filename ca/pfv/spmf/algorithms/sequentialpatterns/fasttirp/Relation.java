@@ -15,6 +15,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.fasttirp;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 /**
  * The temporal relations (b = before, m = meet, o = overlap, f = finishes, s =

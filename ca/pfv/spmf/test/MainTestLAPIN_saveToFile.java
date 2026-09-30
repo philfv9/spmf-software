@@ -21,6 +21,12 @@ public class MainTestLAPIN_saveToFile {
 		
 		double minsup = 0.5; // we use a minimum support of 2 sequences.
 		
+		// This optional parameter allows to specify the minimum pattern length:
+//		algo.setMinimumPatternLength(1);  // optional
+
+		// This optional parameter allows to specify the maximum pattern length:
+//		algo.setMaximumPatternLength(2);  // optional
+		
 		// execute the algorithm
 		algo.runAlgorithm(inputPath, outputPath, minsup);    
 		algo.printStatistics();

@@ -202,7 +202,11 @@ public class AlgoHMine_FAST {
 		startTimestamp = System.currentTimeMillis();
 		maxMemoryUsage = 0;
 		writer = new BufferedWriter(new FileWriter(output), 1 << 16);
-
+		writer.write("@FILETYPE=\"Frequent itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+		
 		try {
 			// (1) first pass: count item supports and collect
 			//     database sizing statistics

@@ -1,8 +1,11 @@
 package ca.pfv.spmf.gui.workflow_editor;
 
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,8 +17,10 @@ import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 
 import ca.pfv.spmf.algorithmmanager.AlgorithmManager;
@@ -23,7 +28,6 @@ import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
 import ca.pfv.spmf.gui.AlgorithmSelectorDialog;
 import ca.pfv.spmf.gui.DialogSelectAlgorithmParameter;
-import ca.pfv.spmf.gui.RecentFilesPopup;
 import ca.pfv.spmf.gui.parameterselectionpanel.ParameterSelectionPanel;
 import ca.pfv.spmf.gui.preferences.PreferencesManager;
 
@@ -56,6 +60,10 @@ import ca.pfv.spmf.gui.preferences.PreferencesManager;
 @SuppressWarnings("serial")
 class InformationPanel extends JPanel implements DrawPanelListener {
 
+    // --- Layout constants (same as AlgorithmRunnerPanel) --------------------
+    private static final int INSET_V = 4;
+    private static final int INSET_H = 4;
+
     /** The parent frame (the workflow editor window). */
     JFrame parent;
 
@@ -67,6 +75,11 @@ class InformationPanel extends JPanel implements DrawPanelListener {
 
     /** The node currently displayed in the panel. */
     Node currentNode = null;
+
+    // --- Shared button column sizes (same computation as AlgorithmRunnerPanel) ---
+    private final Dimension selectDim;
+    private final Dimension recentDim;
+    private final Dimension viewDocDim;
 
     // -----------------------------------------------------------------------
     // Output file sub-panel
@@ -141,6 +154,19 @@ class InformationPanel extends JPanel implements DrawPanelListener {
         this.parent    = parent;
         this.drawPanel = drawPanel;
 
+        // --- Shared column sizes (identical to AlgorithmRunnerPanel) ---------
+        JButton protoSelect = new JButton("Select");
+        JButton protoRecent = new JButton("Recent \u25BC");
+        JButton protoView   = new JButton("View");
+        JButton protoDoc    = new JButton("Guide");
+        int btnH = Math.max(
+                Math.max(protoSelect.getPreferredSize().height, protoRecent.getPreferredSize().height),
+                Math.max(protoView.getPreferredSize().height,   protoDoc.getPreferredSize().height));
+        selectDim  = new Dimension(protoSelect.getPreferredSize().width + 6, btnH);
+        recentDim  = new Dimension(protoRecent.getPreferredSize().width + 6, btnH);
+        viewDocDim = new Dimension(
+                Math.max(protoView.getPreferredSize().width, protoDoc.getPreferredSize().width) + 14, btnH);
+
         createNodeInputFilePanel();
         add(nodeFileInputPanel);
         nodeFileInputPanel.setVisible(false);
@@ -155,6 +181,38 @@ class InformationPanel extends JPanel implements DrawPanelListener {
     }
 
     // -----------------------------------------------------------------------
+    // Small widget helpers (same as AlgorithmRunnerPanel)
+    // -----------------------------------------------------------------------
+
+    private static JButton makeButton(String text, String tooltip, Dimension size) {
+        JButton b = new JButton(text);
+        b.setToolTipText(tooltip);
+        b.setPreferredSize(size);
+        return b;
+    }
+
+    private static JPanel fixedSizePanel(Dimension size) {
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        p.setPreferredSize(size);
+        p.setMinimumSize(size);
+        p.setMaximumSize(size);
+        return p;
+    }
+
+    private static GridBagConstraints defaultGbc() {
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridheight = 1;
+        c.gridwidth = 1;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.anchor = GridBagConstraints.WEST;
+        c.weightx = 0;
+        c.weighty = 0;
+        c.insets = new Insets(INSET_V, INSET_H, INSET_V, INSET_H);
+        return c;
+    }
+
+    // -----------------------------------------------------------------------
     // Sub-panel builders
     // -----------------------------------------------------------------------
 
@@ -164,33 +222,39 @@ class InformationPanel extends JPanel implements DrawPanelListener {
     private void createNodeOutputFilePanel() {
         nodeFileOutputPanel = new JPanel();
         nodeFileOutputPanel.setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
+        GridBagConstraints gbc = defaultGbc();
 
         JLabel labelFileName = new JLabel("File:");
         textFieldFileNameOutput = new JTextField(30);
         textFieldFileNameOutput.setEditable(false);
 
         gbc.gridx = 0; gbc.gridy = 0;
-        gbc.anchor = GridBagConstraints.NORTHWEST; gbc.weighty = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.WEST;
         nodeFileOutputPanel.add(labelFileName, gbc);
 
-        gbc.gridx = 1; gbc.gridy = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1;
+        gbc.gridx = 1; gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1;
         nodeFileOutputPanel.add(textFieldFileNameOutput, gbc);
 
-        buttonOutput = new JButton("Select");
-        buttonOutput.setToolTipText("Select an output file");
+        buttonOutput       = makeButton("Select", "Select an output file location", selectDim);
+        buttonRecentOutput = makeButton("Recent \u25BC", "Show recently used output files", recentDim);
+
         gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
-        gbc.anchor = GridBagConstraints.NORTHWEST;
-        gbc.gridx = 2; gbc.gridy = 1;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.gridx = 2; gbc.gridy = 0;
         nodeFileOutputPanel.add(buttonOutput, gbc);
 
-        buttonRecentOutput = new JButton("Recent \u25BC");
-        buttonRecentOutput.setToolTipText("Show recently used output files");
-        gbc.gridx = 3; gbc.gridy = 1;
+        gbc.gridx = 3; gbc.gridy = 0;
         nodeFileOutputPanel.add(buttonRecentOutput, gbc);
+
+        // Spacer so the columns line up with the input row (as in AlgorithmRunnerPanel)
+        gbc.gridx = 4; gbc.gridy = 0;
+        nodeFileOutputPanel.add(fixedSizePanel(viewDocDim), gbc);
 
         gbc.gridx = 0; gbc.gridy = GridBagConstraints.RELATIVE;
         gbc.weighty = 1;
+        gbc.insets = new Insets(0, 0, 0, 0);
         nodeFileOutputPanel.add(Box.createVerticalGlue(), gbc);
 
         buttonOutput.addActionListener(e -> {
@@ -202,19 +266,7 @@ class InformationPanel extends JPanel implements DrawPanelListener {
             parent.repaint();
         });
 
-        buttonRecentOutput.addActionListener(e -> {
-            List<String> recent = PreferencesManager.getInstance().getRecentOutputFiles();
-            RecentFilesPopup.show(buttonRecentOutput, recent, path -> {
-                NodeFileOutput outNode = (NodeFileOutput) currentNode;
-                java.io.File f = new java.io.File(path);
-                outNode.name       = f.getName();
-                outNode.outputFile = path;
-                outNode.rectangle  = null;
-                textFieldFileNameOutput.setText(outNode.name);
-                drawPanel.relayoutAndRepaint();
-                parent.repaint();
-            });
-        });
+        buttonRecentOutput.addActionListener(e -> showRecentFilesMenu(true));
     }
 
     /**
@@ -223,39 +275,40 @@ class InformationPanel extends JPanel implements DrawPanelListener {
     private void createNodeInputFilePanel() {
         nodeFileInputPanel = new JPanel();
         nodeFileInputPanel.setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
+        GridBagConstraints gbc = defaultGbc();
 
         JLabel labelFileName = new JLabel("File:");
         textFieldFileNameInput = new JTextField(30);
         textFieldFileNameInput.setEditable(false);
 
         gbc.gridx = 0; gbc.gridy = 0;
-        gbc.anchor = GridBagConstraints.NORTHWEST; gbc.weighty = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.WEST;
         nodeFileInputPanel.add(labelFileName, gbc);
 
-        gbc.gridx = 1; gbc.gridy = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1;
+        gbc.gridx = 1; gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1;
         nodeFileInputPanel.add(textFieldFileNameInput, gbc);
 
-        buttonInput = new JButton("Select");
-        buttonInput.setToolTipText("Choose an input file");
+        buttonInput       = makeButton("Select", "Select an input file", selectDim);
+        buttonRecentInput = makeButton("Recent \u25BC", "Show recently used input files", recentDim);
+        buttonViewInput   = makeButton("View", "Open the input file in a viewer", viewDocDim);
+        buttonViewInput.setEnabled(false);
+
         gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
-        gbc.anchor = GridBagConstraints.NORTHWEST;
-        gbc.gridx = 2; gbc.gridy = 1;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.gridx = 2; gbc.gridy = 0;
         nodeFileInputPanel.add(buttonInput, gbc);
 
-        buttonRecentInput = new JButton("Recent \u25BC");
-        buttonRecentInput.setToolTipText("Show recently used input files");
-        gbc.gridx = 3; gbc.gridy = 1;
+        gbc.gridx = 3; gbc.gridy = 0;
         nodeFileInputPanel.add(buttonRecentInput, gbc);
 
-        buttonViewInput = new JButton("View");
-        buttonViewInput.setToolTipText("View the input file");
-        buttonViewInput.setEnabled(false);
-        gbc.gridx = 4; gbc.gridy = 1;
+        gbc.gridx = 4; gbc.gridy = 0;
         nodeFileInputPanel.add(buttonViewInput, gbc);
 
         gbc.gridx = 0; gbc.gridy = GridBagConstraints.RELATIVE;
         gbc.weighty = 1;
+        gbc.insets = new Insets(0, 0, 0, 0);
         nodeFileInputPanel.add(Box.createVerticalGlue(), gbc);
 
         buttonInput.addActionListener(e -> {
@@ -270,20 +323,7 @@ class InformationPanel extends JPanel implements DrawPanelListener {
             parent.repaint();
         });
 
-        buttonRecentInput.addActionListener(e -> {
-            List<String> recent = PreferencesManager.getInstance().getRecentInputFiles();
-            RecentFilesPopup.show(buttonRecentInput, recent, path -> {
-                NodeFileInput inNode = (NodeFileInput) currentNode;
-                java.io.File f = new java.io.File(path);
-                inNode.name      = f.getName();
-                inNode.inputFile = path;
-                inNode.rectangle = null;
-                textFieldFileNameInput.setText(inNode.name);
-                buttonViewInput.setEnabled(true);
-                drawPanel.relayoutAndRepaint();
-                parent.repaint();
-            });
-        });
+        buttonRecentInput.addActionListener(e -> showRecentFilesMenu(false));
 
         buttonViewInput.addActionListener(e ->
                 openInputFileWithViewer(((NodeFileInput) currentNode).inputFile));
@@ -309,7 +349,7 @@ class InformationPanel extends JPanel implements DrawPanelListener {
 
         textFieldAlgorithmName = new JTextField(15);
         textFieldAlgorithmName.setEditable(false);
-        textFieldAlgorithmName.setToolTipText("Currently selected algorithm");
+        textFieldAlgorithmName.setToolTipText("Currently selected algorithm \u2014 click Select to change");
 
         GridBagConstraints rowGbc = new GridBagConstraints();
         rowGbc.gridx = 0; rowGbc.gridy = 0;
@@ -317,24 +357,22 @@ class InformationPanel extends JPanel implements DrawPanelListener {
         rowGbc.anchor = GridBagConstraints.WEST;
         algorithmRowPanel.add(textFieldAlgorithmName, rowGbc);
 
-        buttonSelectAlgorithm = new JButton("Select");
-        buttonSelectAlgorithm.setToolTipText("Open the algorithm browser");
-        rowGbc.gridx = 1; rowGbc.weightx = 0;
-        rowGbc.fill = GridBagConstraints.NONE;
-        rowGbc.insets = new java.awt.Insets(0, 4, 0, 0);
-        algorithmRowPanel.add(buttonSelectAlgorithm, rowGbc);
-
-        buttonRecentAlgorithm = new JButton("Recent \u25BC");
-        buttonRecentAlgorithm.setToolTipText("Show recently used algorithms valid for this position");
-        rowGbc.gridx = 2;
-        rowGbc.insets = new java.awt.Insets(0, 4, 0, 0);
-        algorithmRowPanel.add(buttonRecentAlgorithm, rowGbc);
-
-        buttonExample = new JButton("Guide");
+        buttonSelectAlgorithm = makeButton("Select", "Open the searchable algorithm browser", selectDim);
+        buttonRecentAlgorithm = makeButton("Recent \u25BC",
+                "Show recently used algorithms valid for this position", recentDim);
+        buttonExample = makeButton("Guide", "Open the documentation page of this algorithm", viewDocDim);
         buttonExample.setEnabled(false);
-        buttonExample.setToolTipText("Open documentation for this algorithm");
+
+        rowGbc.weightx = 0;
+        rowGbc.fill = GridBagConstraints.NONE;
+        rowGbc.anchor = GridBagConstraints.CENTER;
+        rowGbc.insets = new Insets(0, INSET_H, 0, 0);
+
+        rowGbc.gridx = 1;
+        algorithmRowPanel.add(buttonSelectAlgorithm, rowGbc);
+        rowGbc.gridx = 2;
+        algorithmRowPanel.add(buttonRecentAlgorithm, rowGbc);
         rowGbc.gridx = 3;
-        rowGbc.insets = new java.awt.Insets(0, 4, 0, 0);
         algorithmRowPanel.add(buttonExample, rowGbc);
 
         // Add algorithm row panel to main panel
@@ -357,25 +395,7 @@ class InformationPanel extends JPanel implements DrawPanelListener {
 
         buttonSelectAlgorithm.addActionListener(e -> openAlgorithmSelectorDialog());
 
-        buttonRecentAlgorithm.addActionListener(e -> {
-            try {
-                List<String> filtered = buildFilteredRecentAlgorithms();
-                if (filtered.isEmpty()) {
-                    JOptionPane.showMessageDialog(parent,
-                            "No recently used algorithms are valid for this position in the workflow.",
-                            "Recent Algorithms", JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
-                RecentFilesPopup.show(buttonRecentAlgorithm, filtered, algorithmName -> {
-                    if (algorithmName != null && !algorithmName.isEmpty()) {
-                        updateUserInterfaceForAlgorithm(algorithmName, null, false);
-                        saveRecentAlgorithm(algorithmName);
-                    }
-                });
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
+        buttonRecentAlgorithm.addActionListener(e -> showRecentAlgorithmsMenu());
 
         buttonExample.addActionListener(e -> {
             try {
@@ -387,6 +407,131 @@ class InformationPanel extends JPanel implements DrawPanelListener {
     }
 
     // -----------------------------------------------------------------------
+    // Recent-files / recent-algorithms popup menus (same as the runner)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Builds and shows a popup menu of recently used files anchored to the
+     * appropriate "Recent ▼" button.
+     *
+     * @param isOutput {@code true} for recent output files, {@code false} for input
+     */
+    private void showRecentFilesMenu(boolean isOutput) {
+        List<String> recentFiles = isOutput
+                ? PreferencesManager.getInstance().getRecentOutputFiles()
+                : PreferencesManager.getInstance().getRecentInputFiles();
+
+        JPopupMenu menu = new JPopupMenu();
+
+        if (recentFiles.isEmpty()) {
+            JMenuItem emptyItem = new JMenuItem("(no recent files)");
+            emptyItem.setEnabled(false);
+            menu.add(emptyItem);
+        } else {
+            for (String filePath : recentFiles) {
+                String displayName = new File(filePath).getName();
+                JMenuItem item = new JMenuItem(displayName);
+                item.setToolTipText(filePath);
+
+                final String fullPath = filePath;
+                item.addActionListener(e -> {
+                    if (isOutput) {
+                        applyRecentOutputFile(fullPath);
+                    } else {
+                        applyRecentInputFile(fullPath);
+                    }
+                });
+                menu.add(item);
+            }
+        }
+
+        JButton anchor = isOutput ? buttonRecentOutput : buttonRecentInput;
+        menu.show(anchor, 0, anchor.getHeight());
+    }
+
+    /**
+     * Builds and shows a popup menu of recently used algorithm names anchored to
+     * the "Recent ▼" button. Only algorithms that exist and are valid for the
+     * current position in the workflow are shown.
+     */
+    private void showRecentAlgorithmsMenu() {
+        List<String> recentAlgorithms = PreferencesManager.getInstance().getRecentAlgorithms();
+
+        JPopupMenu menu = new JPopupMenu();
+
+        // Filter the recent algorithms based on the current workflow position
+        Set<String> suggested;
+        try {
+            suggested = buildSuggestedSet();   // null = root node: no filtering
+        } catch (Exception ex) {
+            suggested = null;
+        }
+
+        List<String> filteredAlgorithms = new ArrayList<>();
+        for (String algorithmName : recentAlgorithms) {
+            try {
+                DescriptionOfAlgorithm algorithm = AlgorithmManager.getInstance()
+                        .getDescriptionOfAlgorithm(algorithmName);
+
+                if (algorithm != null && (suggested == null || suggested.contains(algorithmName))) {
+                    filteredAlgorithms.add(algorithmName);
+                }
+            } catch (Exception ex) {
+                // Algorithm not found or error — skip it
+            }
+        }
+
+        if (filteredAlgorithms.isEmpty()) {
+            JMenuItem emptyItem = new JMenuItem("(no recent algorithms)");
+            emptyItem.setEnabled(false);
+            menu.add(emptyItem);
+        } else {
+            for (String algorithmName : filteredAlgorithms) {
+                JMenuItem item = new JMenuItem(algorithmName);
+                item.setToolTipText("Select " + algorithmName);
+
+                final String name = algorithmName;
+                item.addActionListener(e -> updateUserInterfaceForAlgorithm(name, null, false));
+                menu.add(item);
+            }
+        }
+
+        JButton anchor = buttonRecentAlgorithm;
+        menu.show(anchor, 0, anchor.getHeight());
+    }
+
+    /**
+     * Applies a recently used input file to the current input node.
+     *
+     * @param fullPath the full file path.
+     */
+    private void applyRecentInputFile(String fullPath) {
+        NodeFileInput inNode = (NodeFileInput) currentNode;
+        inNode.name      = new File(fullPath).getName();
+        inNode.inputFile = fullPath;
+        inNode.rectangle = null;
+        textFieldFileNameInput.setText(inNode.name);
+        buttonViewInput.setEnabled(true);
+        drawPanel.relayoutAndRepaint();
+        parent.repaint();
+    }
+
+    /**
+     * Applies a recently used output file to the current output node.
+     *
+     * @param fullPath the full file path.
+     */
+    private void applyRecentOutputFile(String fullPath) {
+        NodeFileOutput outNode = (NodeFileOutput) currentNode;
+        outNode.name       = new File(fullPath).getName();
+        outNode.outputFile = fullPath;
+        outNode.rectangle  = null;
+        textFieldFileNameOutput.setText(outNode.name);
+        drawPanel.relayoutAndRepaint();
+        parent.repaint();
+    }
+
+    // -----------------------------------------------------------------------
     // Algorithm selector dialog
     // -----------------------------------------------------------------------
 
@@ -395,8 +540,7 @@ class InformationPanel extends JPanel implements DrawPanelListener {
      */
     private void openAlgorithmSelectorDialog() {
         try {
-            Set<String> suggested = buildSuggestedSet();
-            Set<String> highlightSet = (suggested == null) ? null : suggested;
+            Set<String> highlightSet = buildSuggestedSet();
 
             AlgorithmSelectorDialog dialog = new AlgorithmSelectorDialog(
                     (Frame) javax.swing.SwingUtilities.getWindowAncestor(this),
@@ -460,33 +604,6 @@ class InformationPanel extends JPanel implements DrawPanelListener {
             }
         }
         return suggested;
-    }
-
-    /**
-     * Returns the recent algorithms list filtered to only those valid for the current workflow position.
-     * When the current node is a root, all recent algorithms are returned unchanged.
-     * When the current node is a non-root, only entries present in the suggested set are kept, in recency order.
-     *
-     * @return the filtered list of recent algorithm names, never null but may be empty.
-     * @throws Exception if the algorithm manager cannot be accessed.
-     */
-    private List<String> buildFilteredRecentAlgorithms() throws Exception {
-        List<String> recent = PreferencesManager.getInstance().getRecentAlgorithms();
-        Set<String> suggested = buildSuggestedSet();
-
-        // null means root node: no type-based filtering applies, return all recent entries
-        if (suggested == null) {
-            return new ArrayList<>(recent);
-        }
-
-        // non-root node: keep only recent entries that are in the suggested set
-        List<String> filtered = new ArrayList<>();
-        for (String name : recent) {
-            if (suggested.contains(name)) {
-                filtered.add(name);
-            }
-        }
-        return filtered;
     }
 
     // -----------------------------------------------------------------------
@@ -581,6 +698,7 @@ class InformationPanel extends JPanel implements DrawPanelListener {
             boolean hasInput  = algorithm != null && algorithm.getInputFileTypes()  != null;
 
             textFieldAlgorithmName.setText(algorithmName != null ? algorithmName : "");
+            textFieldAlgorithmName.setCaretPosition(0);
 
             updateExampleButton(algorithm);
             updateParameterPanel(algorithm, parameters);
@@ -641,7 +759,7 @@ class InformationPanel extends JPanel implements DrawPanelListener {
         try {
             if (inputFile == null || inputFile.isEmpty()) {
                 JOptionPane.showMessageDialog(null,
-                        "No input file is selected. Please click \"...\" to select one.",
+                        "No input file is selected. Please click \"Select\" to select one.",
                         "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }

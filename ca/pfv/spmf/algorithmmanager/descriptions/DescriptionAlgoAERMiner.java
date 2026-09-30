@@ -79,7 +79,8 @@ public class DescriptionAlgoAERMiner extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getInputFileTypes() {
-		return new String[]{"Dynamic Attributed Graph"};
+		return null;
+//		return new String[]{"Dynamic Attributed Graph"};
 	}
 
 	@Override

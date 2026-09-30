@@ -15,6 +15,8 @@ package ca.pfv.spmf.algorithms.timeseries.reader_writer;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 import java.io.BufferedWriter;
@@ -72,6 +74,10 @@ public class AlgoTimeSeriesWriter {
 
 		// write the file
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Time series database\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		
 		// for each time series
 		for(int j = 0; j < multipleTimeSeries.size(); j++){

@@ -128,9 +128,9 @@ public class AlgoHUIMACO {
 
 //        test.printBit(itemsBitMap.getItemsBitmap(),data.getHTWUs_1(),data.getDatabase());
 
-		if(DEBUG_MODE) {
-		System.out.println("End of data processing");
-		System.out.println(" Memory ~ " + maxMemory + " MB");
+		if (DEBUG_MODE) {
+			System.out.println("End of data processing");
+			System.out.println(" Memory ~ " + maxMemory + " MB");
 		}
 
 		AntColony antColony = new AntColony(data.getHTWUs_1().size());
@@ -142,15 +142,15 @@ public class AlgoHUIMACO {
 		HUIS huis = new HUIS();
 
 		if (data.getHTWUs_1().size() > 0) {
-			if(DEBUG_MODE) {
-			System.out.println("Start initializing the ant colony");
+			if (DEBUG_MODE) {
+				System.out.println("Start initializing the ant colony");
 			}
 
 			antColony.initializeAntColony(this.min_utility, data.getHTWUs_1(), data.getDatabase(),
 					itemsBitMap.getItemsBitmap(), huis);
 
-			if(DEBUG_MODE) {
-			System.out.println("End of ant colony initialization");
+			if (DEBUG_MODE) {
+				System.out.println("End of ant colony initialization");
 			}
 
 			antColony.searchFood(this.min_utility, data.getDatabase(), data.getHTWUs_1(), itemsBitMap.getItemsBitmap(),
@@ -185,8 +185,12 @@ public class AlgoHUIMACO {
 	 */
 	private void writeOut(HUIS huis, String output) throws IOException {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
-		; // writer to write the output file
-			// Create a string buffer
+		writer.write("@FILETYPE=\"High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		// writer to write the output file
+		// Create a string buffer
 		StringBuilder buffer = new StringBuilder();
 		// append the prefix
 		for (int i = 0; i < huis.getHuiSet().size(); i++) {

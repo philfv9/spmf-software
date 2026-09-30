@@ -13,6 +13,8 @@ import java.util.List;
  * IPredict is distributed under The MIT License (MIT).
  * You may obtain a copy of the License at
  * https://opensource.org/licenses/MIT 
+ * 
+ * Do not remove license and copyright information.
  */
 public class StatsLogger {
 

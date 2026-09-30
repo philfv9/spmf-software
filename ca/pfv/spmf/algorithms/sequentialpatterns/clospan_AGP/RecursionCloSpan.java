@@ -11,15 +11,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.AbstractionCreator_Qualitative;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Abstraction_Qualitative;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Item;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.ItemAbstractionPair;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Pair;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Pattern;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.PseudoSequence;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.PseudoSequenceDatabase;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.abstractions.Abstraction_Generic;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.abstractions.ItemAbstractionPair;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.creators.AbstractionCreator;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.creators.ItemAbstractionPairCreator;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Pattern;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.trie.Trie;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.trie.TrieNode;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.savers.Saver;
@@ -49,6 +48,8 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.savers.Saver;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  *
  * @author agomariz
  */
@@ -57,7 +58,7 @@ class RecursionCloSpan {
     /**
      * Abstraction creator
      */
-    private AbstractionCreator abstractionCreator;
+    private AbstractionCreator_Qualitative abstractionCreator;
     /**
      * Saver, got from Class AlgoPrefixSpan where the user has already chosen
      * where he wants to keep the results.
@@ -113,7 +114,7 @@ class RecursionCloSpan {
      * @param findClosedPatterns flag to indicate if we are interesting in only 
      * finding the closed sequences
      */
-    public RecursionCloSpan(AbstractionCreator abstractionCreator, Saver saver, long minSupportAbsolute, PseudoSequenceDatabase pseudoDatabase, Map<Item, BitSet> mapSequenceID, boolean findClosedPatterns, boolean executePruningMethods) {
+    public RecursionCloSpan(AbstractionCreator_Qualitative abstractionCreator, Saver saver, long minSupportAbsolute, PseudoSequenceDatabase pseudoDatabase, Map<Item, BitSet> mapSequenceID, boolean findClosedPatterns, boolean executePruningMethods) {
         this.abstractionCreator = abstractionCreator;
         this.minSupportAbsolute = minSupportAbsolute;
         this.pseudoDatabase = pseudoDatabase;
@@ -198,7 +199,7 @@ class RecursionCloSpan {
      * @param firstTime Flag that points out if it the first time that 
      * @return The new projected database
      */
-    private PseudoSequenceDatabase makePseudoProjections(Item item, PseudoSequenceDatabase database, Abstraction_Generic abstraccion, boolean firstTime) {
+    private PseudoSequenceDatabase makePseudoProjections(Item item, PseudoSequenceDatabase database, Abstraction_Qualitative abstraccion, boolean firstTime) {
         // The projected pseudo-database
         PseudoSequenceDatabase newProjectedDatabase = new PseudoSequenceDatabase();
         //Counter of number of projections done
@@ -390,7 +391,7 @@ class RecursionCloSpan {
             if (pair.getSupport() >= minSupportAbsolute) {
                 // create the new pattern
                 Pattern newPrefix = prefix.clonePatron();
-                ItemAbstractionPair newPair = ItemAbstractionPairCreator.getInstance().getItemAbstractionPair(pair.getPar().getItem(), abstractionCreator.createAbstractionFromAPrefix(prefix, pair.getPar().getAbstraction()));
+                ItemAbstractionPair newPair = new ItemAbstractionPair(pair.getPar().getItem(), abstractionCreator.createAbstractionFromAPrefix(prefix, pair.getPar().getAbstraction()));
                 newPrefix.add(newPair);
                 // build the projected database with respect to this frequent item (the item which forms the prefix)
                 PseudoSequenceDatabase projection = makePseudoProjections(pair.getPar().getItem(), context, pair.getPar().getAbstraction(), false);
@@ -500,7 +501,7 @@ class RecursionCloSpan {
          */
         if (associatedMap == null) {
             associatedMap = new LinkedHashMap<Integer, List<Entry<Pattern, Trie>>>();
-            List entryList = new ArrayList<Entry<Pattern, Trie>>();
+            ArrayList<Entry<Pattern, Trie>> entryList = new ArrayList<Entry<Pattern, Trie>>();
             entryList.add(newEntry);
             associatedMap.put(key2, entryList);
             matchingMap.put(key1, associatedMap);
@@ -595,17 +596,6 @@ class RecursionCloSpan {
 
     /**
      * One of the methods used by key2 in the method pruneByCheckingProjectedDBSize 
-     * that return the number of elements that appear in the projected
-     * database
-     * @param projection projected database of the prefix to consider
-     * @return 
-     */
-    private static int key_standard(PseudoSequenceDatabase projection) {
-        return projection.getNumberOfElementsProjectedDatabase();
-    }
-
-    /**
-     * One of the methods used by key2 in the method pruneByCheckingProjectedDBSize 
      * that return the addition of the number of elements that appear in 
      * the projected database and the support of the related prefix
      * @param projection projected database of the prefix to consider
@@ -615,51 +605,6 @@ class RecursionCloSpan {
     private static int key_standardAndSupport(PseudoSequenceDatabase projection, Trie prefix) {
         return projection.getNumberOfElementsProjectedDatabase() + prefix.getSupport();
     }
-
-    /**
-     * One of the methods used by key2 in the method pruneByCheckingProjectedDBSize 
-     * that return the addition of the number of elements that appear in 
-     * the projected database and sum of the sequence identifiers where 
-     * the given prefix appears
-     * @param projection projected database of the prefix to consider
-     * @param prefix prefix to consider
-     * @return 
-     */
-    private static int key_standardAndSumIDs(PseudoSequenceDatabase projection, Trie prefix) {
-        return (projection.getNumberOfElementsProjectedDatabase() + prefix.getSumIdSequences());
-    }
-
-    /**
-     * One of the methods used by key2 in the method pruneByCheckingProjectedDBSize 
-     * that return the addition of the number of elements that appear in 
-     * the projected database and sum of itemsets that appear in all the 
-     * projection of every sequence where the given prefix appears
-     * @param projection projected database of the prefix to consider
-     * @param prefix prefix to consider
-     * @return 
-     */
-    private static int key_standardAndCumulativeSum(PseudoSequenceDatabase projection, Trie prefix) {
-        int key = projection.getNumberOfElementsProjectedDatabase();
-        key += projection.getCumulativeSum();
-        return key;
-    }
-    
-    /**
-     * One of the methods used by key2 in the method pruneByCheckingProjectedDBSize 
-     * that return the addition of the number of elements that appear in 
-     * the projected database and sum of itemsets that appear in the first 
-     * projection point of every sequence where the given prefix appears
-     * @param projection projected database of the prefix to consider
-     * @param prefix prefix to consider
-     * @return 
-     */
-    private static int Key_standardAndElements(PseudoSequenceDatabase projection, Trie prefix) {
-        int key = projection.getNumberOfElementsProjectedDatabase();
-        key += projection.getElementsProjectedDatabase();
-        return key;
-    }
-    
-    
     
     /**
      * It removes the non closed patterns from the list of patterns given
@@ -718,7 +663,7 @@ class RecursionCloSpan {
             }
         }
         /*
-         * We calcule the number of frequent patterns and we store in the chosen 
+         * We calculate the number of frequent patterns and we store in the chosen 
          * output if the flag is activated
          */
         for (List<Pattern> list : totalPatterns.values()) {

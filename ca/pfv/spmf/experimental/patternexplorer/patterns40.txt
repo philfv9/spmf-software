@@ -1,0 +1,15 @@
+@ITEM=1=apple
+@ITEM=2=water
+@ITEM=3=milk
+@ITEM=4=bread
+@ITEM=5=orange
+1 #SUP: 3
+2 #SUP: 4
+3 #SUP: 4
+5 #SUP: 4
+1 3 #SUP: 3
+1 5 #SUP: 2
+2 3 #SUP: 3
+2 5 #SUP: 4
+2 3 5 #SUP: 3
+3 5 #SUP: 3

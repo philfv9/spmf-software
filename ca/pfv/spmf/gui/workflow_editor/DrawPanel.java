@@ -22,14 +22,15 @@ package ca.pfv.spmf.gui.workflow_editor;
  */
 
 import java.awt.BasicStroke;
-import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
@@ -41,6 +42,7 @@ import java.util.Map;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JViewport;
 import javax.swing.Scrollable;
 import javax.swing.ToolTipManager;
 
@@ -98,17 +100,27 @@ class DrawPanel extends JPanel implements Scrollable {
     /** Half-height of each node hit box in pixels. */
     private static final int HIT_HALF_H = 12;
 
-    /** Font used for off-screen text measurement during layout. */
-    private static final Font MEASURE_FONT = new Font("Dialog", Font.PLAIN, 12);
+    /** Default preferred size used when the workflow is empty. */
+    private static final Dimension EMPTY_SIZE = new Dimension(400, 300);
+
+    /**
+     * Font used both for painting and for text measurement during layout.
+     * Using the same font for both guarantees that hit boxes, the preferred size and
+     * the painted result always agree with each other.
+     */
+    private static final Font LAYOUT_FONT = new Font("Dialog", Font.PLAIN, 12);
+
+    /** Colour of the hint text shown when the workflow is empty. */
+    private static final Color HINT_COLOR = new Color(160, 160, 160);
+
+    /** Hint text shown when the workflow is empty. */
+    private static final String EMPTY_HINT = "Click \"Add algorithm\" to start building a workflow";
 
     /** Tooltip dismiss delay in milliseconds, kept long so the popup stays readable. */
     private static final int TOOLTIP_DISMISS_DELAY_MS = 8000;
 
     /** Tooltip initial delay in milliseconds before it first appears on hover. */
     private static final int TOOLTIP_INITIAL_DELAY_MS = 400;
-
-    /** Off-screen canvas used solely to obtain a FontMetrics for layout measurement. */
-    private final Canvas measureCanvas = new Canvas();
 
     /** The list of root branch nodes of the workflow tree. */
     List<BranchNode> roots = new ArrayList<>();
@@ -127,11 +139,13 @@ class DrawPanel extends JPanel implements Scrollable {
 
     /**
      * Creates a new draw panel with a white background and default preferred size.
-     * Enables Swing tooltip support so that mouseMoved can update the tooltip text dynamically.
+     * Enables Swing tooltip support so that getToolTipText is queried on hover.
      */
     DrawPanel() {
+        setOpaque(true);
         setBackground(Color.WHITE);
-        setPreferredSize(new Dimension(400, 300));
+        setFont(LAYOUT_FONT);
+        setPreferredSize(EMPTY_SIZE);
 
         // Enable Swing tooltips on this component and use fast dismiss/appearance
         ToolTipManager.sharedInstance().registerComponent(this);
@@ -140,6 +154,10 @@ class DrawPanel extends JPanel implements Scrollable {
 
         registerMouseEvents();
     }
+
+    // ------------------------------------------------------------------
+    // Scrollable
+    // ------------------------------------------------------------------
 
     /**
      * Returns the preferred size of the viewport for this scrollable panel.
@@ -178,24 +196,34 @@ class DrawPanel extends JPanel implements Scrollable {
     }
 
     /**
-     * Returns false so that the panel is never forced to match the viewport width.
+     * Returns true when the viewport is wider than the graph so that the panel stretches to
+     * fill the whole visible area (avoiding a gray strip on the right), and false when the graph
+     * is wider than the viewport so that a horizontal scrollbar appears.
      *
-     * @return false.
+     * @return true if the panel should track the viewport width.
      */
     @Override
     public boolean getScrollableTracksViewportWidth() {
-        return false;
+        Container parent = getParent();
+        return parent instanceof JViewport && parent.getWidth() > getPreferredSize().width;
     }
 
     /**
-     * Returns false so that the panel is never forced to match the viewport height.
+     * Returns true when the viewport is taller than the graph so that the panel stretches to
+     * fill the whole visible area (avoiding a gray strip at the bottom), and false when the graph
+     * is taller than the viewport so that a vertical scrollbar appears.
      *
-     * @return false.
+     * @return true if the panel should track the viewport height.
      */
     @Override
     public boolean getScrollableTracksViewportHeight() {
-        return false;
+        Container parent = getParent();
+        return parent instanceof JViewport && parent.getHeight() > getPreferredSize().height;
     }
+
+    // ------------------------------------------------------------------
+    // Tooltips
+    // ------------------------------------------------------------------
 
     /**
      * Returns the tooltip text for the node currently under the mouse pointer, or null if none.
@@ -295,7 +323,7 @@ class DrawPanel extends JPanel implements Scrollable {
                     DescriptionOfParameter pd = params[i];
                     String val = (currentValues != null && i < currentValues.length
                             && currentValues[i] != null && !currentValues[i].isEmpty())
-                            ? currentValues[i] : "<i>(not set)</i>";
+                            ? escapeHtml(currentValues[i]) : "<i>(not set)</i>";
                     sb.append("<tr><td>&nbsp;&bull;&nbsp;")
                       .append(escapeHtml(pd.getName()))
                       .append(":</td><td><b>").append(val).append("</b></td></tr>");
@@ -322,6 +350,10 @@ class DrawPanel extends JPanel implements Scrollable {
                    .replace("\"", "&quot;");
     }
 
+    // ------------------------------------------------------------------
+    // Listeners
+    // ------------------------------------------------------------------
+
     /**
      * Registers a listener to receive draw-panel event notifications.
      *
@@ -340,6 +372,10 @@ class DrawPanel extends JPanel implements Scrollable {
     void removeDrawPanelListener(DrawPanelListener l) {
         listeners.remove(l);
     }
+
+    // ------------------------------------------------------------------
+    // Tree editing operations
+    // ------------------------------------------------------------------
 
     /**
      * Returns true if the selected algorithm node is the topmost node of its branch and has no output node shown.
@@ -484,8 +520,10 @@ class DrawPanel extends JPanel implements Scrollable {
 
         List<BranchNode> allCopied = new ArrayList<>();
         copy.collectAllNodes(allCopied);
-        for (BranchNode node : allCopied) {
-            int idx = countAllBranchNodes() + allCopied.indexOf(node) + 1;
+        int base = countAllBranchNodes();
+        for (int i = 0; i < allCopied.size(); i++) {
+            BranchNode node = allCopied.get(i);
+            int idx = base + i + 1;
             node.group.nodeOutput.name       = "Output" + idx + ".txt";
             node.group.nodeOutput.outputFile = "Output" + idx + ".txt";
             node.group.nodeOutput.rectangle  = null;
@@ -570,19 +608,37 @@ class DrawPanel extends JPanel implements Scrollable {
         return null;
     }
 
+    // ------------------------------------------------------------------
+    // Layout
+    // ------------------------------------------------------------------
+
     /**
      * Recomputes the layout of all nodes and repaints the panel.
      */
     void relayoutAndRepaint() {
+        performLayout();
+        revalidate();
+        repaint();
+    }
+
+    /**
+     * Computes node coordinates, hit boxes and the preferred size for the current tree,
+     * always using the panel's own font so that layout and painting agree.
+     *
+     * @return true if the preferred size of the panel changed as a result of the layout.
+     */
+    private boolean performLayout() {
+        Dimension before = getPreferredSize();
+
         if (roots.isEmpty()) {
             hitBoxes.clear();
-            setPreferredSize(new Dimension(400, 300));
-            revalidate();
-            repaint();
-            return;
+            if (!EMPTY_SIZE.equals(before)) {
+                setPreferredSize(EMPTY_SIZE);
+            }
+            return !EMPTY_SIZE.equals(before);
         }
 
-        FontMetrics fm = measureCanvas.getFontMetrics(MEASURE_FONT);
+        FontMetrics fm = getFontMetrics(getFont());
         Map<BranchNode, Integer> widths = new HashMap<>();
         for (BranchNode r : roots)
             computeSubtreeWidth(r, widths, fm);
@@ -596,8 +652,8 @@ class DrawPanel extends JPanel implements Scrollable {
 
         rebuildHitBoxes(widths, fm);
         updatePreferredSizeFromLayout(widths, fm);
-        revalidate();
-        repaint();
+
+        return !getPreferredSize().equals(before);
     }
 
     /**
@@ -805,6 +861,10 @@ class DrawPanel extends JPanel implements Scrollable {
         return max;
     }
 
+    // ------------------------------------------------------------------
+    // Painting
+    // ------------------------------------------------------------------
+
     /**
      * Paints all edges and nodes of the workflow tree onto the panel.
      *
@@ -814,52 +874,68 @@ class DrawPanel extends JPanel implements Scrollable {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        if (!roots.isEmpty()) {
-            FontMetrics fm = g.getFontMetrics();
-            Map<BranchNode, Integer> widths = new HashMap<>();
-            for (BranchNode r : roots)
-                computeSubtreeWidth(r, widths, fm);
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
+                RenderingHints.VALUE_STROKE_PURE);
+        g2.setFont(getFont());
 
-            int cursorX = LEFT_MARGIN;
-            for (BranchNode r : roots) {
-                int w = widths.get(r);
-                assignCoordinates(r, cursorX + w / 2, TOP_MARGIN, widths);
-                cursorX += w + SIBLING_GAP;
-            }
-
-            rebuildHitBoxes(widths, fm);
-            updatePreferredSizeFromLayout(widths, fm);
+        // Node names may have been edited elsewhere (e.g. in the information panel)
+        // followed by a simple repaint(), so refresh the layout before drawing.
+        // If the extent of the graph changed, ask the scroll pane to re-layout.
+        if (performLayout()) {
+            revalidate();
         }
 
-        for (BranchNode r : roots)
-            paintEdgesRecursive(g, r);
-        for (BranchNode r : roots)
-            paintNodesRecursive(g, r);
+        if (roots.isEmpty()) {
+            paintEmptyHint(g2);
+        } else {
+            for (BranchNode r : roots)
+                paintEdgesRecursive(g2, r);
+            for (BranchNode r : roots)
+                paintNodesRecursive(g2, r);
+        }
 
         notifyRootsChanged();
         notifyHasOutput();
     }
 
     /**
+     * Paints a subtle centred hint when the workflow contains no node.
+     *
+     * @param g2 the Graphics2D context.
+     */
+    private void paintEmptyHint(Graphics2D g2) {
+        FontMetrics fm = g2.getFontMetrics();
+        int x = (getWidth() - fm.stringWidth(EMPTY_HINT)) / 2;
+        int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+        g2.setColor(HINT_COLOR);
+        g2.drawString(EMPTY_HINT, Math.max(x, LEFT_MARGIN), Math.max(y, TOP_MARGIN));
+    }
+
+    /**
      * Recursively paints all edges in the subtree rooted at the given branch node.
      *
-     * @param g  the Graphics context.
+     * @param g  the Graphics2D context.
      * @param bn the subtree root.
      */
-    private void paintEdgesRecursive(Graphics g, BranchNode bn) {
+    private void paintEdgesRecursive(Graphics2D g, BranchNode bn) {
         GroupOfNodes group = bn.group;
         if (group.showInput && group.nodeInput != null)
-            drawArrow((Graphics2D) g, group.nodeInput.getX(), group.nodeInput.getY(),
+            drawArrow(g, group.nodeInput.getX(), group.nodeInput.getY(),
                     group.nodeAlgorithm.getX(), group.nodeAlgorithm.getY());
         if (group.showOutput && group.nodeOutput != null)
-            drawArrow((Graphics2D) g, group.nodeAlgorithm.getX(), group.nodeAlgorithm.getY(),
+            drawArrow(g, group.nodeAlgorithm.getX(), group.nodeAlgorithm.getY(),
                     group.nodeOutput.getX(), group.nodeOutput.getY());
 
         Node last = group.showOutput ? group.nodeOutput : group.nodeAlgorithm;
         for (BranchNode child : bn.children) {
             Node first = (child.group.showInput && child.group.nodeInput != null)
                     ? child.group.nodeInput : child.group.nodeAlgorithm;
-            drawArrow((Graphics2D) g, last.getX(), last.getY(), first.getX(), first.getY());
+            drawArrow(g, last.getX(), last.getY(), first.getX(), first.getY());
         }
         for (BranchNode child : bn.children)
             paintEdgesRecursive(g, child);
@@ -884,6 +960,7 @@ class DrawPanel extends JPanel implements Scrollable {
 
     /**
      * Draws an arrow from one node centre to another, stopping at the target node's radius.
+     * The transform, stroke and colour of the graphics context are restored afterwards.
      *
      * @param g  the Graphics2D context.
      * @param x1 the source X coordinate.
@@ -892,7 +969,10 @@ class DrawPanel extends JPanel implements Scrollable {
      * @param y2 the target Y coordinate.
      */
     private void drawArrow(Graphics2D g, int x1, int y1, int x2, int y2) {
-        AffineTransform saved = g.getTransform();
+        AffineTransform savedTransform = g.getTransform();
+        java.awt.Stroke savedStroke = g.getStroke();
+        Color savedColor = g.getColor();
+
         double dx = x2 - x1, dy = y2 - y1;
         AffineTransform t = AffineTransform.getTranslateInstance(x1, y1);
         t.concatenate(AffineTransform.getRotateInstance(Math.atan2(dy, dx)));
@@ -905,12 +985,19 @@ class DrawPanel extends JPanel implements Scrollable {
         g.fillPolygon(
                 new int[]{ len, len - ARROWHEAD_SIZE, len - ARROWHEAD_SIZE, len },
                 new int[]{ 0, -ARROWHEAD_SIZE, ARROWHEAD_SIZE, 0 }, 4);
-        g.setTransform(saved);
+
+        g.setTransform(savedTransform);
+        g.setStroke(savedStroke);
+        g.setColor(savedColor);
     }
 
+    // ------------------------------------------------------------------
+    // Mouse handling
+    // ------------------------------------------------------------------
+
     /**
-     * Registers mouse listeners for left-click selection, right-click context menu,
-     * and mouse motion for tooltip updates.
+     * Registers mouse listeners for left-click selection and right-click context menu.
+     * Tooltips are handled by the ToolTipManager registered in the constructor.
      */
     private void registerMouseEvents() {
         MouseAdapter adapter = new MouseAdapter() {
@@ -968,23 +1055,14 @@ class DrawPanel extends JPanel implements Scrollable {
                     }
                 }
             }
-
-            /**
-             * Updates the tooltip text dynamically as the mouse moves over different nodes.
-             *
-             * @param e the mouse event.
-             */
-            @Override
-            public void mouseMoved(MouseEvent e) {
-                // Trigger Swing's ToolTipManager to re-query getToolTipText by
-                // posting a synthetic mouseMoved event; this is the standard Swing idiom.
-                ToolTipManager.sharedInstance().mouseMoved(e);
-            }
         };
 
         addMouseListener(adapter);
-        addMouseMotionListener(adapter);
     }
+
+    // ------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------
 
     /**
      * Creates a new branch node with an algorithm node and an output node, optionally including an input node.
@@ -1160,6 +1238,10 @@ class DrawPanel extends JPanel implements Scrollable {
         }
         return null;
     }
+
+    // ------------------------------------------------------------------
+    // Listener notifications
+    // ------------------------------------------------------------------
 
     /**
      * Notifies all listeners that the selected node has changed.

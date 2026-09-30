@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Pattern;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Pattern;
 
 /**
  * This is an implementation of a class implementing the Saver interface. By
@@ -29,6 +29,8 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Patt
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  *
  * @author agomariz
  */
@@ -50,6 +52,10 @@ public class SaverIntoFile implements Saver {
         path = outputFilePath;
         this.outputSequenceIdentifiers = outputSequenceIdentifiers;
         writer = new BufferedWriter(new FileWriter(outputFilePath));
+		writer.write("@FILETYPE=\"Frequent closed sequential patterns\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
     }
 
     @Override

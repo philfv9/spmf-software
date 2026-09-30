@@ -180,6 +180,14 @@ public class AlgoNARMiner {
 		this.minConf = minConf;
 		writer = (output != null) ? new BufferedWriter(new FileWriter(output)) : null;
 
+		if(writer != null) {
+			writer.write("@FILETYPE=\"Association rules\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
+		}
+		
+		
 		// -------------------------------------------------------
 		// PHASE 1a — load database, count single-item supports
 		// -------------------------------------------------------

@@ -119,6 +119,11 @@ public class AlgoTRCT {
         this.maxPeriodicity = maxPeriodicity;
 
         writer = new BufferedWriter(new FileWriter(output));
+        writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Periodic frequent itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
         allPatterns = new ArrayList<CompressedTIDList>();
         topKHeap = new PriorityQueue<Integer>();
         kthHighestSupport = 0;

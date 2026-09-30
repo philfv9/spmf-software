@@ -39,7 +39,7 @@ public class DescriptionOfParameter implements Serializable {
 
 	/** type of parameter value */
 	@SuppressWarnings("rawtypes")
-	private
+	public
 	final Class parameterType;
 
 	/** this parameter is optional or not? */

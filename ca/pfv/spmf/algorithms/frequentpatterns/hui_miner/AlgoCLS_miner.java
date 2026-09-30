@@ -185,6 +185,10 @@ public class AlgoCLS_miner {
 		// to file
 		if (output != null) {
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Closed high-utility itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 		} else {
 			// If the user chose to save to memory, we initialize the structures
 			// for storing CHUIs into memory.

@@ -16,7 +16,7 @@ public class MainTestConvertSequenceDatabase {
 	
 	public static void main(String [] arg) throws IOException{
 		
-		String inputFile = fileToPath("contextCSV.txt");
+		String inputFile = fileToPath("contextCSVSeq.csv");
 		String outputFile = ".//output.txt";
 		Formats inputFileformat = Formats.CSV_INTEGER;
 		int sequenceCount = Integer.MAX_VALUE;

@@ -915,6 +915,11 @@ public class AlgoAERMiner {
 //		if (ParametersSettingAERMiner.TASK_FLAG < 0 || ParametersSettingAERMiner.TASK_FLAG > 1)
 //			return;
 		FileWriter fileWriter = new FileWriter(ParametersSettingAERMiner.PATTERN_PATH);
+		fileWriter.write("@FILETYPE=\"Attribute Evolution Rules\"");
+		fileWriter.append(System.lineSeparator());
+		fileWriter.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		fileWriter.append(System.lineSeparator());
+		
 		// to do
 		for (int i = 0; i < patterns.size(); i++) {
 			fileWriter.write("size " + (i + 2) + "pattern," + "count: " + patterns.get(i).size() + "\n");

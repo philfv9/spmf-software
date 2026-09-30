@@ -4,26 +4,23 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.BIDE_and_prefixspan.AlgoFSGP;
-import ca.pfv.spmf.input.sequence_database_list_integers.SequenceDatabase;
-
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.AlgoFSGP2;
 
 /**
  * Example of how to use the FSGP algorithm in source code.
- * @author Philippe Fournier-Viger
+ * @author copyright Philippe Fournier-Viger 2026
  */
 public class MainTestFSGP_saveToFile {
 
 	public static void main(String [] arg) throws IOException{    
+		// Input sequence database
+		String inputFile = fileToPath("contextPrefixSpan.txt");
+		
+		// Output file path
 		String outputPath = ".//output.txt";
-		// Load a sequence database
-		SequenceDatabase sequenceDatabase = new SequenceDatabase(); 
-		sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"));
-		// print the database to console
-//		sequenceDatabase.print();
 		
 		// Create an instance of the algorithm with minsup = 50 %
-		AlgoFSGP algo = new AlgoFSGP(); 
+		AlgoFSGP2 algo = new AlgoFSGP2(); 
 		
 		// if you set the following parameter to true, the sequence ids of the sequences where
         // each pattern appears will be shown in the result
@@ -33,9 +30,9 @@ public class MainTestFSGP_saveToFile {
 		
 		// execute the algorithm
 		boolean performPruning = true;// to activate pruning of search space
-		algo.runAlgorithm(sequenceDatabase, minsup, performPruning);    
-		algo.writeResultTofile(outputPath);
-		algo.printStatistics(sequenceDatabase.size());
+		algo.runAlgorithm(inputFile, minsup, performPruning);    
+		algo.writeResultToFile(outputPath);
+		algo.printStatistics();
 	}
 	
 	public static String fileToPath(String filename) throws UnsupportedEncodingException{

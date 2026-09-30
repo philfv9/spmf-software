@@ -86,9 +86,9 @@ public class DescriptionAlgoTwoPhase extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getInputFileTypes() {
-		return new String[]{"Database of instances","Transaction database", "Simple transaction database"};
+		return new String[]{"Database of instances","Transaction database", "Transaction database with utility values"};
 	}
-
+	
 	@Override
 	public String[] getOutputFileTypes() {
 		return new String[]{"Patterns",  "High-utility patterns","High-utility itemsets"};

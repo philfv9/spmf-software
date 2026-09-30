@@ -88,6 +88,11 @@ public class AlgoSFUI_UF {
 		//parameter initialization
 		startTimestamp = System.currentTimeMillis();
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Skyline High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		mapItemToTWU = new HashMap<>();
 		mapItemToUtility = new HashMap<>();
 		mapItemToTempTWU = new HashMap<>();

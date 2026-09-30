@@ -179,6 +179,10 @@ public class AlgoLTHUIMiner {
 		timeDiff.add(sum);
 		
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Locally trending high-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		mapItemToTWU = new HashMap<Integer, Integer>();
 

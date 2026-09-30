@@ -54,6 +54,14 @@ public class SequenceDatabaseGenerator {
 		
 		// We create a BufferedWriter to write the database to disk
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output)); 
+		if(withTimestamps) {
+			writer.write("@FILETYPE=\"Sequence database with timestamps\"");
+		}else {
+			writer.write("@FILETYPE=\"Simple sequence database\"");
+		}
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		
 		// For the number of sequences to be generated
 		for (int i = 0; i < sequenceCount; i++) {

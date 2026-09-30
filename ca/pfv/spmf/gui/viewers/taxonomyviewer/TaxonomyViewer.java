@@ -207,6 +207,11 @@ public class TaxonomyViewer {
 		try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
+				// if the line is a comment, is empty or is a
+				// kind of metadata, skip it
+				if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+					continue;
+				}
 				String[] parts = line.split(",");
 				int child = Integer.parseInt(parts[0]);
 				int parent = Integer.parseInt(parts[1]);

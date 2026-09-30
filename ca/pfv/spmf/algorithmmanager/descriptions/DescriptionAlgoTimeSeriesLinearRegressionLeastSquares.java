@@ -61,7 +61,7 @@ public class DescriptionAlgoTimeSeriesLinearRegressionLeastSquares extends Descr
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
 
 		String separator;
-		if (parameters.length > 1 && "".equals(parameters[0]) == false) {
+		if (parameters.length >= 1 && "".equals(parameters[0]) == false) {
 			separator = getParamAsString(parameters[0]);
 		}else{
 			separator = " ";

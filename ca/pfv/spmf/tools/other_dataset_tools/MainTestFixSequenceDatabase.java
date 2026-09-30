@@ -12,8 +12,8 @@ public class MainTestFixSequenceDatabase {
 
 	public static void main(String [] arg) throws IOException{
 		
-		String inputFile = fileToPath("online_best.txt");
-		String outputFile = "online_modified.txt";
+		String inputFile = fileToPath("sequence_broken.txt");
+		String outputFile = "output.txt";
 		
 		FixSequenceDatabaseTool tool = new FixSequenceDatabaseTool();
 		tool.convert(inputFile, outputFile);

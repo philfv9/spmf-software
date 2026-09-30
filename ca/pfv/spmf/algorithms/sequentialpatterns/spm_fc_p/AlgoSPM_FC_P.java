@@ -17,6 +17,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.spm_fc_p;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  */
 import java.io.IOException;
 import java.util.BitSet;

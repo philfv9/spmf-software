@@ -50,7 +50,6 @@ public class DescriptionAlgoSystemTextEditorOpenFile extends DescriptionOfAlgori
 
 	@Override
 	public DescriptionOfParameter[] getParametersDescription() {
-
 		DescriptionOfParameter[] parameters = new DescriptionOfParameter[0];
 		return parameters;
 	}
@@ -69,11 +68,7 @@ public class DescriptionAlgoSystemTextEditorOpenFile extends DescriptionOfAlgori
 	public String[] getOutputFileTypes() {
 		return null;
 	}
-//
-//	@Override
-//	String[] getSpecialInputFileTypes() {
-//		return null; //new String[]{"ARFF"};
-//	}
+
 	@Override
 	public AlgorithmType getAlgorithmType() {
 		return AlgorithmType.DATA_VIEWER;

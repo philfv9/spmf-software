@@ -17,237 +17,631 @@ package ca.pfv.spmf.gui.developerswindow;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
- */
-/**
- * A class for developers that display the algorithms that have a broken link for the documentation
- * @author Philippe Fournier-Viger, 2024
- *
+ * 
+ * Do not remove the copyright and license information
  */
 
-//Import the necessary classes
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 
-/**
- * This is a tool to find the list of broken URLs in the documentation of SPMF.
- * @author Philippe Fournier-Viger, 2024.
- */
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 import ca.pfv.spmf.algorithmmanager.AlgorithmManager;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 
+/**
+ * A tool for SPMF developers that scans the documentation links of all
+ * algorithms and reports which ones are broken.
+ *
+ * Features:
+ * <ul>
+ *   <li>Start / Pause-Resume / Stop controls</li>
+ *   <li>Recheck button: enabled after the first check when errors are present;
+ *       only rechecks the URLs that were reported as broken instead of all of them.
+ *       Rows that pass the recheck (transient errors) are removed from the table.</li>
+ *   <li>Live status label and progress bar</li>
+ *   <li>Results table updated in real time</li>
+ *   <li>Per-request network timeouts</li>
+ * </ul>
+ *
+ * @author Philippe Fournier-Viger, 2024 (revised)
+ */
 public class FindDocBrokenURLsViewer {
 
-	private static JButton btnCheck;
-	private static JProgressBar progressBar;
-	private static JFrame frame;
+    /** Max time (ms) to wait for a TCP connection to be established. */
+    private static final int CONNECT_TIMEOUT_MS = 5000;
 
-	public FindDocBrokenURLsViewer() throws Exception {
-		createAndShowGUI();
-	}
+    /** Max time (ms) to wait for the server response once connected. */
+    private static final int READ_TIMEOUT_MS = 5000;
 
-	public void createAndShowGUI() {
-		frame = new JFrame("SPMF Tool to Find Broken Documentation URLs (for SPMF developpers)");
-		frame.setSize(800, 100);
-		frame.setLayout(new BorderLayout());
-		frame.setLocationRelativeTo(null);
+    // ── GUI components (instance fields, not static) ──────────────────────────
 
-		btnCheck = new JButton("Check for Broken URLs");
-		btnCheck.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// Disable the button
-				btnCheck.setEnabled(false);
+    private JFrame frame;
+    private JButton btnStart;
+    private JButton btnPauseResume;
+    private JButton btnStop;
 
-				// Run the check in a separate thread to keep the GUI responsive
-				new Thread(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							List<String> algorithms = AlgorithmManager.getInstance().getListOfAlgorithmsAsString(true,true,true,
-									true, true);
-							progressBar.setMaximum(algorithms.size());
-							progressBar.setValue(0);
-							progressBar.setStringPainted(true);
+    /**
+     * Recheck button: only enabled when the first (or any subsequent) check has
+     * finished and the results table contains at least one broken-URL row.
+     */
+    private JButton btnRecheck;
 
-							List<DescriptionOfAlgorithm> brokenURLs = checkAlgorithmsForBrokenURLs(progressBar,
-									algorithms);
-							displayBrokenURLsInJTable(brokenURLs);
-						} catch (Exception ex) {
-							ex.printStackTrace();
-						}
+    private JProgressBar progressBar;
+    private JLabel lblStatus;
+    private JLabel lblSummary;
+    private JTable resultsTable;
+    private DefaultTableModel tableModel;
 
-						// After checking, enable the button
-						SwingUtilities.invokeLater(new Runnable() {
-							@Override
-							public void run() {
-								btnCheck.setEnabled(true);
-							}
-						});
-					}
-				}).start();
-			}
-		});
+    /** The worker currently running the check (null when idle). */
+    private CheckWorker currentWorker;
 
-		progressBar = new JProgressBar(0, 100);
-		progressBar.setStringPainted(true);
+    /**
+     * Tracks whether we are in "recheck mode".
+     * When true the worker only processes algorithms whose names are already in
+     * the results table, and finished rows that are now OK are removed from it.
+     */
+    private boolean isRecheckMode = false;
 
-		frame.getContentPane().add(btnCheck, BorderLayout.NORTH);
-		frame.getContentPane().add(progressBar, BorderLayout.CENTER);
-		frame.setVisible(true);
-	}
+    // ── Constructor / GUI bootstrap ───────────────────────────────────────────
 
-	public static void main(String[] args) throws Exception {
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					new FindDocBrokenURLsViewer();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
+    public FindDocBrokenURLsViewer() {
+        createAndShowGUI();
+    }
 
-	// Define a method to check the algorithms for broken URLs and return a list of
-	// them
-	// Modify the checkAlgorithmsForBrokenURLs method to accept the progress bar and
-	// list of algorithms
-	public static List<DescriptionOfAlgorithm> checkAlgorithmsForBrokenURLs(JProgressBar progressBar,
-			List<String> algorithms) throws Exception {
-		System.out.println("Checking algorithms for broken URLs...");
+    private void createAndShowGUI() {
+        frame = new JFrame("SPMF Tool to Find Broken Documentation URLs (for SPMF developers)");
+        frame.setSize(1000, 640);
+        frame.setLayout(new BorderLayout());
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
-		// Create an empty list to store the algorithms with broken URLs
-		List<DescriptionOfAlgorithm> brokenURLs = new ArrayList<>();
-		int progress = 0;
+        // ── Top control panel ─────────────────────────────────────────────────
+        JPanel topPanel = new JPanel(new BorderLayout());
 
-		// Loop through the list of algorithms
-		for (String algorithmName : AlgorithmManager.getInstance().getListOfAlgorithmsAsString(true,true,true, true, true)) {
-			// If the algorithm name contains "---", skip it
-			if (algorithmName.contains("---")) {
-				progress++;
-				continue;
-			}
-			// Get the description of the algorithm
-			DescriptionOfAlgorithm algorithm = AlgorithmManager.getInstance().getDescriptionOfAlgorithm(algorithmName);
-			// Get the documentation URL from the description
-			String url = algorithm.getURLOfDocumentation();
-			// Check if the URL is accessible
-			boolean isAccessible = true;
-			try {
-				// Create a URL object from the string
-				URL urlObject = new URI(url).toURL();
-				// Open a connection to the URL
-				HttpURLConnection connection = (HttpURLConnection) urlObject.openConnection();
-				// Set the request method to HEAD
-				connection.setRequestMethod("HEAD");
-				// Get the response code
-				int responseCode = connection.getResponseCode();
-				// If the response code is not OK (200), then the URL is not accessible
-				if (responseCode != HttpURLConnection.HTTP_OK) {
-					isAccessible = false;
-				}
-				// Disconnect the connection
-				connection.disconnect();
-			} catch (Exception e) {
-				// If an exception occurs, then the URL is not accessible
-				isAccessible = false;
-			}
-			// If the URL is not accessible, add the algorithm to the list of broken URLs
-			if (!isAccessible) {
-				brokenURLs.add(algorithm);
-				System.out.println(algorithm.getName() + " ... URL IS BROKEN: " + url);
-			} else {
-				System.out.println(algorithm.getName() + " ... URL IS OK");
-			}
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
-			progress++;
-			final int currentProgress = progress;
-			progressBar.setValue(currentProgress);
-		}
-		System.out.println("Broken URLs: " + brokenURLs);
-		
-//		progressBar.setValue(100);
-		// Return the list of broken URLs
-		return brokenURLs;
-	}
+        btnStart       = new JButton("Start Full Check");
+        btnPauseResume = new JButton("Pause");
+        btnStop        = new JButton("Stop");
+        btnRecheck     = new JButton("Recheck Errors");
 
-	// Define a method to display the algorithms with broken URLs in a JTable
-	public static void displayBrokenURLsInJTable(List<DescriptionOfAlgorithm> brokenURLs) {
-		// Create a new frame
-		JFrame frame = new JFrame("List of broken URLs from the SPMF documentation");
-		frame.setSize(800, 600);
+        // Initial button states
+        btnPauseResume.setEnabled(false);
+        btnStop.setEnabled(false);
+        btnRecheck.setEnabled(false);   // enabled only after a check finds errors
 
-		// Create a table model with two columns
-		DefaultTableModel model = new DefaultTableModel();
-		model.addColumn("Name");
-		model.addColumn("Documentation");
+        btnStart.setToolTipText("Check every algorithm's documentation URL.");
+        btnRecheck.setToolTipText(
+                "Re-check only the URLs currently shown as broken. "
+                + "Rows that pass this time (transient errors) will be removed.");
 
-		// Loop through the list of broken URLs and add them as rows to the table model
-		for (DescriptionOfAlgorithm algorithm : brokenURLs) {
-			model.addRow(new Object[] { algorithm.getName(), algorithm.getURLOfDocumentation() });
-		}
+        btnStart.addActionListener(e -> startFullCheck());
+        btnPauseResume.addActionListener(e -> togglePauseResume());
+        btnStop.addActionListener(e -> stopCheck());
+        btnRecheck.addActionListener(e -> startRecheck());
 
-		// Create a table with the table model
-		JTable table = new JTable(model);
+        buttonsPanel.add(btnStart);
+        buttonsPanel.add(btnPauseResume);
+        buttonsPanel.add(btnStop);
+        buttonsPanel.add(btnRecheck);
 
-		// Create a custom table cell renderer that extends the default one
-		class CustomTableCellRenderer extends DefaultTableCellRenderer {
-			/**
-			 * default serial UID
-			 */
-			private static final long serialVersionUID = 1L;
+        progressBar = new JProgressBar(0, 100);
+        progressBar.setStringPainted(true);
+        progressBar.setPreferredSize(new Dimension(980, 25));
 
-			// Override the getTableCellRendererComponent method
-			@Override
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-					boolean hasFocus, int row, int column) {
-				// Call the super method to get the default component
-				Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row,
-						column);
-				// Set the font color to red
-				component.setForeground(Color.RED);
-				// Return the component
-				return component;
-			}
-		}
+        lblStatus = new JLabel("Ready.");
+        lblStatus.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
 
-		// Set the custom table cell renderer to the table for both columns
-		table.getColumnModel().getColumn(0).setCellRenderer(new CustomTableCellRenderer());
-		table.getColumnModel().getColumn(1).setCellRenderer(new CustomTableCellRenderer());
-		System.out.println("");
-		System.out.println();
+        topPanel.add(buttonsPanel, BorderLayout.NORTH);
+        topPanel.add(progressBar,  BorderLayout.CENTER);
+        topPanel.add(lblStatus,    BorderLayout.SOUTH);
 
-		// Add a scroll pane to the table
-		JScrollPane scrollPane = new JScrollPane(table);
+        // ── Results table (filled live) ───────────────────────────────────────
+        tableModel = new DefaultTableModel(
+                new Object[]{"Algorithm Name", "Documentation URL", "Problem"}, 0) {
+            private static final long serialVersionUID = 1L;
 
-		// Add the scroll pane to the frame
-		frame.add(scrollPane, BorderLayout.CENTER);
-		frame.add(new JLabel("The number of broken URLs is " + model.getRowCount()), BorderLayout.SOUTH);
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
-		// Set the window in the center of the screen
-		frame.setLocationRelativeTo(null);
+        resultsTable = new JTable(tableModel);
+        resultsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
-		// Make the frame visible
-		frame.setVisible(true);
-	}
+        DefaultTableCellRenderer redRenderer = new DefaultTableCellRenderer() {
+            private static final long serialVersionUID = 1L;
 
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(
+                        table, value, isSelected, hasFocus, row, column);
+                c.setForeground(Color.RED);
+                return c;
+            }
+        };
+        resultsTable.getColumnModel().getColumn(0).setCellRenderer(redRenderer);
+        resultsTable.getColumnModel().getColumn(1).setCellRenderer(redRenderer);
+        resultsTable.getColumnModel().getColumn(2).setCellRenderer(redRenderer);
+
+        JScrollPane scrollPane = new JScrollPane(resultsTable);
+
+        // ── Bottom summary ────────────────────────────────────────────────────
+        lblSummary = new JLabel("No check has been run yet.");
+        lblSummary.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+
+        frame.add(topPanel,    BorderLayout.NORTH);
+        frame.add(scrollPane,  BorderLayout.CENTER);
+        frame.add(lblSummary,  BorderLayout.SOUTH);
+
+        // ── Window-close guard ────────────────────────────────────────────────
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (currentWorker != null && !currentWorker.isDone()) {
+                    int choice = JOptionPane.showConfirmDialog(frame,
+                            "A check is still running. Stop it and close the window?",
+                            "Confirm Close", JOptionPane.YES_NO_OPTION);
+                    if (choice != JOptionPane.YES_OPTION) {
+                        return;
+                    }
+                    currentWorker.cancel(true);
+                }
+                frame.dispose();
+            }
+        });
+
+        frame.setVisible(true);
+    }
+
+    // ── Button actions ────────────────────────────────────────────────────────
+
+    /**
+     * Starts a brand-new full check.
+     * The results table is cleared and every algorithm is examined.
+     */
+    private void startFullCheck() {
+        isRecheckMode = false;
+        tableModel.setRowCount(0);          // wipe previous results
+        progressBar.setValue(0);
+        lblStatus.setText("Fetching algorithm list…");
+        lblSummary.setText("");
+
+        setControlsRunning();
+
+        currentWorker = new CheckWorker(null); // null → full check
+        currentWorker.execute();
+    }
+
+    /**
+     * Starts a recheck of only the algorithms whose names are currently in the
+     * results table (i.e. those that were broken in the previous run).
+     * Rows that pass this time are removed so the table always reflects the
+     * current known-broken set.
+     */
+    private void startRecheck() {
+        // Snapshot the algorithm names that are currently shown as broken.
+        List<String> namesToRecheck = new ArrayList<>();
+        for (int row = 0; row < tableModel.getRowCount(); row++) {
+            namesToRecheck.add((String) tableModel.getValueAt(row, 0));
+        }
+
+        if (namesToRecheck.isEmpty()) {
+            JOptionPane.showMessageDialog(frame,
+                    "There are no broken URLs to recheck.",
+                    "Nothing to recheck", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        isRecheckMode = true;
+        progressBar.setValue(0);
+        lblStatus.setText("Rechecking " + namesToRecheck.size() + " broken URL(s)…");
+        lblSummary.setText("");
+
+        setControlsRunning();
+
+        currentWorker = new CheckWorker(namesToRecheck);
+        currentWorker.execute();
+    }
+
+    private void togglePauseResume() {
+        if (currentWorker == null) return;
+        if (currentWorker.isPaused()) {
+            currentWorker.resumeChecking();
+            btnPauseResume.setText("Pause");
+            lblStatus.setText("Resumed.");
+        } else {
+            currentWorker.pauseChecking();
+            btnPauseResume.setText("Resume");
+            lblStatus.setText("Paused — click Resume to continue.");
+        }
+    }
+
+    private void stopCheck() {
+        if (currentWorker != null) {
+            lblStatus.setText("Stopping (finishing current request)…");
+            currentWorker.cancel(true);
+            btnStop.setEnabled(false);
+            btnPauseResume.setEnabled(false);
+        }
+    }
+
+    // ── Worker lifecycle helpers ──────────────────────────────────────────────
+
+    /** Put the UI into "a check is running" state. */
+    private void setControlsRunning() {
+        btnStart.setEnabled(false);
+        btnRecheck.setEnabled(false);
+        btnPauseResume.setEnabled(true);
+        btnPauseResume.setText("Pause");
+        btnStop.setEnabled(true);
+    }
+
+    /**
+     * Called on the EDT when the worker finishes (normally, cancelled, or error).
+     * Decides whether to enable the Recheck button based on how many rows remain
+     * in the table after the run.
+     */
+    private void onWorkerFinished(CheckWorker worker) {
+
+        // Re-enable idle controls
+        btnStart.setEnabled(true);
+        btnPauseResume.setEnabled(false);
+        btnPauseResume.setText("Pause");
+        btnStop.setEnabled(false);
+
+        // Enable Recheck only when there are broken rows to work on
+        boolean hasErrors = tableModel.getRowCount() > 0;
+        btnRecheck.setEnabled(hasErrors);
+
+        try {
+            List<DescriptionOfAlgorithm> brokenURLs = worker.get(); // safe: already done
+            int checked = worker.getCheckedCount();
+            int total   = worker.getTotalCount();
+
+            String mode    = isRecheckMode ? "Recheck" : "Full check";
+            String stopped = worker.isCancelled() ? " (stopped by user)" : "";
+
+            lblSummary.setText(String.format(
+                    "%s: examined %d of %d link(s). Broken: %d.%s",
+                    mode, checked, total, tableModel.getRowCount(), stopped));
+            lblStatus.setText(worker.isCancelled() ? "Stopped." : "Done.");
+
+        } catch (CancellationException ce) {
+            lblSummary.setText(String.format(
+                    "Stopped after %d of %d link(s). Broken so far: %d.",
+                    worker.getCheckedCount(), worker.getTotalCount(),
+                    tableModel.getRowCount()));
+            lblStatus.setText("Stopped.");
+
+        } catch (InterruptedException | ExecutionException ex) {
+            Thread.currentThread().interrupt();
+            lblStatus.setText("Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(frame,
+                    "An error occurred:\n" + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // ── Entry point ───────────────────────────────────────────────────────────
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(FindDocBrokenURLsViewer::new);
+    }
+
+    // =========================================================================
+    //  CheckWorker – cancellable, pausable SwingWorker
+    // =========================================================================
+
+    /**
+     * Background worker that checks a list of documentation URLs.
+     *
+     * <p>When {@code algorithmNamesToCheck} is {@code null} the worker fetches
+     * the full algorithm list from {@link AlgorithmManager} (full-check mode).
+     * When it is non-null only those named algorithms are checked (recheck mode).
+     *
+     * <p>In recheck mode the worker additionally publishes {@link RecheckedOkEntry}
+     * events so the EDT can remove rows that are no longer broken.
+     */
+    private class CheckWorker extends SwingWorker<List<DescriptionOfAlgorithm>, Object> {
+
+        /** Names to check; null means "all algorithms". */
+        private final List<String> algorithmNamesToCheck;
+
+        private final Object  pauseLock    = new Object();
+        private volatile boolean paused    = false;
+        private volatile int checkedCount  = 0;
+        private volatile int totalCount    = 0;
+
+        CheckWorker(List<String> algorithmNamesToCheck) {
+            this.algorithmNamesToCheck = algorithmNamesToCheck;
+        }
+
+        boolean isPaused()      { return paused; }
+        int     getCheckedCount() { return checkedCount; }
+        int     getTotalCount()   { return totalCount; }
+
+        void pauseChecking() {
+            paused = true;
+        }
+
+        void resumeChecking() {
+            synchronized (pauseLock) {
+                paused = false;
+                pauseLock.notifyAll();
+            }
+        }
+
+        // ── Background work ───────────────────────────────────────────────────
+
+        @Override
+        protected List<DescriptionOfAlgorithm> doInBackground() throws Exception {
+
+            List<DescriptionOfAlgorithm> brokenURLs = new ArrayList<>();
+
+            // Determine which algorithm names we will check
+            final List<String> names;
+            if (algorithmNamesToCheck == null) {
+                // Full check: ask AlgorithmManager for the complete list
+                names = AlgorithmManager.getInstance()
+                        .getListOfAlgorithmsAsString(true, true, true, true, true);
+            } else {
+                // Recheck: only the names passed in
+                names = algorithmNamesToCheck;
+            }
+
+            totalCount = names.size();
+
+            for (String algorithmName : names) {
+
+                // ── Cancellation check ────────────────────────────────────────
+                if (isCancelled()) break;
+
+                // ── Pause: block here until resumed or cancelled ───────────────
+                synchronized (pauseLock) {
+                    while (paused && !isCancelled()) {
+                        pauseLock.wait(200);
+                    }
+                }
+                if (isCancelled()) break;
+
+                checkedCount++;
+
+                // Skip category separators (e.g. "---Frequent Itemset Mining---")
+                if (algorithmName.contains("---")) {
+                    publish(new StatusUpdate(algorithmName, checkedCount, totalCount, "skipped"));
+                    continue;
+                }
+
+                DescriptionOfAlgorithm algorithm = AlgorithmManager.getInstance()
+                        .getDescriptionOfAlgorithm(algorithmName);
+
+                if (algorithm == null) {
+                    // Defensive: shouldn't happen, but guard anyway
+                    publish(new StatusUpdate(algorithmName, checkedCount, totalCount,
+                            "not found in AlgorithmManager – skipped"));
+                    continue;
+                }
+
+                String url = algorithm.getURLOfDocumentation();
+                publish(new StatusUpdate(algorithmName, checkedCount, totalCount,
+                        "checking " + url));
+
+                String problem = checkUrl(url);
+
+                if (problem != null) {
+                    // Still broken
+                    brokenURLs.add(algorithm);
+                    publish(new BrokenEntry(algorithm, problem));
+                } else {
+                    // URL is OK now
+                    if (isRecheckMode) {
+                        // Signal the EDT to remove the row that was previously broken
+                        publish(new RecheckedOkEntry(algorithmName));
+                    }
+                }
+
+                setProgress((int) (100.0 * checkedCount / Math.max(1, totalCount)));
+            }
+
+            return brokenURLs;
+        }
+
+        // ── EDT update processing ─────────────────────────────────────────────
+
+        @Override
+        protected void process(List<Object> chunks) {
+            for (Object chunk : chunks) {
+
+                if (chunk instanceof StatusUpdate su) {
+                    lblStatus.setText(String.format("[%d / %d]  %s  —  %s",
+                            su.index, su.total, su.name, su.detail));
+                    progressBar.setValue(
+                            (int) (100.0 * su.index / Math.max(1, su.total)));
+
+                } else if (chunk instanceof BrokenEntry be) {
+                    // In full-check mode just append.
+                    // In recheck mode the row already exists, so update it in place
+                    // (the problem description may differ on the second check).
+                    if (isRecheckMode) {
+                        int existingRow = findRowByName(be.algorithm.getName());
+                        if (existingRow >= 0) {
+                            tableModel.setValueAt(be.problem, existingRow, 2);
+                        } else {
+                            // Shouldn't happen in recheck mode, but be safe
+                            tableModel.addRow(new Object[]{
+                                    be.algorithm.getName(),
+                                    be.algorithm.getURLOfDocumentation(),
+                                    be.problem});
+                        }
+                    } else {
+                        tableModel.addRow(new Object[]{
+                                be.algorithm.getName(),
+                                be.algorithm.getURLOfDocumentation(),
+                                be.problem});
+                    }
+
+                } else if (chunk instanceof RecheckedOkEntry ok) {
+                    // Remove the row: this URL is no longer broken
+                    int row = findRowByName(ok.algorithmName);
+                    if (row >= 0) {
+                        tableModel.removeRow(row);
+                    }
+                }
+            }
+        }
+
+        @Override
+        protected void done() {
+            onWorkerFinished(this);
+        }
+
+        // ── Network check helpers ─────────────────────────────────────────────
+
+        /**
+         * Returns {@code null} if the URL is reachable with HTTP 200, or a short
+         * human-readable problem description otherwise.
+         */
+        private String checkUrl(String url) {
+            if (url == null || url.isBlank()) {
+                return "empty URL";
+            }
+            try {
+                return attempt(url, "HEAD", 0);
+            } catch (Exception e) {
+                return "exception: " + e.getMessage();
+            }
+        }
+
+        /**
+         * Tries to reach {@code url} using {@code method}.
+         * <ul>
+         *   <li>Retries with GET if the server returns 405 / 501 for HEAD.</li>
+         *   <li>Follows cross-protocol redirects manually (up to 3 hops).</li>
+         * </ul>
+         */
+        private String attempt(String url, String method, int redirectDepth) throws Exception {
+            if (redirectDepth > 3) return "too many redirects";
+
+            HttpURLConnection connection = null;
+            try {
+                URL urlObject = new URI(url).toURL();
+                connection = (HttpURLConnection) urlObject.openConnection();
+                connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+                connection.setReadTimeout(READ_TIMEOUT_MS);
+                connection.setInstanceFollowRedirects(true);
+                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (SPMF-LinkChecker)");
+                connection.setRequestMethod(method);
+
+                int responseCode = connection.getResponseCode();
+
+                // Some servers refuse HEAD; retry with GET once
+                if ((responseCode == 405 || responseCode == 501) && "HEAD".equals(method)) {
+                    connection.disconnect();
+                    return attempt(url, "GET", redirectDepth);
+                }
+
+                // Manual redirect (needed for http → https across different hosts)
+                if (responseCode >= 300 && responseCode < 400) {
+                    String location = connection.getHeaderField("Location");
+                    connection.disconnect();
+                    if (location != null) return attempt(location, method, redirectDepth + 1);
+                    return "redirect without Location header (HTTP " + responseCode + ")";
+                }
+
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    return "HTTP " + responseCode;
+                }
+                return null; // OK
+
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }
+
+        // ── Table utility ─────────────────────────────────────────────────────
+
+        /**
+         * Finds the first row in the results table whose "Algorithm Name" column
+         * equals {@code name}. Returns -1 if not found.
+         */
+        private int findRowByName(String name) {
+            for (int row = 0; row < tableModel.getRowCount(); row++) {
+                if (name.equals(tableModel.getValueAt(row, 0))) {
+                    return row;
+                }
+            }
+            return -1;
+        }
+    }
+
+    // =========================================================================
+    //  Immutable message types published from background thread → EDT
+    // =========================================================================
+
+    /** Carries a progress status message to the status label and progress bar. */
+    private static final class StatusUpdate {
+        final String name;
+        final int    index;
+        final int    total;
+        final String detail;
+
+        StatusUpdate(String name, int index, int total, String detail) {
+            this.name   = name;
+            this.index  = index;
+            this.total  = total;
+            this.detail = detail;
+        }
+    }
+
+    /** Signals that a broken URL was found (or is still broken on a recheck). */
+    private static final class BrokenEntry {
+        final DescriptionOfAlgorithm algorithm;
+        final String                  problem;
+
+        BrokenEntry(DescriptionOfAlgorithm algorithm, String problem) {
+            this.algorithm = algorithm;
+            this.problem   = problem;
+        }
+    }
+
+    /**
+     * Signals (recheck mode only) that a previously broken URL is now reachable.
+     * The EDT will remove its row from the table.
+     */
+    private static final class RecheckedOkEntry {
+        final String algorithmName;
+
+        RecheckedOkEntry(String algorithmName) {
+            this.algorithmName = algorithmName;
+        }
+    }
 }

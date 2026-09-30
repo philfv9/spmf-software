@@ -37,8 +37,8 @@ public class MainTestAllAssociationRules_FPGrowth_saveToFile_withLift {
 		
 		// STEP 2: Generating all rules from the set of frequent itemsets (based on Agrawal & Srikant, 94)
 		double  minlift = 0.1;
-		double  minconf = 0.50; 
-		AlgoAgrawalFaster94 algoAgrawal = new AlgoAgrawalFaster94();
+		double  minconf = 0.90; 
+		AlgoAgrawalFaster94 algoAgrawal = new AlgoAgrawalFaster94("Association rules with lift");
 		algoAgrawal.setMaxConsequentLength(maxConsequentLength);
 		algoAgrawal.setMaxAntecedentLength(maxAntecedentLength);
 		algoAgrawal.runAlgorithm(patterns, output, databaseSize, minconf, minlift);

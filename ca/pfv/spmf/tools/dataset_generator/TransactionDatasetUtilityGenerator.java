@@ -60,7 +60,12 @@ public class TransactionDatasetUtilityGenerator {
 		
 		Map<Integer, Integer> externalUtilities = new HashMap<Integer, Integer>();
 
-		BufferedWriter writer = new BufferedWriter(new FileWriter(output)); 
+		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Transaction database with utility values\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		BufferedReader myInput = new BufferedReader(new InputStreamReader( new FileInputStream(new File(input))));
 		// for each line (transaction) until the end of file
 		String thisLine;

@@ -5,10 +5,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.List;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.BIDE_and_prefixspan.AlgoFEAT;
-import ca.pfv.spmf.algorithms.sequentialpatterns.BIDE_and_prefixspan.SequentialPattern;
-import ca.pfv.spmf.input.sequence_database_list_integers.SequenceDatabase;
-
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.AlgoFEAT2;
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.SequentialPattern;
 
 /**
  * Example of how to use the FEAT algorithm in source code.
@@ -17,19 +15,19 @@ import ca.pfv.spmf.input.sequence_database_list_integers.SequenceDatabase;
 public class MainTestFEAT_saveToMemory {
 
 	public static void main(String [] arg) throws IOException{    
-		// Load a sequence database
-		SequenceDatabase sequenceDatabase = new SequenceDatabase(); 
-		sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"));
-		// print the database to console
-		sequenceDatabase.print();
+		// Input file
+		String inputFile = fileToPath("contextPrefixSpan.txt");
 		
 		// Create an instance of the algorithm 
-		AlgoFEAT algo = new AlgoFEAT(); 
+		AlgoFEAT2 algo = new AlgoFEAT2(); 
 //		algo.setMaximumPatternLength(3);
 		
+		// minimum support  (40% = 2 sequences)
+		double minSup = 0.4;
+		
 		// execute the algorithm with minsup = 50 %
-		List<SequentialPattern> patterns = algo.runAlgorithm(sequenceDatabase, 0.4);    
-		algo.printStatistics(sequenceDatabase.size());
+		List<SequentialPattern> patterns = algo.runAlgorithm(inputFile, minSup, null);    
+		algo.printStatistics();
 		System.out.println(" == PATTERNS ==");
 		for(SequentialPattern pattern : patterns){
 			System.out.print(pattern + " support : " + pattern.getAbsoluteSupport() + " sequence ids:");

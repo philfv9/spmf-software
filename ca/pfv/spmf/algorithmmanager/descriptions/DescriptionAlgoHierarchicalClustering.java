@@ -97,7 +97,7 @@ public class DescriptionAlgoHierarchicalClustering extends DescriptionOfAlgorith
 
 	@Override
 	public String[] getOutputFileTypes() {
-		return new String[]{"Clusters", "Hierarchical clusters"};
+		return new String[]{"Clusters"};
 	}
 	@Override
 	public AlgorithmType getAlgorithmType() {

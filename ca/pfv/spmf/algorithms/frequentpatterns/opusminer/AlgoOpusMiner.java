@@ -100,6 +100,10 @@ public class AlgoOpusMiner {
 
 		// create a writer object to write results to file
 		writer = new BufferedWriter(new FileWriter(outputFileName));
+		writer.write("@FILETYPE=\"Self-Sufficient Itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 //		writer.write(inputFileName + ": " + Global.noOfItems 
 //				 + " items, " + Global.noOfTransactions + " transactions");

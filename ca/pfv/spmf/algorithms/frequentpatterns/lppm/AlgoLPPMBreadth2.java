@@ -130,6 +130,10 @@ public class AlgoLPPMBreadth2 {
 		} else { // if the user want to save the result to a file
 			patterns = null;
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Local Periodic frequent itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 		}
 
 		// record itemCount

@@ -1207,7 +1207,16 @@ public class GraphViewer extends JFrame {
         BufferedReader br = new BufferedReader(new FileReader(file));
         graphDatabase = new ArrayList<>();
 
-        String line = br.readLine();
+        String line;
+        // Skip metadata/comment/empty lines before reaching the first graph
+        do {
+            line = br.readLine();
+        } while (line != null
+                && (line.isEmpty() == true
+                    || line.charAt(0) == '#'
+                    || line.charAt(0) == '%'
+                    || line.charAt(0) == '@'));
+
         Boolean hasNextGraph = (line != null) && line.startsWith("t");
 
         StringBuffer linesOfCurrentGraph = null;
@@ -1232,9 +1241,15 @@ public class GraphViewer extends JFrame {
             Map<Integer, GNode> vMap = new HashMap<>();
 
             while ((line = br.readLine()) != null && !line.startsWith("t")) {
-                if (line.length() == 0) {
+                // if the line is a comment, is empty or is a
+                // kind of metadata, skip it
+                if (line.isEmpty() == true
+                        || line.charAt(0) == '#'
+                        || line.charAt(0) == '%'
+                        || line.charAt(0) == '@') {
                     continue;
                 }
+
                 if (SHOW_STRING_REPRESENTATION_OF_FILE) {
                     linesOfCurrentGraph.append(line);
                     linesOfCurrentGraph.append(System.lineSeparator());

@@ -80,7 +80,11 @@ public class AlgoFixTDBTimeUtility {
 
 		/** writer to write the output file */
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
-
+		writer.write("@FILETYPE=\"Transaction database with utility values and time\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		// We scan the database a first time to calculate the TWU of each item.
 		BufferedReader myInput = null;
 		String thisLine;

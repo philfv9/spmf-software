@@ -64,7 +64,7 @@ public class DescriptionAlgoKMeansPlusPlus extends DescriptionOfAlgorithm {
         
 		DescriptionOfParameter[] parameters = new DescriptionOfParameter[3];
 		parameters[0] = new DescriptionOfParameter("k", "(e.g. 3)", Integer.class, false);
-		parameters[1] = new DescriptionOfParameter("Distance function", "(e.g. euclidian, cosine...)", String.class, false);
+		parameters[1] = new DescriptionOfParameter("Distance function", "(e.g. EUCLIDIAN)", String.class, false);
 		parameters[2] = new DescriptionOfParameter("separator", "(default: ' ')", String.class, true);
 		return parameters;
 	}

@@ -93,6 +93,10 @@ public class AlgoMPFPS_DFS {
 
 		PrintWriter out = new PrintWriter(new BufferedWriter
 				(new FileWriter(outputFile)));
+		out.write("@FILETYPE=\"Periodic frequent itemsets common to multiple sequences\"");
+		out.write(System.lineSeparator());
+		out.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		out.write(System.lineSeparator());
 		
 		for(SeqTidList periodicPat: periodicFrequentPatterns){
 			out.println(periodicPat);

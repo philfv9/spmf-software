@@ -12,6 +12,8 @@ import java.util.BitSet;
  * IPredict is distributed under The MIT License (MIT).
  * You may obtain a copy of the License at
  * https://opensource.org/licenses/MIT 
+ * 
+ * Do not remove license and copyright information.
  */
 /**
  * PHIL08
@@ -20,7 +22,7 @@ import java.util.BitSet;
  * 
  * There are two cases:
  *  - When we do a AND operation, the cardinality is recalculated.
- *  - When we set a it  during the "preload" phase, we do cardinality ++;.
+ *  - When we set a bit  during the "preload" phase, we do cardinality ++;.
  */
 public class Bitvector implements Serializable{
 

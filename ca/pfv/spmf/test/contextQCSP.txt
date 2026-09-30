@@ -1,1 +1,3 @@
+@FILETYPE="Single sequence (QCSP) "
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
 1 2 3 0 0 0 0 2 1 3

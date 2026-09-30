@@ -1,0 +1,6 @@
+@FILETYPE="Frequent episode rules"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+1 2 ==> 1 #SUP: 2 #CONF: 0.5000
+1 2 ==> 2 #SUP: 2 #CONF: 0.5000
+1 2 ==> 2 3 #SUP: 2 #CONF: 0.5000
+1 2 ==> 3 #SUP: 2 #CONF: 0.5000

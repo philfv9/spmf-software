@@ -138,6 +138,11 @@ public class AlgoCFPGrowth {
 		} else { // if the user wants to save the result to a file
 			patterns = null;
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Frequent itemsets with multiple thresholds\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
+
 		}
 
 		// (1) PREPROCESSING: Perform an initial database scan to determine the

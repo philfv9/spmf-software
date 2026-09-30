@@ -70,7 +70,7 @@ public class ExtendedEdge implements Serializable {
     /**
      * the edge label
      */
-    int edgeLabel;
+    public int edgeLabel;
 
     /**
      * the hash code

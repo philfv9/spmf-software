@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import ca.pfv.spmf.algorithms.sequentialpatterns.spam.AlgoVGEN;
-import ca.pfv.spmf.algorithms.sequentialpatterns.spam.PatternVGEN;
+import ca.pfv.spmf.algorithms.sequentialpatterns.spam.AlgoVGEN.GeneratorPattern;
+import ca.pfv.spmf.algorithms.sequentialpatterns.spam_oldversion.PatternVGEN;
 
 
 /**
@@ -34,18 +35,18 @@ public class MainTestVGEN_saveToMemory {
 		//algo.setMaxGap(1);
 		
 		// execute the algorithm with minsup = 2 sequences  (50 %)
-		List<Map<Integer, List<PatternVGEN>>> generatorPatterns = algo.runAlgorithm(input, output, 0.5);    
+		List<Map<Integer, List<GeneratorPattern>>> generatorPatterns = algo.runAlgorithm(input, output, 0.5);    
 		algo.printStatistics();
 		
 	    // PRINT THE PATTTERNS FOUND
-		 for(Map<Integer, List<PatternVGEN>> map : generatorPatterns) {
+		 for(Map<Integer, List<GeneratorPattern>> map : generatorPatterns) {
 	    	  if(map == null) {
 	    		  continue;
 	    	  }
 	    	  // for each pattern
-	    	  for(List<PatternVGEN> patterns : map.values()) {
-	    		  for(PatternVGEN pattern : patterns) {
-	    			  System.out.println(" " + pattern.getPrefix() + "  support : " + pattern.bitmap.getSupport());
+	    	  for(List<GeneratorPattern> patterns : map.values()) {
+	    		  for(GeneratorPattern pattern : patterns) {
+	    			  System.out.println(" " + pattern.toString() + "  support : " + pattern.getSupport());
 	    		  }
 	    	}
 		}

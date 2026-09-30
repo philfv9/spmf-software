@@ -117,6 +117,10 @@ public class AlgoFCHM_all_confidence {
 		startTimestamp = System.currentTimeMillis();
 		
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Correlated High-utility itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
 
 		//  We create a  map to store the TWU of each item
 		mapItemToTWU = new HashMap<Integer, Long>();

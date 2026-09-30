@@ -103,6 +103,10 @@ public class AlgoTUFP {
 
         startTimestamp = System.currentTimeMillis();
         writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Uncertain frequent itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
         // Step 1: scan database to build CUP-Lists for all single items
         itemToCupList = new HashMap<Integer, CUPList>();

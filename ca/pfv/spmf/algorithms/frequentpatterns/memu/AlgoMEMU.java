@@ -104,6 +104,12 @@ public class AlgoMEMU {
 		String line = null;
 		String[] pair = null;
 		while ( (line = in.readLine())!=null){
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+				continue;
+			}
+			
 			pair = line.split(", ");
 			item2profits.put(Integer.parseInt(pair[0].trim()),
 					Integer.parseInt(pair[1].trim()));
@@ -148,6 +154,10 @@ public class AlgoMEMU {
 		// Initialize writer
         if(outputFilePath!=null && !outputFilePath.equalsIgnoreCase("null")){
         	 writer = new BufferedWriter(new FileWriter(outputFilePath));
+ 			writer.write("@FILETYPE=\"High average-utility itemsets\"");
+ 			writer.newLine();
+ 			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+ 			writer.newLine();
         }
            
 		// Read items' profit
@@ -171,6 +181,13 @@ public class AlgoMEMU {
 		int quantity;
 		int itemName;
 		while ((curTran = dbReader.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (curTran.isEmpty() == true || curTran.charAt(0) == '#' ||
+					curTran.charAt(0) == '%' || curTran.charAt(0) == '@') {
+				continue;
+			}
+			
 			String[] items = curTran.split(" ");
 			int maxItemUtility = -1;
 			for(int i=0; i <items.length; i+=2){
@@ -220,6 +237,13 @@ public class AlgoMEMU {
 		dbReader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(inputDB))));
 		int tid =0;
 		while ((curTran = dbReader.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (curTran.isEmpty() == true || curTran.charAt(0) == '#' ||
+					curTran.charAt(0) == '%' || curTran.charAt(0) == '@') {
+				continue;
+			}
+			
 			String[]  items= curTran.split(" ");
 			List<Pair> revisedTransaction = new ArrayList<Pair>();
 			int maxUtility =0;

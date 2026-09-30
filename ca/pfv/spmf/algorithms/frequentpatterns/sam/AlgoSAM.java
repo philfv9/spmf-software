@@ -115,6 +115,10 @@ public class AlgoSAM {
         if (!preprocessed.isEmpty()) {
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(outputPath))) {
                 this.writer = bw;
+        		writer.write("@FILETYPE=\"Frequent itemsets\"");
+        		writer.append(System.lineSeparator());
+        		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+        		writer.append(System.lineSeparator());
 
                 int bufferSize = Math.min(frequentItemCount, maxPatternLength);
                 itemsetBuffer = new int[bufferSize];

@@ -761,6 +761,10 @@ public class AlgoPEMDO {
 	 */
 	public void saveEpisodesToFile(String outputFile) throws IOException {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+		writer.write("@FILETYPE=\"Frequent episodes\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
 		for (Episode episode : frequentEpisodes) {
 			writer.write(episode.toStringSPMF(lastRunWasEMDOP));
 			writer.newLine();
@@ -776,6 +780,11 @@ public class AlgoPEMDO {
 	 */
 	public void saveRulesToFile(String outputFile) throws IOException {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+		writer.write("@FILETYPE=\"Episode rules\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+		
 		for (String rule : validRules) {
 			writer.write(rule);
 			writer.newLine();

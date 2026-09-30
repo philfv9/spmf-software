@@ -19,6 +19,8 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.clofast.model.VerticalIdList;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 /**
  * This class represents a sequence node
@@ -73,6 +75,6 @@ public class SequenceNode {
 
 	@Override
 	public String toString() {
-		return sequence.toString() + " #SUP: " + this.getAbsSupport();
+		return sequence.toString() + "#SUP: " + this.getAbsSupport();
 	}
 }

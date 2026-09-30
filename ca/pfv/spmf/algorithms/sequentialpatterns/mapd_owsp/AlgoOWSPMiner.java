@@ -31,6 +31,8 @@ import ca.pfv.spmf.tools.MemoryLogger;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 /**
  * Implementation of the OWSPMiner algorithm. It was converted from C++ to Java.
@@ -502,6 +504,10 @@ public class AlgoOWSPMiner {
 		pw = null;
 		fos = new FileOutputStream(filename);
 		pw = new PrintWriter(fos);
+		pw.write("@FILETYPE=\"Self-adaptive one-off weak-gap strong sequential patterns\"");
+		pw.write(System.lineSeparator());
+		pw.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		pw.write(System.lineSeparator());
 		// Scanner in = new Scanner(System.in);
 //		myPw = pw;
 		read_file(inputFile);

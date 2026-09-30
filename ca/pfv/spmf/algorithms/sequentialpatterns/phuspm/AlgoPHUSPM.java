@@ -36,35 +36,40 @@ import ca.pfv.spmf.tools.MemoryLogger;
 * You should have received a copy of the GNU General Public License
 * along with SPMF.  If not, see <http://www.gnu.org/licenses/>.
 * 
+* Do not remove copyright and license information.
+* 
 * @Copyright Ting Li et al., 2018
 */
 /**
- * This is an implementation of the PHUSPM algorithm as presented in this paper: <br/><br/>
+ * This is an implementation of the PHUSPM algorithm as presented in this paper:
+ * <br/>
+ * <br/>
  * 
- *    Zhang, B., Lin, J. C.-W., Li, T., Gan, W., Fournier-Viger, P. (2017). Mining High Utility-Probability Sequential 
- *    Patterns in Uncertain Databases. PLoS One, Public Library of Science, to appear.
+ * Zhang, B., Lin, J. C.-W., Li, T., Gan, W., Fournier-Viger, P. (2017). Mining
+ * High Utility-Probability Sequential Patterns in Uncertain Databases. PLoS
+ * One, Public Library of Science, to appear.
  * 
  * @author Ting Li
  */
 public class AlgoPHUSPM {
-	
+
 	/** the maximum memory usage */
 	int maxMemory = 0;
-	
-	/**  the time the algorithm started */
+
+	/** the time the algorithm started */
 	long startTimestamp = 0;
-	
-	/**  the time the algorithm terminated */
+
+	/** the time the algorithm terminated */
 	long endTimestamp = 0;
 
-	/** the number of HUSP  **/
+	/** the number of HUSP **/
 	public static int numberOfHUSP = 0;
-	
+
 	/** the number of candidates */
 	public static int numberOfCandidates = 0;
-	
+
 	/** writer to write the output file **/
-	BufferedWriter writer = null;  
+	BufferedWriter writer = null;
 
 	/**
 	 * Constructor
@@ -76,22 +81,25 @@ public class AlgoPHUSPM {
 	/**
 	 * Run the algorithm
 	 * 
-	 * @param input the input file path
-	 * @param output  the output file path
-	 * @param minUtility  the minimum utility threshold count
+	 * @param input          the input file path
+	 * @param output         the output file path
+	 * @param minUtility     the minimum utility threshold count
 	 * @param minProbability the minimum probability threshold count
 	 * @throws IOException
 	 */
-	public void runAlgorithm(String input, String output, int minUtility, float minProbability)
-			throws IOException {
+	public void runAlgorithm(String input, String output, int minUtility, float minProbability) throws IOException {
 
 		maxMemory = 0;
 		startTimestamp = System.currentTimeMillis();
 		numberOfHUSP = 0;
 		numberOfCandidates = 0;
-		
+
 		// create a writer object to write results to file
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High-utility probability sequential patterns\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		BufferedReader myInput = null;
 		Map<Integer, Integer> RSU = new HashMap<Integer, Integer>();
@@ -108,13 +116,17 @@ public class AlgoPHUSPM {
 		// probability
 		try {
 			// prepare the object for reading the file
-			myInput = new BufferedReader(new InputStreamReader(
-					new FileInputStream(new File(input))));
+			myInput = new BufferedReader(new InputStreamReader(new FileInputStream(new File(input))));
 			// for each line (transaction) until the end of file
 			String thisLine = null;
 			while ((thisLine = myInput.readLine()) != null) {
 				// if the line is a comment, is empty or is a
-				// kind of metadata
+				// kind of metadata, skip it
+				if (thisLine.isEmpty() == true || thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%'
+						|| thisLine.charAt(0) == '@') {
+					continue;
+				}
+
 				Set<Integer> set = new HashSet();
 				String arry[] = thisLine.split(" -1 ");
 
@@ -147,8 +159,7 @@ public class AlgoPHUSPM {
 					if (!Probability.containsKey(item)) {
 						Probability.put(item, lineProbability);
 					} else {
-						Probability.put(item, Probability.get(item)
-								+ lineProbability);
+						Probability.put(item, Probability.get(item) + lineProbability);
 					}
 				}
 			}
@@ -163,13 +174,17 @@ public class AlgoPHUSPM {
 
 		try {
 			// for each line (transaction) until the end of file
-			myInput = new BufferedReader(new InputStreamReader(
-					new FileInputStream(new File(input))));
+			myInput = new BufferedReader(new InputStreamReader(new FileInputStream(new File(input))));
 			String thisLine = null;
 			int order = 0;
 			while ((thisLine = myInput.readLine()) != null) {
 				// if the line is a comment, is empty or is a
 				// kind of metadata
+				if (thisLine.isEmpty() == true || thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%'
+						|| thisLine.charAt(0) == '@') {
+					continue;
+				}
+				
 				List<Itemset> sequnce = new ArrayList<Itemset>();
 				String arry[] = thisLine.split(" -1 ");
 				int lineSWU = Integer.parseInt(arry[arry.length - 2]);
@@ -184,8 +199,7 @@ public class AlgoPHUSPM {
 						String itemProperty[] = itemset[j].split(" ");
 						int item = Integer.parseInt(itemProperty[0]);
 						int utility = Integer.parseInt(itemProperty[1]);
-						if (RSU.get(item) >= minUtility
-								&& Probability.get(item) >= minProbability) {
+						if (RSU.get(item) >= minUtility && Probability.get(item) >= minProbability) {
 
 							Item sitem = new Item();
 							sitem.item = item;
@@ -222,13 +236,11 @@ public class AlgoPHUSPM {
 			int restUtility = lineSWU;
 
 			for (int j = 0; j < revisedDatabase.get(i).size(); j++) {
-				for (int k = 0; k < revisedDatabase.get(i).get(j).Itemset
-						.size(); k++) {
+				for (int k = 0; k < revisedDatabase.get(i).get(j).Itemset.size(); k++) {
 					int item = revisedDatabase.get(i).get(j).Itemset.get(k).item;
 					int utility = revisedDatabase.get(i).get(j).Itemset.get(k).utility;
 					restUtility -= utility;
-					Element element = new Element(i, j, utility,
-							lineProbability, restUtility);
+					Element element = new Element(i, j, utility, lineProbability, restUtility);
 
 					if (sequenceListMap.containsKey(item)) {
 						sequenceListMap.get(item).addElement(element);
@@ -245,12 +257,10 @@ public class AlgoPHUSPM {
 		}
 
 		// keep 1-sequnces in a Seq structure : sequenceList
-		List<SequenceList> oneSequenceList = new ArrayList<SequenceList>(
-				sequenceListMap.values());
+		List<SequenceList> oneSequenceList = new ArrayList<SequenceList>(sequenceListMap.values());
 		for (int i = 0; i < oneSequenceList.size(); i++) {
 			oneSequenceList.get(i).calculate();
-			if (oneSequenceList.get(i).sumSWU < minUtility
-					|| oneSequenceList.get(i).sumProbability < minProbability) {
+			if (oneSequenceList.get(i).sumSWU < minUtility || oneSequenceList.get(i).sumProbability < minProbability) {
 				oneSequenceList.remove(i);
 				i--;
 			}
@@ -267,33 +277,27 @@ public class AlgoPHUSPM {
 			AlgoPHUSPM(Seq, revisedDatabase, minUtility, minProbability);
 		}
 		numberOfCandidates += oneSequenceList.size();
-		
+
 		MemoryLogger.getInstance().checkMemory();
 		writer.close();
-			
+
 		endTimestamp = System.currentTimeMillis();
 	}
 
 	/**
 	 * mining processing, projection-based
 	 * 
-	 * @param Seq
-	 *            , pre-sequence
-	 * @param revisedDatabase
-	 *            : revised database
-	 * @param minUtility
-	 *            : the minimum utility threshold count
-	 * @param minProbability
-	 *            : the minimum probability count
-	 * @throws IOException 
+	 * @param Seq             , pre-sequence
+	 * @param revisedDatabase : revised database
+	 * @param minUtility      : the minimum utility threshold count
+	 * @param minProbability  : the minimum probability count
+	 * @throws IOException
 	 */
-	public void AlgoPHUSPM(SequenceList Seq,
-			List<List<Itemset>> revisedDatabase, int minUtility,
-			float minProbability) throws IOException {
+	public void AlgoPHUSPM(SequenceList Seq, List<List<Itemset>> revisedDatabase, int minUtility, float minProbability)
+			throws IOException {
 
 		numberOfCandidates++;
-		if (Seq.sumUtility >= minUtility
-				&& Seq.sumProbability >= minProbability) {
+		if (Seq.sumUtility >= minUtility && Seq.sumProbability >= minProbability) {
 			numberOfHUSP++;
 			// output HUSP
 			writeOut(Seq);
@@ -312,27 +316,22 @@ public class AlgoPHUSPM {
 			int preUtility = 0;
 
 			int i = 0;
-			for (i = 0; i < revisedDatabase.get(SID).get(location).Itemset
-					.size(); i++) {
-				int item = revisedDatabase.get(SID).get(location).Itemset
-						.get(i).item;
-				if (item == Seq.itemsets.get(Seq.itemsets.size() - 1).get(
-						Seq.itemsets.get(Seq.itemsets.size() - 1).size() - 1)) {
+			for (i = 0; i < revisedDatabase.get(SID).get(location).Itemset.size(); i++) {
+				int item = revisedDatabase.get(SID).get(location).Itemset.get(i).item;
+				if (item == Seq.itemsets.get(Seq.itemsets.size() - 1)
+						.get(Seq.itemsets.get(Seq.itemsets.size() - 1).size() - 1)) {
 					i++;
 					break;
 				}
 			}
 			// item extended
 			for (; i < revisedDatabase.get(SID).get(location).Itemset.size(); i++) {
-				int item = revisedDatabase.get(SID).get(location).Itemset
-						.get(i).item;
-				int utility = revisedDatabase.get(SID).get(location).Itemset
-						.get(i).utility;
+				int item = revisedDatabase.get(SID).get(location).Itemset.get(i).item;
+				int utility = revisedDatabase.get(SID).get(location).Itemset.get(i).utility;
 				preUtility += utility;
 
-				Element newElement = new Element(SID, location, element.utility
-						+ utility, element.probability, element.restUtility
-						- preUtility);
+				Element newElement = new Element(SID, location, element.utility + utility, element.probability,
+						element.restUtility - preUtility);
 				if (!itemExtend.containsKey(item)) {
 					SequenceList newlist = new SequenceList();
 					newlist.itemsets.addAll(Seq.itemsets);
@@ -351,17 +350,13 @@ public class AlgoPHUSPM {
 			}
 
 			/* itemset extended */
-			for (int j = element.location + 1; j < revisedDatabase.get(SID)
-					.size(); j++) {
-				for (int k = 0; k < revisedDatabase.get(SID).get(j).Itemset
-						.size(); k++) {
+			for (int j = element.location + 1; j < revisedDatabase.get(SID).size(); j++) {
+				for (int k = 0; k < revisedDatabase.get(SID).get(j).Itemset.size(); k++) {
 					int item = revisedDatabase.get(SID).get(j).Itemset.get(k).item;
-					int utility = revisedDatabase.get(SID).get(j).Itemset
-							.get(k).utility;
+					int utility = revisedDatabase.get(SID).get(j).Itemset.get(k).utility;
 					preUtility += utility;
-					Element newElement = new Element(SID, j, element.utility
-							+ utility, element.probability, element.restUtility
-							- preUtility);
+					Element newElement = new Element(SID, j, element.utility + utility, element.probability,
+							element.restUtility - preUtility);
 					if (!itemsetExtend.containsKey(item)) {
 						SequenceList newlist = new SequenceList();
 						newlist.itemsets.addAll(Seq.itemsets);
@@ -379,30 +374,24 @@ public class AlgoPHUSPM {
 			}
 		}
 
-		java.util.Iterator<Entry<Integer, SequenceList>> iter1 = itemExtend
-				.entrySet().iterator();
+		java.util.Iterator<Entry<Integer, SequenceList>> iter1 = itemExtend.entrySet().iterator();
 		while (iter1.hasNext()) {// traverse mapOneItem, add frequent 1-itemsets
 									// to frequentFuzzyOneItemset
-			Map.Entry<Integer, SequenceList> entry = (Map.Entry<Integer, SequenceList>) iter1
-					.next();
+			Map.Entry<Integer, SequenceList> entry = (Map.Entry<Integer, SequenceList>) iter1.next();
 			entry.getValue().calculate();
 
-			if (entry.getValue().sumSWU >= minUtility
-					&& entry.getValue().sumProbability >= minProbability) {
+			if (entry.getValue().sumSWU >= minUtility && entry.getValue().sumProbability >= minProbability) {
 				nextGeneration.add(entry.getValue());
 			}
 		}
 
-		java.util.Iterator<Entry<Integer, SequenceList>> iter2 = itemsetExtend
-				.entrySet().iterator();
+		java.util.Iterator<Entry<Integer, SequenceList>> iter2 = itemsetExtend.entrySet().iterator();
 		while (iter2.hasNext()) {// traverse mapOneItem, add frequent 1-itemsets
 									// to frequentFuzzyOneItemset
-			Map.Entry<Integer, SequenceList> entry = (Map.Entry<Integer, SequenceList>) iter2
-					.next();
+			Map.Entry<Integer, SequenceList> entry = (Map.Entry<Integer, SequenceList>) iter2.next();
 			entry.getValue().calculate();
 
-			if (entry.getValue().sumSWU >= minUtility
-					&& entry.getValue().sumProbability >= minProbability) {
+			if (entry.getValue().sumSWU >= minUtility && entry.getValue().sumProbability >= minProbability) {
 				nextGeneration.add(entry.getValue());
 			}
 		}
@@ -414,10 +403,11 @@ public class AlgoPHUSPM {
 
 	/**
 	 * write a pattern to file
+	 * 
 	 * @param sequence the pattern
-	 * @param writer a buffered writer to write to the file
+	 * @param writer   a buffered writer to write to the file
 	 */
-	private  void writeOut(SequenceList sequence) throws IOException {
+	private void writeOut(SequenceList sequence) throws IOException {
 		for (List<Integer> items : sequence.itemsets) {
 			for (int item : items) {
 				writer.write(item + " ");
@@ -435,14 +425,11 @@ public class AlgoPHUSPM {
 	 * Print statistics about the algorithm execution
 	 */
 	public void printStats() throws IOException {
-		System.out
-				.println("=======  THE RESULT OF THE ALGORITHM - STATS ============");
-		System.out.println(" Total time ~ " + (endTimestamp - startTimestamp)
-				/ 1000 + " s");
+		System.out.println("=======  THE RESULT OF THE ALGORITHM - STATS ============");
+		System.out.println(" Total time ~ " + (endTimestamp - startTimestamp) / 1000 + " s");
 		System.out.println(" Candidates count: " + numberOfCandidates);
 		System.out.println(" HUSPs count: " + numberOfHUSP);
-		System.out.println(" Max memory: "
-				+ MemoryLogger.getInstance().getMaxMemory() + "  MB");
+		System.out.println(" Max memory: " + MemoryLogger.getInstance().getMaxMemory() + "  MB");
 		System.out.println("======================================================");
 	}
 }

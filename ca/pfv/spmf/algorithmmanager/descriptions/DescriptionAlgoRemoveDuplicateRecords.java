@@ -51,7 +51,7 @@ public class DescriptionAlgoRemoveDuplicateRecords extends DescriptionOfAlgorith
 
     @Override
     public String getURLOfDocumentation() {
-        return "http://www.philippe-fournier-viger.com/spmf/RemoveDuplicateRecords.php";
+        return "http://www.philippe-fournier-viger.com/spmf/Remove_Duplicate_Records.php";
     }
 
     @Override

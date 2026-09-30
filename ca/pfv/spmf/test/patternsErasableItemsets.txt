@@ -1,0 +1,10 @@
+@FILETYPE="Erasable itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+5 #LOSS: 70.0
+6 #LOSS: 80.0
+7 #LOSS: 50.0
+3 #LOSS: 150.0
+5 6 #LOSS: 150.0
+5 7 #LOSS: 100.0
+5 6 7 #LOSS: 150.0
+6 7 #LOSS: 100.0

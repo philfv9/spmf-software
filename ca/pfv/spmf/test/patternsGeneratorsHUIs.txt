@@ -1,0 +1,4 @@
+@FILETYPE="Generator high-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+2 5 #UTIL: 31 #SUP: 3
+2 4 #UTIL: 30 #SUP: 2

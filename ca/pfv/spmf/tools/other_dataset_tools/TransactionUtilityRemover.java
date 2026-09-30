@@ -47,7 +47,12 @@ public class TransactionUtilityRemover {
 
 		 try (BufferedWriter writer = new BufferedWriter(new FileWriter(output));
 		         BufferedReader myInput = new BufferedReader(new InputStreamReader(new FileInputStream(new File(input))))) {
-		        String thisLine;
+				writer.write("@FILETYPE=\"Simple transaction database\"");
+				writer.newLine();
+				writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+				writer.newLine();   
+			 
+			 String thisLine;
 		        // for each line (transaction) until the end of file
 		        while ((thisLine = myInput.readLine()) != null) {
 		            // if the line is a comment, is empty or is a

@@ -19,6 +19,8 @@ public class MainTestSequentialPatternMining4 {
 		String input = fileToPath("ContextMDSequenceNoTime.txt");
 		String output = ".//output.txt";
 		
+		// Multi-dimensional frequent closed sequential patterns 
+		
 		// Load a sequence database
 		MDSequenceDatabase contextMDDatabase  = new MDSequenceDatabase(); //
 		contextMDDatabase.loadFile(input);

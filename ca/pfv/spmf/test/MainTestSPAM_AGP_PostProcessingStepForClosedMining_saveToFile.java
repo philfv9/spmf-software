@@ -4,12 +4,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.AlgoClaSP;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.dataStructures.creators.AbstractionCreator;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.dataStructures.creators.AbstractionCreator_Qualitative;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.dataStructures.database.SequenceDatabase;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.idlists.creators.IdListCreator;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_AGP.idlists.creators.IdListCreatorStandard_Map;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.AlgoClaSP_bitset;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.AlgoSPAM_AGP;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.SequenceDatabase;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.idLists.creators.IdListCreator;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clasp_spade_spam_AGP_fast.idLists.creators.IdListCreator_Bitmap;
 
 /**
  * Example of how to use the algorithm SPAM but executing a 
@@ -27,27 +26,22 @@ public class MainTestSPAM_AGP_PostProcessingStepForClosedMining_saveToFile {
     	
     	String outputPath = ".//output.txt";
         // Load a sequence database
-        double support = 0.4;
+        double support = 0.5;
 
         boolean keepPatterns = true;
         boolean verbose = true;
-        boolean findClosedPatterns = true;
-        boolean executePruningMethods = false;
-        
         // if you set the following parameter to true, the sequence ids of the sequences where
         // each pattern appears will be shown in the result
-        boolean outputSequenceIdentifiers = false; 
+        boolean outputSequenceIdentifiers = false;
 
-        AbstractionCreator abstractionCreator = AbstractionCreator_Qualitative.getInstance();
-        IdListCreator idListCreator = IdListCreatorStandard_Map.getInstance();
+        IdListCreator idListCreator = IdListCreator_Bitmap.getInstance();
 
-        SequenceDatabase sequenceDatabase = new SequenceDatabase(abstractionCreator, idListCreator);
+        SequenceDatabase sequenceDatabase = new SequenceDatabase(idListCreator);
 
-        //double relativeSupport = sequenceDatabase.loadFile(fileToPath("ExampleClaSP.txt"), support);
-        double relativeSupport = sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"), support);
+        //double relativeSupport = sequenceDatabase.loadFile(fileToPath("contextClaSP.txt"), support);
+        sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"), support);
 
-        AlgoClaSP algorithm = new AlgoClaSP(relativeSupport, abstractionCreator, findClosedPatterns, executePruningMethods);
-
+        AlgoSPAM_AGP algorithm = new AlgoSPAM_AGP(support);
 
         //System.out.println(sequenceDatabase.toString());
         algorithm.runAlgorithm(sequenceDatabase, keepPatterns, verbose, outputPath,outputSequenceIdentifiers);

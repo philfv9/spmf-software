@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
+/*
  * Implementation of a sequential pattern. A sequential pattern is a list of
  * itemsets. An itemset is a list of integers.
  *
@@ -24,6 +24,7 @@ import java.util.List;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * Do not remove copyright and license information.
  */
 public class Prefix {
 

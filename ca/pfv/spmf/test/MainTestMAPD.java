@@ -41,7 +41,7 @@ public class MainTestMAPD {
 		double minimumThreshold = 0.2; 
 
 		// the possible maximum length of frequent patterns
-		int maxPatternLength = 3; 
+		int maxPatternLength = 5; 
 		
 		// the minimum gap constraint
 		int minGap = 0; 

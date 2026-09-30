@@ -41,7 +41,7 @@ public class MainTestCSVViewer {
     @SuppressWarnings("unused")
 	public static void main(String[] arg) throws IOException {
 
-        String input = fileToPath("test.csv");
+        String input = fileToPath("testOpen.csv");
 
         // Applying the viewer
         CSVDatabaseViewer viewer = new CSVDatabaseViewer(true, input);

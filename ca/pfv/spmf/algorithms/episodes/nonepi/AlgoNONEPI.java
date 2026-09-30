@@ -90,6 +90,13 @@ public class AlgoNONEPI {
 		String line;
 		Map<String, List<Occurrence>> SingleEventEpisode = new HashMap<>();
 		while ((line = reader.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+				continue;
+			}
+			
+			
 			String[] lineSplited = line.split("\\|");
 			String event = lineSplited[0];
 			long timeStamp = Integer.parseInt(lineSplited[1]);
@@ -438,7 +445,11 @@ public class AlgoNONEPI {
 	public void saveRulesToFile(String outputPath) {
 		try {
 			PrintWriter writer = new PrintWriter(outputPath, "UTF-8");
-			writer.write(rulesAsString());
+			writer.write("@FILETYPE=\"Episode rules\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());writer.write(rulesAsString());
+					
 			writer.close();
 		} catch (FileNotFoundException | UnsupportedEncodingException e) {
 			e.printStackTrace();

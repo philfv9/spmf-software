@@ -1,0 +1,12 @@
+@FILETYPE="High average-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+2 #AUTIL: 26.0
+2 1 #AUTIL: 24.5
+2 3 #AUTIL: 25.0
+1 #AUTIL: 35.0
+1 4 #AUTIL: 29.5
+1 4 3 #AUTIL: 26.333333333333332
+1 3 #AUTIL: 27.5
+4 #AUTIL: 27.0
+4 3 #AUTIL: 27.5
+3 #AUTIL: 34.0

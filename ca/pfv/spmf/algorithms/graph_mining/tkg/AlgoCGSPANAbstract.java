@@ -175,6 +175,16 @@ public abstract class AlgoCGSPANAbstract {
     protected boolean outputExtendableByMultipleIsomorphisms = true;
 
     /**
+     * restrict the output to subgraphs that are also closed according to the threshold based definition
+     * (CloseGraph for the support setting, CloGraMi for the MNI setting).
+     * <p>
+     * When true (the default), the {@link ClosedSubgraph#isClosedByThreshold()} flag is computed for every cgSpan
+     * closed subgraph and only the subgraphs whose flag is true are written to the output. When false, the flag is
+     * not computed and every cgSpan closed subgraph is written to the output.
+     */
+    protected boolean closedByThreshold = true;
+
+    /**
      * output number of projections in each database graph
      */
     protected boolean outputProjections = true;
@@ -204,12 +214,22 @@ public abstract class AlgoCGSPANAbstract {
     protected void writeResultToFile(String outputPath) throws IOException {
         // Create the output file
         BufferedWriter bw = new BufferedWriter(new FileWriter(new File(outputPath)));
+		bw.write("@FILETYPE=\"Frequent subgraphs\"");
+		bw.append(System.lineSeparator());
+		bw.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		bw.append(System.lineSeparator());
 
         closedSubgraphs.sort((ClosedSubgraph z1, ClosedSubgraph z2) -> (Integer.compare(z1.support, z2.support)));
 
         if (!outputExtendableByMultipleIsomorphisms) {
             closedSubgraphs = closedSubgraphs.stream()
                     .filter(g -> !isExtendableWithMultipleIsomorphisms(g)).collect(Collectors.toList());
+        }
+
+        // when restricted to threshold based closed subgraphs, keep only the subgraphs whose isClosedByThreshold flag is true
+        if (closedByThreshold) {
+            closedSubgraphs = closedSubgraphs.stream()
+                    .filter(ClosedSubgraph::isClosedByThreshold).collect(Collectors.toList());
         }
 
         // For each frequent subgraph
@@ -308,7 +328,12 @@ public abstract class AlgoCGSPANAbstract {
         BufferedReader br = new BufferedReader(new FileReader(new File(path)));
         List<DatabaseGraph> graphDatabase = new ArrayList<>();
 
-        String line = br.readLine();
+	    // skip any header/comment lines starting with '@' before looking for the first graph
+	    String line;
+	    do {
+	        line = br.readLine();
+	    } while (line != null && line.startsWith("@"));
+	    
         Boolean hasNextGraph = (line != null) && line.startsWith("t");
 
         // For each graph of the graph database
@@ -514,6 +539,125 @@ public abstract class AlgoCGSPANAbstract {
             }
         }
         return extensions;
+    }
+
+    /**
+     * Determines whether a cgSpan closed subgraph is also closed according to the threshold based definition, by
+     * testing whether it has a one edge supergraph with the same value of the threshold measure.
+     * <p>
+     * This base implementation handles the multiple graphs <b>support</b> setting (CloseGraph definition). A one edge
+     * supergraph has the same support as "c" if and only if the corresponding extension is present in <b>every</b>
+     * database graph of the support of "c" (support is anti-monotone, so equal support means the supergraph appears
+     * in all support graphs). Therefore we collect, per database graph, the set of possible one edge extensions and
+     * intersect these sets over all support graphs: if the intersection is non empty a common extension exists and
+     * "c" is NOT closed by threshold; otherwise "c" is closed by threshold. Checking only one edge extensions is
+     * sufficient because if a larger supergraph had equal support, every intermediate one edge supergraph would have
+     * equal support as well.
+     * <p>
+     * The MNI setting uses a different closure test and overrides this method (see {@code AlgoCGSPANMNI}).
+     * <p>
+     * Unlike {@link #rightMostPathExtensionsFromSingle(DFSCode, Graph)}, which is restricted to the rightmost path
+     * (as required by the gSpan enumeration), this method considers extensions from <b>every</b> vertex, as required
+     * to test the closure condition. The isomorphisms of "c" are not recomputed from scratch: instead the
+     * already available projections of "c" are streamed with the same consumer/producer machinery used by
+     * {@link RightPathExtender}, and each projection yields its isomorphism through
+     * {@link PDFSCompact#subgraphIsomorphism(DFSCode)}.
+     * <p>
+     * Each extension is described by an {@link ExtendedEdge} whose vertex indices refer to the DFS code vertices, so
+     * that the same extension found in different database graphs collapses to the same descriptor:
+     * <ul>
+     *     <li>a forward extension adds a new vertex, so its second index is the number of vertices of "c" (the next
+     *     free vertex index);</li>
+     *     <li>a backward extension connects two existing vertices of "c" that are not yet connected, with the indices
+     *     normalized so that the smaller index comes first.</li>
+     * </ul>
+     *
+     * @param c         the DFS code of the cgSpan closed subgraph
+     * @param projected the projections of "c" into the graph database
+     * @param graphIds  the ids of the database graphs in the support of "c"
+     * @return true if "c" is also closed according to the threshold based definition, false otherwise
+     */
+    protected boolean isClosedByThreshold(DFSCode c, ProjectedCompact projected, Set<Integer> graphIds) {
+        // one edge extension descriptors available in each support graph
+        Map<Integer, Set<ExtendedEdge>> extensionsByGraph = new HashMap<Integer, Set<ExtendedEdge>>();
+        for (Integer gid : graphIds) {
+            extensionsByGraph.put(gid, new HashSet<ExtendedEdge>());
+        }
+
+        // index used for the new vertex of a forward extension (next free DFS vertex index)
+        int newVertexIndex = c.getAllVLabels().size();
+
+        // stream all projections of "c" using the consumer/producer iterator (same machinery as RightPathExtender)
+        ThreadPool threadPool = ThreadPool.getProjectedIteratorProducersInstance();
+        ProjectedIteratorConsumer iterator = projected.iterator(threadPool.getThreadCount() * 10, threadPool.getThreadCount());
+
+        while (iterator.hasNext()) {
+            PDFSCompact pdfs = iterator.next();
+            if (pdfs == null) {
+                break;
+            }
+
+            DatabaseGraph g = pdfs.getDatabaseGraph();
+            Set<ExtendedEdge> extensions = extensionsByGraph.get(g.getId());
+            if (extensions == null) {
+                // projection from a graph outside the support (should not happen)
+                continue;
+            }
+
+            // isomorphism of "c" for this projection, obtained from the projection itself (no recomputation)
+            Map<Integer, Integer> isom = pdfs.subgraphIsomorphism(c);
+            Map<Integer, Integer> invertedISOM = new HashMap<Integer, Integer>();
+            for (Map.Entry<Integer, Integer> entry : isom.entrySet()) {
+                invertedISOM.put(entry.getValue(), entry.getKey());
+            }
+
+            // for each vertex of the subgraph
+            for (Map.Entry<Integer, Integer> entry : isom.entrySet()) {
+                int v = entry.getKey();
+                int mappedV = entry.getValue();
+                int mappedVlabel = g.getVLabel(mappedV);
+
+                // for each neighbor of the vertex corresponding to v in g
+                for (Vertex x : g.getAllNeighbors(mappedV)) {
+                    int edgeLabel = g.getEdgeLabel(mappedV, x.getId());
+                    Integer mappedNeighborIndex = invertedISOM.get(x.getId());
+
+                    if (mappedNeighborIndex == null) {
+                        // forward extension: x is a vertex not belonging to the subgraph projection
+                        extensions.add(new ExtendedEdge(v, newVertexIndex, mappedVlabel, x.getLabel(), edgeLabel));
+                    } else {
+                        // backward extension: both endpoints belong to the subgraph projection
+                        int u = mappedNeighborIndex;
+                        // skip edges that are already part of the subgraph
+                        if (!c.containEdge(v, u)) {
+                            int a = Math.min(v, u);
+                            int b = Math.max(v, u);
+                            extensions.add(new ExtendedEdge(a, b, g.getVLabel(isom.get(a)), g.getVLabel(isom.get(b)), edgeLabel));
+                        }
+                    }
+                }
+            }
+        }
+
+        // intersect the per graph extension sets: a common extension means a supergraph with equal support exists
+        Set<ExtendedEdge> commonExtensions = null;
+        for (Integer gid : graphIds) {
+            Set<ExtendedEdge> extensions = extensionsByGraph.get(gid);
+            if (commonExtensions == null) {
+                commonExtensions = new HashSet<ExtendedEdge>(extensions);
+            } else {
+                commonExtensions.retainAll(extensions);
+            }
+
+            // no extension is common to all support graphs seen so far, so "c" is closed by threshold
+            if (commonExtensions.isEmpty()) {
+                return true;
+            }
+        }
+
+        // reaching here means a common extension exists in every support graph (or the support is empty):
+        // "c" has a supergraph with equal support and is therefore NOT closed by threshold, unless there is no support
+        return commonExtensions == null;
     }
 
     protected Map<ExtendedEdge, ProjectedCompact> rightMostPathExtensions(DFSCode c, List<DatabaseGraph> graphDatabase,
@@ -968,6 +1112,23 @@ public abstract class AlgoCGSPANAbstract {
 
     public void setOutputExtendableByMultipleIsomorphisms(boolean outputExtendableByMultipleIsomorphisms) {
         this.outputExtendableByMultipleIsomorphisms = outputExtendableByMultipleIsomorphisms;
+    }
+
+    /**
+     * @return true if the output is restricted to subgraphs that are also closed according to the threshold based
+     *         definition (CloseGraph for the support setting, CloGraMi for the MNI setting)
+     */
+    public boolean isClosedByThreshold() {
+        return closedByThreshold;
+    }
+
+    /**
+     * @param closedByThreshold when true (the default), the isClosedByThreshold flag is computed for every cgSpan
+     *                          closed subgraph and only the subgraphs whose flag is true are written to the output;
+     *                          when false, the flag is not computed and every cgSpan closed subgraph is written
+     */
+    public void setClosedByThreshold(boolean closedByThreshold) {
+        this.closedByThreshold = closedByThreshold;
     }
 
     /**

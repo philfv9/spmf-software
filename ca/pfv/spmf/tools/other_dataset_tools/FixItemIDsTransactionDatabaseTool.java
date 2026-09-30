@@ -56,6 +56,11 @@ public class FixItemIDsTransactionDatabaseTool {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(output));
 				BufferedReader myInput = new BufferedReader(
 						new InputStreamReader(new FileInputStream(new File(input))))) {
+			writer.write("@FILETYPE=\"Simple transaction database\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
+			
 			// for each line (transaction) until the end of file
 			String thisLine;
 			while ((thisLine = myInput.readLine()) != null) {

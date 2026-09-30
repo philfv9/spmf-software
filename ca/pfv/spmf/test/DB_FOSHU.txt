@@ -1,3 +1,5 @@
+@FILETYPE="Transaction database with shelf-time periods and utility values"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
 1 3 4:3:-5 1 2:0
 1 3 5 7:17:-10 6 6 5:0
 1 2 3 4 5 6:25:-5 4 1 12 3 5:1

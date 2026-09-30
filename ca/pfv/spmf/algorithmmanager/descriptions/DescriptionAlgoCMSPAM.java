@@ -80,7 +80,8 @@ public class DescriptionAlgoCMSPAM extends DescriptionOfAlgorithm {
 		}
 		
 		// execute the algorithm with minsup = 2 sequences (50 %)
-		algo.runAlgorithm(inputFile, outputFile, getParamAsDouble(parameters[0]),outputSeqIdentifiers); 
+		algo.showSequenceIdentifiersInOutput(outputSeqIdentifiers);
+		algo.runAlgorithm(inputFile, outputFile, getParamAsDouble(parameters[0]));
 		algo.printStatistics();
 	}
 
@@ -104,9 +105,9 @@ public class DescriptionAlgoCMSPAM extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getInputFileTypes() {
-		return new String[]{"Database of instances","Sequence database", "Simple sequence database"};
+		return new String[] { "Database of instances", "Sequence database", "Simple sequence database" };
 	}
-
+	
 	@Override
 	public String[] getOutputFileTypes() {
 		return new String[]{"Patterns", "Sequential patterns", "Frequent sequential patterns"};

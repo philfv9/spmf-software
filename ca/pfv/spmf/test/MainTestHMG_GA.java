@@ -41,10 +41,10 @@ public class MainTestHMG_GA {
 		HMGMutationVariant mutationvariant = HMGMutationVariant.SINGLE;
 		
 		// Input file
-		String dataset = fileToPath("AeCa");
+		String dataset = fileToPath("AeCa.seq");
 		
 		// Output file    
-		String outputFile = ("output_AeCa.txt");
+		String outputFile = ("output.txt");
 		
 		// Number of generations  (only for genetic algorithm)
 		int generations = 10;

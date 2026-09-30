@@ -113,6 +113,10 @@ public class AlgoEHAUPM {
 		// Initialize writer
 		if(HAUIsFile!=null && !HAUIsFile.equalsIgnoreCase("null"))
         	writer = new BufferedWriter(new FileWriter(HAUIsFile));
+		writer.write("@FILETYPE=\"High average-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 
 		// Create a map to store the auub value of each item
@@ -543,6 +547,7 @@ public class AlgoEHAUPM {
 		buffer.append(utility);
 		// write to file
 		writer.write(buffer.toString());
+		writer.write(System.lineSeparator());
 
 	}
 

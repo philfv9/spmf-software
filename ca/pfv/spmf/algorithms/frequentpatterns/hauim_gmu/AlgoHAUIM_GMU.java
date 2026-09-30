@@ -115,6 +115,11 @@ public class AlgoHAUIM_GMU {
 	 */
 	public void runAlgorithm(String input, String output, int threshold) throws IOException {
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High average-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		startTimestamp = System.currentTimeMillis();
 		mau = threshold;
 		BufferedReader myInput = null;

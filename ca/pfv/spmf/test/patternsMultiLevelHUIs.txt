@@ -1,0 +1,6 @@
+@FILETYPE="Multi-Level High-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+7 #UTIL: 61.0
+7 8 #UTIL: 84.0
+3 5 6 #UTIL: 64.0
+3 6 #UTIL: 61.0

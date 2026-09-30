@@ -1,5 +1,6 @@
 package ca.pfv.spmf.gui.visual_pattern_viewer;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -8,23 +9,30 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.Stroke;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.border.EmptyBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import javax.swing.ToolTipManager;
 
 /*
  * Copyright (c) 2008-2025 Philippe Fournier-Viger
@@ -48,354 +56,522 @@ import javax.swing.event.ChangeListener;
  * Do not remove copyright and license information
  */
 /**
- * A dialog window that displays a histogram showing the distribution of values
- * for a selected measure across all patterns.
- * 
+ * A dialog showing the distribution of the values of a measure as a histogram,
+ * with mean / median markers, hover tooltips per bin, a statistics strip and
+ * PNG export.
+ *
  * @author Philippe Fournier-Viger 2025
  */
 public class MeasureHistogramDialog extends JDialog {
 
-	/** Serial UID */
 	private static final long serialVersionUID = 1L;
 
-	/** The panel that draws the histogram */
-	private HistogramPanel histogramPanel;
+	private static final Color MEAN_COLOR = new Color(219, 68, 55);
+	private static final Color MEDIAN_COLOR = new Color(15, 157, 88);
 
-	/** Combo box for selecting the measure */
-	private JComboBox<String> measureComboBox;
-
-	/** Spinner for selecting the number of bins */
-	private JSpinner binSpinner;
-
-	/** The patterns panel containing the data */
-	private PatternsPanel patternsPanel;
-
-	/** Map of measure names to their values for all patterns */
+	private final PatternsPanel patternsPanel;
 	private Map<String, List<Double>> measureValuesMap;
 
-	/** Current number of bins */
-	private int numberOfBins = 10;
-
-	/** Minimum value for current measure */
-	private double currentMin;
-
-	/** Maximum value for current measure */
-	private double currentMax;
+	private HistogramPanel histogramPanel;
+	private JComboBox<String> measureComboBox;
+	private JSpinner binSpinner;
+	private JCheckBox markersCheckBox;
+	private JLabel statsLabel;
+	private boolean updatingCombo;
 
 	/**
 	 * Constructor
-	 * 
-	 * @param parent          the parent frame
-	 * @param patternsPanel   the patterns panel containing measure data
-	 * @param measureValuesMap map of measure names to their list of values
+	 *
+	 * @param parent           the parent frame
+	 * @param patternsPanel    the patterns panel (used to refresh the values)
+	 * @param measureValuesMap measure name → values
 	 */
 	public MeasureHistogramDialog(JFrame parent, PatternsPanel patternsPanel,
 			Map<String, List<Double>> measureValuesMap) {
 		super(parent, "Measure Distribution Histogram", false);
 		this.patternsPanel = patternsPanel;
 		this.measureValuesMap = measureValuesMap;
-
 		initializeUI();
 		pack();
+		setMinimumSize(new Dimension(560, 420));
 		setLocationRelativeTo(parent);
-		setMinimumSize(new Dimension(500, 400));
 	}
 
-	/**
-	 * Initializes the user interface components
-	 */
 	private void initializeUI() {
 		setLayout(new BorderLayout());
+		getContentPane().setBackground(ViewerStyle.CARD_BG);
 
-		// === Control Panel (Top) ===
-		JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		controlPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+		// --- Toolbar ---
+		JPanel toolbar = new JPanel(new BorderLayout());
+		toolbar.setBackground(ViewerStyle.CARD_BG);
+		toolbar.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createMatteBorder(0, 0, 1, 0, ViewerStyle.CARD_BORDER),
+				BorderFactory.createEmptyBorder(6, 10, 6, 10)));
 
-		// Measure selection combo box
-		controlPanel.add(new JLabel("Measure:"));
+		JPanel leftTools = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+		leftTools.setOpaque(false);
+		leftTools.add(toolbarLabel("Measure"));
 		measureComboBox = new JComboBox<>();
+		measureComboBox.setFont(ViewerStyle.measureValueFont());
 		for (String measure : measureValuesMap.keySet()) {
 			measureComboBox.addItem(measure);
 		}
-		measureComboBox.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
+		measureComboBox.addActionListener(e -> {
+			if (!updatingCombo) {
 				updateHistogram();
 			}
 		});
-		controlPanel.add(measureComboBox);
+		leftTools.add(measureComboBox);
+		leftTools.add(Box(14));
+		leftTools.add(toolbarLabel("Bins"));
+		binSpinner = new JSpinner(new SpinnerNumberModel(20, 1, 200, 1));
+		binSpinner.setFont(ViewerStyle.measureValueFont());
+		binSpinner.setPreferredSize(new Dimension(64, binSpinner.getPreferredSize().height));
+		binSpinner.addChangeListener(e -> updateHistogram());
+		leftTools.add(binSpinner);
+		leftTools.add(Box(14));
+		markersCheckBox = new JCheckBox("Mean / median", true);
+		markersCheckBox.setFont(ViewerStyle.measureValueFont());
+		markersCheckBox.setOpaque(false);
+		markersCheckBox.setFocusPainted(false);
+		markersCheckBox.addActionListener(e -> histogramPanel.repaint());
+		leftTools.add(markersCheckBox);
 
-		// Number of bins spinner
-		controlPanel.add(new JLabel("   Bins:"));
-		binSpinner = new JSpinner(new SpinnerNumberModel(10, 2, 100, 1));
-		binSpinner.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				numberOfBins = (Integer) binSpinner.getValue();
-				updateHistogram();
-			}
-		});
-		controlPanel.add(binSpinner);
-
-		// Refresh button
+		JPanel rightTools = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+		rightTools.setOpaque(false);
 		JButton refreshButton = new JButton("Refresh");
-		refreshButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				updateHistogram();
-			}
-		});
-		controlPanel.add(refreshButton);
+		refreshButton.setToolTipText("Reload the values from the viewer (after filtering or sorting)");
+		ViewerStyle.styleButton(refreshButton);
+		refreshButton.addActionListener(e -> refreshData());
+		JButton exportButton = new JButton("Save as PNG\u2026");
+		ViewerStyle.styleButton(exportButton);
+		exportButton.addActionListener(e -> exportAsPng());
+		rightTools.add(refreshButton);
+		rightTools.add(exportButton);
 
-		add(controlPanel, BorderLayout.NORTH);
+		toolbar.add(leftTools, BorderLayout.WEST);
+		toolbar.add(rightTools, BorderLayout.EAST);
+		add(toolbar, BorderLayout.NORTH);
 
-		// === Histogram Panel (Center) ===
+		// --- Chart ---
 		histogramPanel = new HistogramPanel();
-		histogramPanel.setPreferredSize(new Dimension(600, 400));
+		histogramPanel.setPreferredSize(new Dimension(680, 420));
 		add(histogramPanel, BorderLayout.CENTER);
 
-		// === Statistics Panel (Bottom) ===
-		JPanel statsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		statsPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+		// --- Statistics strip ---
+		JPanel statsPanel = new JPanel(new BorderLayout());
+		statsPanel.setBackground(ViewerStyle.SIDEBAR_BG);
+		statsPanel.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createMatteBorder(1, 0, 0, 0, ViewerStyle.CARD_BORDER),
+				BorderFactory.createEmptyBorder(5, 12, 5, 12)));
+		statsLabel = new JLabel(" ");
+		statsLabel.setFont(ViewerStyle.measureValueFont());
+		statsLabel.setForeground(ViewerStyle.TEXT_PRIMARY);
+		statsPanel.add(statsLabel, BorderLayout.CENTER);
 		add(statsPanel, BorderLayout.SOUTH);
 
-		// Initialize with first measure if available
 		if (measureComboBox.getItemCount() > 0) {
 			measureComboBox.setSelectedIndex(0);
-			updateHistogram();
 		}
+		updateHistogram();
+	}
+
+	private static JLabel toolbarLabel(String text) {
+		JLabel l = new JLabel(text);
+		l.setFont(ViewerStyle.measureNameFont());
+		l.setForeground(ViewerStyle.TEXT_SECONDARY);
+		return l;
+	}
+
+	private static java.awt.Component Box(int w) {
+		return javax.swing.Box.createHorizontalStrut(w);
 	}
 
 	/**
-	 * Updates the histogram based on current measure selection and bin count
+	 * Recomputes the bins for the selected measure and repaints.
 	 */
 	private void updateHistogram() {
-		String selectedMeasure = (String) measureComboBox.getSelectedItem();
-		if (selectedMeasure == null) {
+		String measure = (String) measureComboBox.getSelectedItem();
+		List<Double> values = (measure == null) ? null : measureValuesMap.get(measure);
+		DescriptiveStats stats = DescriptiveStats.of(values);
+		if (stats == null) {
+			histogramPanel.setData(null, 0, 0, measure, null);
+			statsLabel.setText("No numeric values for this measure");
+			histogramPanel.repaint();
 			return;
 		}
-
-		List<Double> values = measureValuesMap.get(selectedMeasure);
-		if (values == null || values.isEmpty()) {
-			return;
+		int bins = (Integer) binSpinner.getValue();
+		int[] counts;
+		if (stats.max <= stats.min) {
+			counts = new int[] { stats.count };
+		} else {
+			counts = calculateBinCounts(values, stats.min, stats.max, bins);
 		}
-
-		// Get min and max from the patterns panel (adjusted values)
-		Double min = patternsPanel.getMinForMeasureOriginal(selectedMeasure);
-		Double max = patternsPanel.getMaxForMeasureOriginal(selectedMeasure);
-
-		if (min == null || max == null) {
-			// Calculate from values if not available
-			min = Double.MAX_VALUE;
-			max = Double.MIN_VALUE;
-			for (Double v : values) {
-				if (v < min) min = v;
-				if (v > max) max = v;
-			}
-		}
-
-		currentMin = min;
-		currentMax = max;
-
-		// Calculate bin counts
-		int[] binCounts = calculateBinCounts(values, min, max, numberOfBins);
-
-		// Update the histogram panel
-		histogramPanel.setData(binCounts, min, max, selectedMeasure, values.size());
+		histogramPanel.setData(counts, stats.min, stats.max, measure, stats);
+		statsLabel.setText("<html><b>n</b> = " + stats.count + " &nbsp;\u00B7&nbsp; <b>min</b> "
+				+ ViewerStyle.formatNumber(stats.min) + " &nbsp;\u00B7&nbsp; <b>mean</b> "
+				+ ViewerStyle.formatNumber(stats.mean) + " &nbsp;\u00B7&nbsp; <b>median</b> "
+				+ ViewerStyle.formatNumber(stats.median) + " &nbsp;\u00B7&nbsp; <b>max</b> "
+				+ ViewerStyle.formatNumber(stats.max) + " &nbsp;\u00B7&nbsp; <b>std dev</b> "
+				+ ViewerStyle.formatNumber(stats.stdDev) + "</html>");
 		histogramPanel.repaint();
 	}
 
 	/**
-	 * Calculates the count of values in each bin
-	 * 
-	 * @param values      the list of values
-	 * @param min         minimum value
-	 * @param max         maximum value
-	 * @param numBins     number of bins
-	 * @return array of counts for each bin
+	 * Counts the values falling in each of numBins equal-width bins over
+	 * [min, max]. The last bin is closed on the right.
 	 */
-	private int[] calculateBinCounts(List<Double> values, double min, double max, int numBins) {
-		int[] counts = new int[numBins];
-		double binWidth = (max - min) / numBins;
-
-		// Handle edge case where min == max
-		if (binWidth == 0) {
+	static int[] calculateBinCounts(List<Double> values, double min, double max, int numBins) {
+		int[] counts = new int[Math.max(1, numBins)];
+		double binWidth = (max - min) / counts.length;
+		if (binWidth <= 0) {
 			counts[0] = values.size();
 			return counts;
 		}
-
 		for (Double value : values) {
-			int binIndex = (int) ((value - min) / binWidth);
-			// Handle edge case where value == max
-			if (binIndex >= numBins) {
-				binIndex = numBins - 1;
+			if (value == null || value.isNaN()) {
+				continue;
 			}
-			if (binIndex < 0) {
-				binIndex = 0;
-			}
-			counts[binIndex]++;
+			int idx = (int) ((value - min) / binWidth);
+			idx = Math.max(0, Math.min(counts.length - 1, idx));
+			counts[idx]++;
 		}
-
 		return counts;
 	}
 
 	/**
-	 * Inner class that draws the histogram
+	 * Reloads the values from the patterns panel (e.g. after the user filtered
+	 * the patterns) and keeps the selected measure if it still exists.
+	 */
+	private void refreshData() {
+		try {
+			Map<String, List<Double>> fresh = MeasureValuesExtractor.extractMeasureValues(patternsPanel);
+			if (fresh != null) {
+				measureValuesMap = fresh;
+			}
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(this, "Could not reload the values:\n" + ex.getMessage(), "Error",
+					JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		String selected = (String) measureComboBox.getSelectedItem();
+		updatingCombo = true;
+		try {
+			measureComboBox.removeAllItems();
+			for (String measure : measureValuesMap.keySet()) {
+				measureComboBox.addItem(measure);
+			}
+			if (selected != null && measureValuesMap.containsKey(selected)) {
+				measureComboBox.setSelectedItem(selected);
+			} else if (measureComboBox.getItemCount() > 0) {
+				measureComboBox.setSelectedIndex(0);
+			}
+		} finally {
+			updatingCombo = false;
+		}
+		updateHistogram();
+	}
+
+	/**
+	 * Saves the chart as a PNG image.
+	 */
+	private void exportAsPng() {
+		String measure = (String) measureComboBox.getSelectedItem();
+		JFileChooser chooser = new JFileChooser();
+		chooser.setDialogTitle("Save histogram as PNG");
+		chooser.setSelectedFile(new File((measure == null ? "measure" : measure) + "_histogram.png"));
+		if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+			return;
+		}
+		File file = chooser.getSelectedFile();
+		if (!file.getName().toLowerCase().endsWith(".png")) {
+			file = new File(file.getParentFile(), file.getName() + ".png");
+		}
+		try {
+			int w = Math.max(1, histogramPanel.getWidth());
+			int h = Math.max(1, histogramPanel.getHeight());
+			BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D g2 = img.createGraphics();
+			try {
+				histogramPanel.printAll(g2);
+			} finally {
+				g2.dispose();
+			}
+			ImageIO.write(img, "png", file);
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(this, "Could not save the image:\n" + ex.getMessage(), "Error",
+					JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	// ------------------------------------------------------------------
+	// Chart
+	// ------------------------------------------------------------------
+
+	/**
+	 * The panel drawing the histogram.
 	 */
 	private class HistogramPanel extends JPanel {
 
-		/** Serial UID */
 		private static final long serialVersionUID = 1L;
 
-		/** Bin counts */
+		private static final int LEFT = 62;
+		private static final int RIGHT = 20;
+		private static final int TOP = 36;
+		private static final int BOTTOM = 56;
+
 		private int[] binCounts;
-
-		/** Minimum value */
 		private double minValue;
-
-		/** Maximum value */
 		private double maxValue;
-
-		/** Measure name */
 		private String measureName;
+		private DescriptiveStats stats;
+		private int hoveredBin = -1;
 
-		/** Total count of values */
-		private int totalCount;
+		// Geometry of the last paint, used for hit testing
+		private int chartLeft;
+		private int chartTop;
+		private int chartWidth;
+		private int chartHeight;
 
-		/** Margin for labels */
-		private static final int LEFT_MARGIN = 60;
-		private static final int RIGHT_MARGIN = 20;
-		private static final int TOP_MARGIN = 40;
-		private static final int BOTTOM_MARGIN = 60;
-
-		/** Bar color */
-		private static final Color BAR_COLOR = new Color(70, 130, 180);
-		private static final Color BAR_BORDER_COLOR = new Color(30, 80, 130);
-
-		/**
-		 * Constructor
-		 */
-		public HistogramPanel() {
-			setBackground(Color.WHITE);
+		HistogramPanel() {
+			setBackground(ViewerStyle.CARD_BG);
+			setOpaque(true);
+			ToolTipManager.sharedInstance().registerComponent(this);
+			addMouseMotionListener(new MouseMotionAdapter() {
+				@Override
+				public void mouseMoved(MouseEvent e) {
+					int b = binAt(e.getX(), e.getY());
+					if (b != hoveredBin) {
+						hoveredBin = b;
+						repaint();
+					}
+				}
+			});
+			addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseExited(MouseEvent e) {
+					if (hoveredBin != -1) {
+						hoveredBin = -1;
+						repaint();
+					}
+				}
+			});
 		}
 
-		/**
-		 * Sets the data for the histogram
-		 * 
-		 * @param binCounts   array of counts for each bin
-		 * @param min         minimum value
-		 * @param max         maximum value
-		 * @param measureName name of the measure
-		 * @param totalCount  total number of values
-		 */
-		public void setData(int[] binCounts, double min, double max, String measureName, int totalCount) {
+		void setData(int[] binCounts, double min, double max, String measureName, DescriptiveStats stats) {
 			this.binCounts = binCounts;
 			this.minValue = min;
 			this.maxValue = max;
 			this.measureName = measureName;
-			this.totalCount = totalCount;
+			this.stats = stats;
+			this.hoveredBin = -1;
+		}
+
+		private int binAt(int mx, int my) {
+			if (binCounts == null || chartWidth <= 0) {
+				return -1;
+			}
+			if (mx < chartLeft || mx >= chartLeft + chartWidth || my < chartTop || my > chartTop + chartHeight) {
+				return -1;
+			}
+			int b = (int) ((mx - chartLeft) / ((double) chartWidth / binCounts.length));
+			return Math.min(b, binCounts.length - 1);
+		}
+
+		@Override
+		public String getToolTipText(MouseEvent e) {
+			int b = binAt(e.getX(), e.getY());
+			if (b < 0) {
+				return null;
+			}
+			int n = binCounts.length;
+			double bw = (maxValue - minValue) / n;
+			double a = minValue + b * bw;
+			double z = (b == n - 1) ? maxValue : a + bw;
+			int total = stats == null ? 0 : stats.count;
+			double pct = total > 0 ? 100.0 * binCounts[b] / total : 0;
+			String range = (maxValue <= minValue) ? ViewerStyle.formatNumber(minValue)
+					: "[" + ViewerStyle.formatNumber(a) + ", " + ViewerStyle.formatNumber(z)
+							+ (b == n - 1 ? "]" : ")");
+			return String.format("<html><b>%s</b><br>%d pattern%s (%.1f%%)</html>", range, binCounts[b],
+					binCounts[b] != 1 ? "s" : "", pct);
 		}
 
 		@Override
 		protected void paintComponent(Graphics g) {
 			super.paintComponent(g);
-
-			if (binCounts == null || binCounts.length == 0) {
-				return;
-			}
-
 			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			try {
+				ViewerStyle.applyRenderingHints(g2);
+				int W = getWidth();
+				int H = getHeight();
 
-			int width = getWidth();
-			int height = getHeight();
-			int chartWidth = width - LEFT_MARGIN - RIGHT_MARGIN;
-			int chartHeight = height - TOP_MARGIN - BOTTOM_MARGIN;
-
-			// Find max count for scaling
-			int maxCount = 0;
-			for (int count : binCounts) {
-				if (count > maxCount) {
-					maxCount = count;
+				if (binCounts == null || binCounts.length == 0) {
+					g2.setFont(ViewerStyle.baseFont().deriveFont(Font.ITALIC, 14f));
+					g2.setColor(ViewerStyle.TEXT_SECONDARY);
+					String msg = "No numeric values to display";
+					FontMetrics fm = g2.getFontMetrics();
+					g2.drawString(msg, (W - fm.stringWidth(msg)) / 2, H / 2);
+					return;
 				}
-			}
 
-			// Draw title
-			g2.setColor(Color.BLACK);
-			g2.setFont(new Font("SansSerif", Font.BOLD, 14));
+				chartLeft = LEFT;
+				chartTop = TOP;
+				chartWidth = W - LEFT - RIGHT;
+				chartHeight = H - TOP - BOTTOM;
+				if (chartWidth <= 10 || chartHeight <= 10) {
+					return;
+				}
+				int n = binCounts.length;
+				int maxCount = 0;
+				for (int c : binCounts) {
+					maxCount = Math.max(maxCount, c);
+				}
+
+				// Title
+				g2.setFont(ViewerStyle.sectionTitleFont());
+				g2.setColor(ViewerStyle.TEXT_PRIMARY);
+				g2.drawString("Distribution of " + measureName, LEFT, 22);
+				g2.setFont(ViewerStyle.smallFont());
+				g2.setColor(ViewerStyle.TEXT_SECONDARY);
+				String nText = (stats == null ? 0 : stats.count) + " values \u00B7 " + n + (n == 1 ? " bin" : " bins");
+				g2.drawString(nText, W - RIGHT - g2.getFontMetrics().stringWidth(nText), 22);
+
+				// Y scale (nice integer steps) + grid
+				double step = Math.max(1, ViewerStyle.niceStep(Math.max(1, maxCount), 5));
+				double yMax = Math.max(step, Math.ceil(maxCount / step) * step);
+				FontMetrics sfm = g2.getFontMetrics(ViewerStyle.smallFont());
+				g2.setFont(ViewerStyle.smallFont());
+				for (double v = 0; v <= yMax + 1e-9; v += step) {
+					int y = chartTop + chartHeight - (int) Math.round(v / yMax * chartHeight);
+					if (v > 0) {
+						g2.setColor(ViewerStyle.GRID_LINE);
+						g2.drawLine(chartLeft, y, chartLeft + chartWidth, y);
+					}
+					String label = ViewerStyle.formatNumber(v);
+					g2.setColor(ViewerStyle.TEXT_SECONDARY);
+					g2.drawString(label, chartLeft - 8 - sfm.stringWidth(label), y + sfm.getAscent() / 2 - 1);
+				}
+
+				// Axes
+				g2.setColor(ViewerStyle.AXIS);
+				g2.drawLine(chartLeft, chartTop, chartLeft, chartTop + chartHeight);
+				g2.drawLine(chartLeft, chartTop + chartHeight, chartLeft + chartWidth, chartTop + chartHeight);
+
+				// Bars
+				double binPx = (double) chartWidth / n;
+				int gap = binPx > 8 ? 2 : (binPx > 3 ? 1 : 0);
+				int baseY = chartTop + chartHeight;
+				for (int i = 0; i < n; i++) {
+					int x0 = chartLeft + (int) Math.round(i * binPx);
+					int x1 = chartLeft + (int) Math.round((i + 1) * binPx);
+					int bx = x0 + gap / 2;
+					int bw = Math.max(1, x1 - x0 - gap);
+					boolean hovered = i == hoveredBin;
+					if (hovered) {
+						g2.setColor(ViewerStyle.ACCENT_SOFT);
+						g2.fillRect(x0, chartTop, Math.max(1, x1 - x0), chartHeight);
+					}
+					int barH = (int) Math.round(binCounts[i] / yMax * chartHeight);
+					if (barH > 0) {
+						int by = baseY - barH;
+						g2.setColor(hovered ? ViewerStyle.ACCENT_DARK : ViewerStyle.ACCENT);
+						int r = Math.min(4, bw / 2);
+						if (barH > r && r > 0) {
+							g2.fillRoundRect(bx, by, bw, barH, 2 * r, 2 * r);
+							g2.fillRect(bx, by + r, bw, barH - r);
+						} else {
+							g2.fillRect(bx, by, bw, barH);
+						}
+						String cs = String.valueOf(binCounts[i]);
+						int cw = sfm.stringWidth(cs);
+						if ((cw <= bw + 2 || hovered) && by - 4 - sfm.getAscent() >= chartTop) {
+							g2.setColor(ViewerStyle.TEXT_PRIMARY);
+							g2.drawString(cs, bx + (bw - cw) / 2, by - 4);
+						}
+					}
+				}
+
+				// X labels at bin boundaries, spaced so they never overlap
+				int labelY = baseY + 6 + sfm.getAscent();
+				g2.setFont(ViewerStyle.smallFont());
+				if (maxValue <= minValue) {
+					String lab = ViewerStyle.formatNumber(minValue);
+					g2.setColor(ViewerStyle.TEXT_SECONDARY);
+					g2.drawString(lab, chartLeft + (chartWidth - sfm.stringWidth(lab)) / 2, labelY);
+				} else {
+					double vw = (maxValue - minValue) / n;
+					int maxLabelW = 0;
+					String[] labels = new String[n + 1];
+					for (int i = 0; i <= n; i++) {
+						labels[i] = ViewerStyle.formatNumber(i == n ? maxValue : minValue + i * vw);
+						maxLabelW = Math.max(maxLabelW, sfm.stringWidth(labels[i]));
+					}
+					int every = Math.max(1, (int) Math.ceil((maxLabelW + 12) / binPx));
+					int lastRight = Integer.MIN_VALUE;
+					for (int i = 0; i <= n; i++) {
+						if (i % every != 0 && i != n) {
+							continue;
+						}
+						int x = chartLeft + (int) Math.round(i * binPx);
+						int lw = sfm.stringWidth(labels[i]);
+						int lx = Math.max(2, Math.min(W - lw - 2, x - lw / 2));
+						if (lx < lastRight + 6) {
+							continue;
+						}
+						g2.setColor(ViewerStyle.AXIS);
+						g2.drawLine(x, baseY, x, baseY + 4);
+						g2.setColor(ViewerStyle.TEXT_SECONDARY);
+						g2.drawString(labels[i], lx, labelY);
+						lastRight = lx + lw;
+					}
+				}
+
+				// Mean / median markers
+				if (markersCheckBox.isSelected() && stats != null && maxValue > minValue) {
+					paintMarker(g2, stats.mean, MEAN_COLOR, "mean " + ViewerStyle.formatNumber(stats.mean), 0,
+							new float[] { 6f, 4f });
+					paintMarker(g2, stats.median, MEDIAN_COLOR, "median " + ViewerStyle.formatNumber(stats.median),
+							1, new float[] { 2f, 3f });
+				}
+
+				// Axis titles
+				g2.setFont(ViewerStyle.measureNameFont());
+				g2.setColor(ViewerStyle.TEXT_SECONDARY);
+				FontMetrics tfm = g2.getFontMetrics();
+				String xTitle = measureName;
+				g2.drawString(xTitle, chartLeft + (chartWidth - tfm.stringWidth(xTitle)) / 2, H - 10);
+				String yTitle = "Number of patterns";
+				AffineTransform old = g2.getTransform();
+				g2.rotate(-Math.PI / 2);
+				g2.drawString(yTitle, -(chartTop + (chartHeight + tfm.stringWidth(yTitle)) / 2), 16);
+				g2.setTransform(old);
+			} finally {
+				g2.dispose();
+			}
+		}
+
+		private void paintMarker(Graphics2D g2, double value, Color color, String label, int slot,
+				float[] dash) {
+			int x = chartLeft + (int) Math.round((value - minValue) / (maxValue - minValue) * chartWidth);
+			Stroke old = g2.getStroke();
+			g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, dash, 0f));
+			g2.setColor(color);
+			g2.drawLine(x, chartTop, x, chartTop + chartHeight);
+			g2.setStroke(old);
+
+			g2.setFont(ViewerStyle.smallFont().deriveFont(Font.BOLD));
 			FontMetrics fm = g2.getFontMetrics();
-			String title = "Distribution of " + measureName + " (n=" + totalCount + ")";
-			int titleWidth = fm.stringWidth(title);
-			g2.drawString(title, (width - titleWidth) / 2, 25);
-
-			// Draw axes
-			g2.setColor(Color.BLACK);
-			g2.drawLine(LEFT_MARGIN, TOP_MARGIN, LEFT_MARGIN, height - BOTTOM_MARGIN);
-			g2.drawLine(LEFT_MARGIN, height - BOTTOM_MARGIN, width - RIGHT_MARGIN, height - BOTTOM_MARGIN);
-
-			// Draw bars
-			double binWidth = (double) chartWidth / binCounts.length;
-			double valueRange = maxValue - minValue;
-			double valueBinWidth = valueRange / binCounts.length;
-
-			g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
-			fm = g2.getFontMetrics();
-
-			for (int i = 0; i < binCounts.length; i++) {
-				int barHeight = (maxCount > 0) ? (int) ((double) binCounts[i] / maxCount * chartHeight) : 0;
-				int x = LEFT_MARGIN + (int) (i * binWidth);
-				int y = height - BOTTOM_MARGIN - barHeight;
-
-				// Draw bar
-				g2.setColor(BAR_COLOR);
-				g2.fillRect(x + 1, y, (int) binWidth - 2, barHeight);
-				g2.setColor(BAR_BORDER_COLOR);
-				g2.drawRect(x + 1, y, (int) binWidth - 2, barHeight);
-
-				// Draw count on top of bar if non-zero
-				if (binCounts[i] > 0) {
-					g2.setColor(Color.BLACK);
-					String countStr = String.valueOf(binCounts[i]);
-					int countWidth = fm.stringWidth(countStr);
-					g2.drawString(countStr, x + (int) (binWidth / 2) - countWidth / 2, y - 3);
-				}
-
-				// Draw x-axis labels (bin ranges)
-				if (i == 0 || i == binCounts.length - 1 || binCounts.length <= 10 || i % (binCounts.length / 5) == 0) {
-					double binStart = minValue + i * valueBinWidth;
-					String label = String.format("%.2f", binStart);
-					int labelWidth = fm.stringWidth(label);
-					g2.setColor(Color.BLACK);
-					g2.drawString(label, x + (int) (binWidth / 2) - labelWidth / 2, height - BOTTOM_MARGIN + 15);
-				}
-			}
-
-			// Draw last x-axis label (max value)
-			String maxLabel = String.format("%.2f", maxValue);
-			g2.drawString(maxLabel, width - RIGHT_MARGIN - fm.stringWidth(maxLabel), height - BOTTOM_MARGIN + 15);
-
-			// Draw y-axis labels
-			g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
-			int numYLabels = 5;
-			for (int i = 0; i <= numYLabels; i++) {
-				int count = (int) ((double) i / numYLabels * maxCount);
-				int y = height - BOTTOM_MARGIN - (int) ((double) i / numYLabels * chartHeight);
-				String label = String.valueOf(count);
-				int labelWidth = fm.stringWidth(label);
-				g2.drawString(label, LEFT_MARGIN - labelWidth - 5, y + 4);
-				g2.setColor(Color.LIGHT_GRAY);
-				g2.drawLine(LEFT_MARGIN, y, width - RIGHT_MARGIN, y);
-				g2.setColor(Color.BLACK);
-			}
-
-			// Draw axis labels
-			g2.setFont(new Font("SansSerif", Font.BOLD, 12));
-			g2.drawString("Count", 10, TOP_MARGIN + chartHeight / 2);
-			String xLabel = measureName + " Value";
-			int xLabelWidth = g2.getFontMetrics().stringWidth(xLabel);
-			g2.drawString(xLabel, LEFT_MARGIN + (chartWidth - xLabelWidth) / 2, height - 10);
-
-			g2.dispose();
+			int lw = fm.stringWidth(label) + 8;
+			int lh = fm.getHeight() + 2;
+			int ly = chartTop + 4 + slot * (lh + 3);
+			int lx = (x + 6 + lw <= chartLeft + chartWidth) ? x + 6 : x - 6 - lw;
+			g2.setColor(ViewerStyle.withAlpha(Color.WHITE, 225));
+			g2.fillRoundRect(lx, ly, lw, lh, 6, 6);
+			g2.setColor(ViewerStyle.withAlpha(color, 140));
+			g2.drawRoundRect(lx, ly, lw - 1, lh - 1, 6, 6);
+			g2.setColor(color);
+			g2.drawString(label, lx + 4, ly + 1 + fm.getAscent());
 		}
 	}
 }

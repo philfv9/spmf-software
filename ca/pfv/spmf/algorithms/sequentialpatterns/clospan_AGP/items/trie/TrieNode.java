@@ -1,7 +1,7 @@
 package ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.trie;
 
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Item;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.abstractions.ItemAbstractionPair;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.ItemAbstractionPair;
 
 
 /**
@@ -24,6 +24,8 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.abstractions.
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  *
  * @author agomariz
  */

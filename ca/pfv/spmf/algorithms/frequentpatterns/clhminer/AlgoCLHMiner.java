@@ -120,6 +120,10 @@ public class AlgoCLHMiner {
 	public void runAlgorithm(int minUtil, String inputPath, String outputPath, String TaxonomyPath) throws IOException {
 
 		writer = new BufferedWriter(new FileWriter(outputPath));
+		writer.write("@FILETYPE=\"Cross-Level High-utility itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
 
 		this.minUtil = minUtil;
 		candidate = 0;

@@ -40,7 +40,6 @@ import ca.pfv.spmf.algorithms.frequentpatterns.fhuqiminer.Qitem;
 import ca.pfv.spmf.algorithms.frequentpatterns.fhuqiminer.UtilityListFHUQIMiner;
 import ca.pfv.spmf.tools.MemoryLogger;
 
-
 /**
  * This is an implementation of the VHUQI algorithm. The code was obtained from
  * the UP-Miner library under the GPL 3 license. The VHUQI algorithm is
@@ -53,9 +52,11 @@ import ca.pfv.spmf.tools.MemoryLogger;
  * <br/>
  * 
  * Modification to the original implementation were made by Philippe
- * Fournier-Viger and Mourad Nouia to integrate it in SPMF, fix a bug and make some improvements.
+ * Fournier-Viger and Mourad Nouia to integrate it in SPMF, fix a bug and make
+ * some improvements.
  * 
- * @author Cheng Wei wu et al.,  revision by Mourad Nououa and Philippe Fournier-Viger
+ * @author Cheng Wei wu et al., revision by Mourad Nououa and Philippe
+ *         Fournier-Viger
  */
 public class AlgoVHUQI {
 
@@ -70,7 +71,7 @@ public class AlgoVHUQI {
 	private BufferedWriter writer_hqui = null;
 
 //Maps
-	/** map of a qitem to  its TWU */
+	/** map of a qitem to its TWU */
 	private Hashtable<Qitem, Integer> mapItemToTwu;
 	/** map of an item to its profit */
 	private Hashtable<Integer, Integer> mapItemToProfit;
@@ -92,14 +93,14 @@ public class AlgoVHUQI {
 
 //For Evaluation
 	/** peak memory usage */
-	 long maxMemory = 0;
+	long maxMemory = 0;
 
 	/** start time of last execution */
 	long startTime;
 
 	/** end time of last execution */
 	long endTime;
-	
+
 	/** minimum support percentage */
 	public float percent;
 
@@ -117,12 +118,12 @@ public class AlgoVHUQI {
 
 	/** the size of a temporary buffer for storing itemsets */
 	private final int BUFFERS_SIZE = 200;
-	
+
 	/** a temporary buffer for storing itemsets */
 	private Qitem[] itemsetBuffer = null;
 
-	/** 
-	 * Constructor 
+	/**
+	 * Constructor
 	 */
 	public AlgoVHUQI() {
 	}
@@ -136,7 +137,7 @@ public class AlgoVHUQI {
 	 * @param coef              coefficient
 	 * @param combinationmethod the combination method (1 = CombineMin, 2 =
 	 *                          CombineMax, 3 = CombineAll)
-	 * @param outputPath            the output file path
+	 * @param outputPath        the output file path
 	 * @throws IOException if exception while reading or writing to file
 	 */
 	public void runAlgorithm(String inputData, String inputProfit, float minUtility, int coef,
@@ -147,6 +148,11 @@ public class AlgoVHUQI {
 		MemoryLogger.getInstance().reset();
 		this.startTime = System.currentTimeMillis();
 		this.writer_hqui = new BufferedWriter(new FileWriter(outputPath));
+		writer_hqui.write("@FILETYPE=\"Quantitative high utility itemsets\"");
+		writer_hqui.newLine();
+		writer_hqui.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer_hqui.newLine();
+		
 		this.itemsetBuffer = new Qitem[BUFFERS_SIZE];
 		this.coefficient = coef;
 		this.percent = minUtility;
@@ -177,6 +183,7 @@ public class AlgoVHUQI {
 //		writeFileStatistics();
 		writer_hqui.close();
 	}
+
 	/**
 	 * Print statistics about the algorithm execution
 	 * 
@@ -231,23 +238,27 @@ public class AlgoVHUQI {
 		currentQitem = new Qitem(0, 0);
 		Qitem Q;
 		while ((str = br_inputDatabase.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (str.isEmpty() == true || str.charAt(0) == '#' || str.charAt(0) == '%' || str.charAt(0) == '@') {
+				continue;
+			}
+
 			tid++;
-			String[] itemInfo = str.split(" ");// (A,2) (B, 5)
+			String[] itemInfo = str.split(" ");// 1,3 2,3 3,2 4,5
 			int transactionU = 0;
 			for (int i = 0; i < itemInfo.length; i++) {
-				currentQitem.setItem(Integer.valueOf(new String(itemInfo[i].substring(0, itemInfo[i].indexOf(',')))));
-				currentQitem.setQteMin(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
-				currentQitem.setQteMax(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
+				String[] itemSplit = itemInfo[i].split(",");
+				currentQitem.setItem(Integer.parseInt(itemSplit[0]));
+				currentQitem.setQteMin(Integer.parseInt(itemSplit[1]));
+				currentQitem.setQteMax(Integer.parseInt(itemSplit[1]));
 				transactionU += currentQitem.getQteMin() * mapItemToProfit.get(currentQitem.getItem());
 			}
 			for (int i = 0; i < itemInfo.length; i++) {
-				currentQitem.setItem(Integer.valueOf(new String(itemInfo[i].substring(0, itemInfo[i].indexOf(',')))));
-				currentQitem.setQteMin(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
-				currentQitem.setQteMax(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
+				String[] itemSplit = itemInfo[i].split(",");
+				currentQitem.setItem(Integer.parseInt(itemSplit[0]));
+				currentQitem.setQteMin(Integer.parseInt(itemSplit[1]));
+				currentQitem.setQteMax(Integer.parseInt(itemSplit[1]));
 				Q = new Qitem();
 				Q.copy(currentQitem);
 				if (!mapItemToTwu.containsKey(Q))
@@ -275,6 +286,11 @@ public class AlgoVHUQI {
 		str = "";
 		tid = 0;
 		while ((str = br_inputDatabase.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (str.isEmpty() == true || str.charAt(0) == '#' || str.charAt(0) == '%' || str.charAt(0) == '@') {
+				continue;
+			}
 			tid++;
 			String[] itemInfo = str.split(" ");
 			ArrayList<Qitem> qItemset = new ArrayList<Qitem>();// line qItemset
@@ -283,11 +299,10 @@ public class AlgoVHUQI {
 			List<Qitem> revisedTransaction = new ArrayList<Qitem>();
 			for (int i = 0; i < itemInfo.length; i++) {
 				Q = new Qitem();
-				Q.setItem(Integer.valueOf(new String(itemInfo[i].substring(0, itemInfo[i].indexOf(',')))));
-				Q.setQteMin(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
-				Q.setQteMax(Integer.valueOf(
-						new String(itemInfo[i].substring(itemInfo[i].indexOf(',') + 1, itemInfo[i].length()))));
+				String[] itemSplit = itemInfo[i].split(",");
+				Q.setItem(Integer.parseInt(itemSplit[0]));
+				Q.setQteMin(Integer.parseInt(itemSplit[1]));
+				Q.setQteMax(Integer.parseInt(itemSplit[1]));
 				if (mapItemToUtilityList.containsKey(Q)) {
 					revisedTransaction.add(Q);
 					remainingUtility += Q.getQteMin() * mapItemToProfit.get(Q.getItem());
@@ -375,12 +390,13 @@ public class AlgoVHUQI {
 
 	/**
 	 * Combine method
-	 * @param prefix a prefix
-	 * @param prefixLength the length of the prefix
-	 * @param candidateList the candidate list
-	 * @param qItemNameList the qtiem list
+	 * 
+	 * @param prefix               a prefix
+	 * @param prefixLength         the length of the prefix
+	 * @param candidateList        the candidate list
+	 * @param qItemNameList        the qtiem list
 	 * @param mapItemToUtilityList a map of item to utility list
-	 * @param hwQUI hwQUI
+	 * @param hwQUI                hwQUI
 	 * @return the result
 	 * @throws IOException
 	 */
@@ -500,7 +516,7 @@ public class AlgoVHUQI {
 		}
 		MemoryLogger.getInstance().checkMemory();
 	}
-	
+
 	/**
 	 * The combine min combination method
 	 * 
@@ -723,12 +739,10 @@ public class AlgoVHUQI {
 	 * @param ulQitem2 the utility list of another qitem
 	 * @return the resulting utility list
 	 */
-	public UtilityListFHUQIMiner constructForCombine(UtilityListFHUQIMiner ulQitem1,
-			UtilityListFHUQIMiner ulQitem2) {
+	public UtilityListFHUQIMiner constructForCombine(UtilityListFHUQIMiner ulQitem1, UtilityListFHUQIMiner ulQitem2) {
 
-		UtilityListFHUQIMiner result = new UtilityListFHUQIMiner(
-				new Qitem(ulQitem1.getSingleItemsetName().getItem(), ulQitem1.getSingleItemsetName().getQteMin(),
-						ulQitem2.getSingleItemsetName().getQteMax()));
+		UtilityListFHUQIMiner result = new UtilityListFHUQIMiner(new Qitem(ulQitem1.getSingleItemsetName().getItem(),
+				ulQitem1.getSingleItemsetName().getQteMin(), ulQitem2.getSingleItemsetName().getQteMax()));
 
 		ArrayList<QItemTrans> temp1 = ulQitem1.getQItemTrans();
 		ArrayList<QItemTrans> temp2 = ulQitem2.getQItemTrans();
@@ -859,8 +873,8 @@ public class AlgoVHUQI {
 	 * @throws IOException if error reading or writing to file
 	 */
 	public void miner(Qitem[] prefix, int prefixLength, UtilityListFHUQIMiner prefixUL,
-			Hashtable<Qitem, UtilityListFHUQIMiner> ULs, ArrayList<Qitem> qItemNameList,
-			BufferedWriter br_writer_hqui, ArrayList<Qitem> hwQUI) throws IOException {
+			Hashtable<Qitem, UtilityListFHUQIMiner> ULs, ArrayList<Qitem> qItemNameList, BufferedWriter br_writer_hqui,
+			ArrayList<Qitem> hwQUI) throws IOException {
 		// For pruning range Q-itemsets using MapFmap
 
 		ArrayList<Qitem> nextNameList = new ArrayList<Qitem>();
@@ -901,8 +915,10 @@ public class AlgoVHUQI {
 						// System.out.println("next is "+afterUL.getSingleItemsetName()+"util is
 						// "+afterUL.getSumIutils());
 					} else {
-						if ((combiningMethod != EnumCombination.COMBINEMAX && afterUL.getSumIutils() >= Math.floor(minUtil / coefficient))
-								|| (combiningMethod != EnumCombination.COMBINEMAX && afterUL.getSumIutils() >= Math.floor(minUtil / 2))) {
+						if ((combiningMethod != EnumCombination.COMBINEMAX
+								&& afterUL.getSumIutils() >= Math.floor(minUtil / coefficient))
+								|| (combiningMethod != EnumCombination.COMBINEMAX
+										&& afterUL.getSumIutils() >= Math.floor(minUtil / 2))) {
 							candidateList.add(afterUL.getSingleItemsetName());
 							// candidateHUL.put(afterUL.getSingleItemsetName(), afterUL);
 						}
@@ -927,7 +943,7 @@ public class AlgoVHUQI {
 
 		}
 	}
-	
+
 	/**
 	 * Write an itemset to file
 	 * 
@@ -988,7 +1004,7 @@ public class AlgoVHUQI {
 		writer_hqui.newLine();
 
 	}
-	
+
 	/**
 	 * Write statistics about the algorithm execution to the file
 	 * 

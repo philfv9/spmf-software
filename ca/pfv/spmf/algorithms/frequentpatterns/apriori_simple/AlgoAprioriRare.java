@@ -106,6 +106,10 @@ public class AlgoAprioriRare {
 	    }else{ // if the user wants to save the result to a file
 			patterns = null;
 			writer = new BufferedWriter(new FileWriter(output)); 
+			writer.write("@FILETYPE=\"Minimal rare itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 		}
 		
 		// record the start time
@@ -433,7 +437,7 @@ public class AlgoAprioriRare {
 		
 		// if the result should be saved to a file
 		if(writer != null){
-			writer.write(itemset.toString() + " #SUP: "
+			writer.write(itemset.toString() + "#SUP: "
 					+ itemset.getAbsoluteSupport());
 			writer.newLine();
 		}// otherwise the result is kept into memory

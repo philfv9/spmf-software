@@ -1,13 +1,11 @@
 package ca.pfv.spmf.algorithmmanager.descriptions;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 import ca.pfv.spmf.algorithmmanager.AlgorithmType;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
 import ca.pfv.spmf.algorithms.frequentpatterns.defme_fast.AlgoDefMe_FAST;
-import ca.pfv.spmf.input.transaction_database_list_integers.TransactionDatabase;
 
 /**
  * This class describes the Apriori algorithm parameters. It is designed to be

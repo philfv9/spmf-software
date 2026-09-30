@@ -1,0 +1,11 @@
+@FILETYPE="Multiple Frequent fuzzy itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+3.H #SUP: 2.0
+2.L #SUP: 4.0
+2.L 3.M #SUP: 2.0
+2.L 3.M 4.L #SUP: 2.0
+2.L 4.L #SUP: 4.0
+3.M #SUP: 3.3333335
+3.M 4.L #SUP: 2.5000002
+5.L #SUP: 2.5
+4.L #SUP: 4.5

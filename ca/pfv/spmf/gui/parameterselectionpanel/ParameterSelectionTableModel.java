@@ -19,16 +19,39 @@ package ca.pfv.spmf.gui.parameterselectionpanel;
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Pattern;
+
 import javax.swing.table.AbstractTableModel;
 
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
 
 /**
- * This is a custom table model used by the ParameterSelectionPanel of SPMF
+ * Table model used by {@link ParameterSelectionPanel}.
+ *
+ * <p>The model holds the raw text typed by the user for each parameter. It
+ * also centralises the small amount of "type knowledge" shared by the panel
+ * (which types are boolean / integer / decimal, what a syntactically valid
+ * value looks like, and how a value is normalised before being handed to an
+ * algorithm).</p>
+ *
+ * <p>Normalisation performed by {@link #getParameterValues()}:</p>
+ * <ul>
+ *   <li>Boolean values are trimmed and lower-cased.</li>
+ *   <li>Numeric values are trimmed.</li>
+ *   <li>Decimal values written as a percentage (e.g. {@code "40%"}) are
+ *       converted to the equivalent fraction (e.g. {@code "0.4"}).</li>
+ *   <li>Other values (typically {@code String}) are returned untouched.</li>
+ * </ul>
  *
  * @see ParameterSelectionPanel
- *
  * @author Philippe Fournier-Viger, 2024.
  */
 @SuppressWarnings("serial")
@@ -39,137 +62,111 @@ public class ParameterSelectionTableModel extends AbstractTableModel {
     // -----------------------------------------------------------------------
 
     /** Index of the "Parameter" column */
-    private static final int COL_PARAMETER = 0;
+    public static final int COL_PARAMETER = 0;
 
     /** Index of the "Value" column */
-    private static final int COL_VALUE = 1;
+    public static final int COL_VALUE = 1;
 
     /** Index of the "Example" column */
-    private static final int COL_EXAMPLE = 2;
+    public static final int COL_EXAMPLE = 2;
 
-    /** Suffix appended to the parameter name when the parameter is optional */
-    private static final String OPTIONAL_SUFFIX = " (optional)";
+    /** Names of the columns */
+    private static final String[] COLUMN_NAMES = { "Parameter", "Value", "Example" };
+
+    /** A complete, syntactically valid integer */
+    private static final Pattern INTEGER_PATTERN = Pattern.compile("-?\\d+");
+
+    /**
+     * A complete, syntactically valid decimal number, optionally in
+     * scientific notation, optionally followed by a {@code %} sign.
+     */
+    private static final Pattern DECIMAL_PATTERN =
+            Pattern.compile("-?(\\d+\\.?\\d*|\\.\\d+)([eE][-+]?\\d+)?%?");
 
     // -----------------------------------------------------------------------
     // Instance fields
     // -----------------------------------------------------------------------
 
-    /** Names of columns */
-    private final String[] columnNames = { "Parameter", "Value", "Example" };
+    /** The descriptions of the parameters (never null) */
+    private DescriptionOfParameter[] parameters = new DescriptionOfParameter[0];
 
-    /** The parameter values entered by the user */
-    private String[] data;
-
-    /** The descriptions of the parameters */
-    private DescriptionOfParameter[] parameters;
+    /** The raw values typed by the user, parallel to {@link #parameters} */
+    private String[] values = new String[0];
 
     // -----------------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------------
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param descriptionOfAlgorithm the description of an algorithm
+     * @param descriptionOfAlgorithm the description of an algorithm, or
+     *                               {@code null} for an empty model
      */
     public ParameterSelectionTableModel(DescriptionOfAlgorithm descriptionOfAlgorithm) {
-        if (descriptionOfAlgorithm != null) {
-            parameters = descriptionOfAlgorithm.getParametersDescription();
-        } else {
-            // No algorithm selected – start with an empty parameter list
-            parameters = new DescriptionOfParameter[0];
-        }
-        // Allocate value storage; entries are null until the user types something
-        data = new String[parameters.length];
+        setData(descriptionOfAlgorithm == null
+                ? null
+                : descriptionOfAlgorithm.getParametersDescription());
     }
 
     // -----------------------------------------------------------------------
     // AbstractTableModel overrides
     // -----------------------------------------------------------------------
 
-    /**
-     * Get the number of rows in the table
-     *
-     * @return number of rows
-     */
     @Override
     public int getRowCount() {
-        if (parameters == null) {
-            return 0;
-        }
         return parameters.length;
     }
 
-    /**
-     * Get the number of columns
-     *
-     * @return the number of columns
-     */
     @Override
     public int getColumnCount() {
-        return columnNames.length;
+        return COLUMN_NAMES.length;
     }
 
-    /**
-     * Get the name of a column
-     *
-     * @param column the column index
-     * @return the name
-     */
     @Override
     public String getColumnName(int column) {
-        return columnNames[column];
+        return COLUMN_NAMES[column];
+    }
+
+    @Override
+    public Class<?> getColumnClass(int columnIndex) {
+        return String.class;
     }
 
     /**
-     * Get the value in a cell
-     *
-     * @param rowIndex    the row index
-     * @param columnIndex the column index
-     * @return the cell value as an Object
+     * Returns the raw content of a cell. The Parameter column returns the
+     * plain parameter name; any decoration (such as an "(optional)" marker)
+     * is the responsibility of the view's renderer.
      */
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         DescriptionOfParameter parameter = parameters[rowIndex];
-
-        if (columnIndex == COL_PARAMETER) {
-            // Append "(optional)" suffix so the user knows the field is not mandatory
-            return parameter.name + (parameter.isOptional() ? OPTIONAL_SUFFIX : "");
-        } else if (columnIndex == COL_EXAMPLE) {
-            return parameter.example;
+        switch (columnIndex) {
+            case COL_PARAMETER:
+                return parameter.getName();
+            case COL_EXAMPLE:
+                return parameter.example;
+            case COL_VALUE:
+            default:
+                return values[rowIndex];
         }
-
-        // COL_VALUE – return whatever the user has typed (may be null)
-        return data[rowIndex];
     }
 
-    /**
-     * Check if a cell is editable
-     *
-     * @param rowIndex    the row index
-     * @param columnIndex the column index
-     * @return true if editable. Otherwise false.
-     */
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        // Only the "Value" column is editable
         return columnIndex == COL_VALUE;
     }
 
-    /**
-     * Set the value in a cell
-     *
-     * @param aValue      the value
-     * @param rowIndex    the row index
-     * @param columnIndex the column index
-     */
     @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-        // Guard: only accept edits in the value column
         if (columnIndex != COL_VALUE) {
             return;
         }
-        data[rowIndex] = (String) aValue;
+        String newValue = aValue == null ? null : aValue.toString();
+        if (Objects.equals(newValue, values[rowIndex])) {
+            return;
+        }
+        values[rowIndex] = newValue;
         fireTableCellUpdated(rowIndex, columnIndex);
     }
 
@@ -178,90 +175,212 @@ public class ParameterSelectionTableModel extends AbstractTableModel {
     // -----------------------------------------------------------------------
 
     /**
-     * Set the data to display in the table.
-     * Previously entered values are preserved when the new parameter list is
-     * at least as long as the old one.
+     * Returns the description of the parameter at the given row.
      *
-     * @param parameters the list of descriptions of parameters to be displayed
+     * @param row the row index
+     * @return the parameter description, or {@code null} if out of range
      */
-    public void setData(DescriptionOfParameter[] parameters) {
-        // Guard against a null argument
-        if (parameters == null) {
-            parameters = new DescriptionOfParameter[0];
-        }
-
-        // Try to copy the previous data so the user does not lose typed values
-        String[] previousData = data;
-        data = new String[parameters.length];
-
-        for (int i = 0; i < data.length && i < previousData.length; i++) {
-            data[i] = previousData[i];
-        }
-
-        this.parameters = parameters;
-        fireTableDataChanged(); // Notify the table that the data has changed
+    public DescriptionOfParameter getParameterAt(int row) {
+        return (row < 0 || row >= parameters.length) ? null : parameters[row];
     }
 
     /**
-     * Pre-populate the Value column with an array of values. Used by the
-     * run-history re-run feature to restore previously recorded parameter
-     * values. Silently ignores null or empty arrays. Extra entries beyond
-     * the current row count are ignored.
+     * Returns the raw (un-normalised) text currently stored for a row.
      *
-     * @param parameterValues the values to set; must not be null
+     * @param row the row index
+     * @return the raw value, possibly {@code null}
+     */
+    public String getRawValue(int row) {
+        return (row < 0 || row >= values.length) ? null : values[row];
+    }
+
+    /**
+     * Replaces the parameter list with a new one (typically because another
+     * algorithm was selected).
+     *
+     * <p>Previously entered values are carried over when it makes sense:
+     * first by parameter <em>name</em> (e.g. a "minsup" value follows the
+     * user from one algorithm to the next), then by <em>position</em>. In
+     * both cases the old value is only kept if it is syntactically valid for
+     * the new parameter's declared type, so that e.g. {@code "true"} never
+     * ends up pre-filled in a {@code Double} field.</p>
+     *
+     * @param newParameters the new parameter descriptions (may be null)
+     */
+    public void setData(DescriptionOfParameter[] newParameters) {
+        if (newParameters == null) {
+            newParameters = new DescriptionOfParameter[0];
+        }
+
+        DescriptionOfParameter[] oldParameters = parameters;
+        String[] oldValues = values;
+        String[] newValues = new String[newParameters.length];
+
+        // Index the old non-blank values by parameter name
+        Map<String, String> oldValuesByName = new HashMap<>();
+        for (int i = 0; i < oldParameters.length; i++) {
+            DescriptionOfParameter p = oldParameters[i];
+            if (p != null && p.getName() != null && !isBlank(oldValues[i])) {
+                oldValuesByName.putIfAbsent(p.getName(), oldValues[i]);
+            }
+        }
+
+        for (int i = 0; i < newParameters.length; i++) {
+            DescriptionOfParameter p = newParameters[i];
+            if (p == null) {
+                continue;
+            }
+            Class<?> type = p.getParameterType();
+
+            String byName = oldValuesByName.get(p.getName());
+            if (!isBlank(byName) && isValidValueForType(byName, type)) {
+                newValues[i] = byName;
+                continue;
+            }
+            if (i < oldValues.length) {
+                String byPosition = oldValues[i];
+                if (!isBlank(byPosition) && isValidValueForType(byPosition, type)) {
+                    newValues[i] = byPosition;
+                }
+            }
+        }
+
+        parameters = newParameters;
+        values = newValues;
+        fireTableDataChanged();
+    }
+
+    /**
+     * Pre-populates the Value column (used by the run-history re-run feature).
+     * Extra values are ignored; missing values leave the cell untouched.
+     *
+     * @param parameterValues the values to restore; ignored if null or empty
      */
     public void setParameterValues(String[] parameterValues) {
         if (parameterValues == null || parameterValues.length == 0) {
             return;
         }
-        for (int i = 0; i < data.length && i < parameterValues.length; i++) {
-            data[i] = parameterValues[i];
-        }
-        // Notify the view so it repaints with the new values
+        int n = Math.min(values.length, parameterValues.length);
+        System.arraycopy(parameterValues, 0, values, 0, n);
         fireTableDataChanged();
     }
 
     /**
-     * Get the array of parameter values entered by the user. Optional
-     * parameters that have been left blank are excluded from the returned
-     * array so that the caller receives only meaningful values that should be
-     * passed to the algorithm.
+     * Returns the normalised parameter values to pass to the algorithm.
+     * Optional parameters left blank are omitted. Required parameters left
+     * blank are returned as {@code null} (use
+     * {@link ParameterSelectionPanel#hasAllRequiredValuesFilled()} to check
+     * beforehand).
      *
-     * <p><b>Important:</b> This method compacts the array by removing empty
-     * optional parameters, which means the length of the returned array may be
-     * less than {@link #getRowCount()}. When re-running a history entry the
-     * controller must NOT call this method to determine how many values to
-     * restore — it should call {@link #getRowCount()} instead, which always
-     * returns the full count of parameter rows.</p>
-     *
-     * @return an array of String values (never null)
+     * @return an array of values (never null; elements may be null)
      */
     public String[] getParameterValues() {
-        // Count how many parameters should be included in the result
-        int numberOfNonOptionalParameters = 0;
+        List<String> result = new ArrayList<>(parameters.length);
         for (int i = 0; i < parameters.length; i++) {
-            DescriptionOfParameter param = parameters[i];
-            // Skip optional parameters that were left empty
-            boolean toRemove = param.isOptional() 
-                    && (data[i] == null || data[i].isEmpty());
-            if (!toRemove) {
-                numberOfNonOptionalParameters++;
+            DescriptionOfParameter p = parameters[i];
+            String raw = values[i];
+            if (p.isOptional() && isBlank(raw)) {
+                continue;
             }
+            result.add(normalizeValue(raw, p.getParameterType()));
         }
+        return result.toArray(new String[0]);
+    }
 
-        // Copy only the relevant entries into the trimmed result array
-        String[] trimmedData = new String[numberOfNonOptionalParameters];
-        int j = 0;
-        for (int i = 0; i < parameters.length; i++) {
-            DescriptionOfParameter param = parameters[i];
-            boolean toRemove = param.isOptional() 
-                    && (data[i] == null || data[i].isEmpty());
-            if (!toRemove) {
-                trimmedData[j] = data[i];
-                j++;
+    // -----------------------------------------------------------------------
+    // Type helpers (shared with the panel)
+    // -----------------------------------------------------------------------
+
+    /** @return true if {@code type} is {@code Boolean}/{@code boolean} */
+    static boolean isBooleanType(Class<?> type) {
+        return type == Boolean.class || type == boolean.class;
+    }
+
+    /** @return true if {@code type} is an integer-like type */
+    static boolean isIntegerType(Class<?> type) {
+        return type == Integer.class || type == int.class
+                || type == Long.class || type == long.class
+                || type == Short.class || type == short.class;
+    }
+
+    /** @return true if {@code type} is a decimal type */
+    static boolean isDecimalType(Class<?> type) {
+        return type == Double.class || type == double.class
+                || type == Float.class || type == float.class;
+    }
+
+    /** @return true if {@code type} is integer-like or decimal */
+    static boolean isNumericType(Class<?> type) {
+        return isIntegerType(type) || isDecimalType(type);
+    }
+
+    /** @return true if {@code s} is null or contains only whitespace */
+    static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
+    }
+
+    /**
+     * Returns true if {@code value} is a complete, syntactically valid value
+     * for the given type. Unknown types always return true.
+     *
+     * @param value the value to check
+     * @param type  the declared parameter type (may be null)
+     * @return true if acceptable
+     */
+    static boolean isValidValueForType(String value, Class<?> type) {
+        if (value == null) {
+            return false;
+        }
+        if (type == null) {
+            return true;
+        }
+        String v = value.trim();
+        if (isBooleanType(type)) {
+            return "true".equalsIgnoreCase(v) || "false".equalsIgnoreCase(v);
+        }
+        if (isIntegerType(type)) {
+            return INTEGER_PATTERN.matcher(v).matches();
+        }
+        if (isDecimalType(type)) {
+            return DECIMAL_PATTERN.matcher(v).matches();
+        }
+        return true;
+    }
+
+    /**
+     * Normalises a raw value for the given type (see class documentation).
+     * Values that cannot be normalised are returned as-is.
+     *
+     * @param value the raw value (may be null)
+     * @param type  the declared parameter type (may be null)
+     * @return the normalised value
+     */
+    static String normalizeValue(String value, Class<?> type) {
+        if (value == null || type == null) {
+            return value;
+        }
+        if (isBooleanType(type)) {
+            String v = value.trim();
+            return ("true".equalsIgnoreCase(v) || "false".equalsIgnoreCase(v))
+                    ? v.toLowerCase(Locale.ROOT) : value;
+        }
+        if (isIntegerType(type)) {
+            return value.trim();
+        }
+        if (isDecimalType(type)) {
+            String v = value.trim();
+            if (v.endsWith("%")) {
+                try {
+                    return new BigDecimal(v.substring(0, v.length() - 1).trim())
+                            .movePointLeft(2)
+                            .stripTrailingZeros()
+                            .toPlainString();
+                } catch (NumberFormatException e) {
+                    return v; // let the algorithm report the problem
+                }
             }
+            return v;
         }
-
-        return trimmedData;
+        return value;
     }
 }

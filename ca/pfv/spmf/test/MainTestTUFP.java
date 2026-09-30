@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.frequentpatterns.uapriori.UncertainTransactionDatabase;
 import ca.pfv.spmf.algorithms.frequentpatterns.tufp.AlgoTUFP;
+import ca.pfv.spmf.algorithms.frequentpatterns.uapriori.UncertainTransactionDatabase;
 
 /**
  * Example of how to use the TUFP algorithm from source code.

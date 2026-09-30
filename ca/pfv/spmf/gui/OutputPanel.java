@@ -1,6 +1,7 @@
 package ca.pfv.spmf.gui;
+
 /*
- * Copyright (c) 2008-2015 Philippe Fournier-Viger
+ * Copyright (c) 2008-2026 Philippe Fournier-Viger
  *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
@@ -17,7 +18,7 @@ package ca.pfv.spmf.gui;
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
  * 
- * Do not remove copyright, authorship and license information.
+ * Do not remove copyright and license
  */
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -42,6 +43,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 
@@ -74,6 +76,11 @@ import ca.pfv.spmf.gui.pattern_diff_analyzer.PatternDiffAnalyzer;
  * <p>The "Open folder" button is handled entirely inside this panel and
  * does not require any controller involvement.</p>
  *
+ * <p>{@link #flashCompletion()} can be called by the controller whenever an
+ * algorithm finishes running, to briefly highlight the panel's background
+ * so the user notices that something happened, even for algorithms that
+ * run so fast (e.g. 1 ms) that the UI would otherwise appear unchanged.</p>
+ *
  * @author Philippe Fournier-Viger
  */
 @SuppressWarnings("serial")
@@ -92,6 +99,18 @@ public class OutputPanel extends JPanel {
 
     /** Foreground colour for the "no output file" placeholder message. */
     private static final Color COLOR_PLACEHOLDER = new Color(120, 120, 120);
+
+    /**
+     * Background colour used to "flash" the panel when an algorithm
+     * completes (a light, friendly green).
+     */
+    private static final Color COLOR_FLASH = new Color(200, 255, 200);
+
+    /** Number of on/off flash cycles performed by {@link #flashCompletion()}. */
+    private static final int FLASH_CYCLE_COUNT = 3;
+
+    /** Delay in milliseconds between each flash toggle. */
+    private static final int FLASH_INTERVAL_MS = 150;
 
     // =====================================================================
     // Widgets
@@ -158,6 +177,21 @@ public class OutputPanel extends JPanel {
      */
     private final List<ActionListener> openListeners = new ArrayList<>();
 
+    /**
+     * The panel's normal (non-flashing) background colour, captured once at
+     * construction time so {@link #flashCompletion()} can always restore it
+     * correctly, regardless of the current Look and Feel.
+     */
+    private final Color normalBackground;
+
+    /**
+     * The {@link Timer} that drives the flashing animation started by
+     * {@link #flashCompletion()}.  Kept as a field so that a new flash
+     * request can stop/replace any flash currently in progress instead of
+     * stacking multiple timers on top of each other.
+     */
+    private Timer flashTimer;
+
     // =====================================================================
     // Construction
     // =====================================================================
@@ -170,6 +204,12 @@ public class OutputPanel extends JPanel {
     public OutputPanel() {
         setLayout(new BorderLayout(4, 4));
         setBorder(new EmptyBorder(4, 4, 4, 4));
+
+        // Make sure the panel actually paints its own background (needed
+        // for the flash effect to be visible) and remember the original
+        // colour so we can restore it after flashing.
+        setOpaque(true);
+        normalBackground = getBackground();
 
         // -----------------------------------------------------------------
         // Top bar: file-path label + action buttons
@@ -207,7 +247,7 @@ public class OutputPanel extends JPanel {
 
         // "Compare with..." — opens Pattern Diff Analyzer with current file
         // pre-loaded as File A so the user only needs to pick File B.
-        btnContrastWith = new JButton("Compare with...");
+        btnContrastWith = new JButton("Compare output with...");
         btnContrastWith.setToolTipText(
                 "Open the Pattern Diff Analyzer with this file pre-loaded as File A");
         btnContrastWith.setEnabled(false);
@@ -360,6 +400,55 @@ public class OutputPanel extends JPanel {
             btnOpenFolder.setEnabled(file.getParentFile() != null);
             // Enable "Compare with..." whenever a valid file is loaded
             btnContrastWith.setEnabled(true);
+        });
+    }
+
+    /**
+     * Briefly flashes the panel's background colour to draw the user's
+     * attention, typically called by the controller right after an
+     * algorithm finishes running.  This provides a strong visual cue even
+     * for algorithms that finish so quickly (e.g. in 1 ms) that the output
+     * preview appears to change instantly with no other indication that
+     * something happened.
+     *
+     * <p>Safe to call from any thread; the animation itself always runs on
+     * the EDT via a Swing {@link Timer}.  If a flash animation is already in
+     * progress, it is stopped and restarted so repeated calls (e.g. from
+     * rapid successive runs) do not stack multiple timers.</p>
+     */
+    public void flashCompletion() {
+        SwingUtilities.invokeLater(() -> {
+
+            // Stop any flash animation already running so we don't end up
+            // with overlapping timers if the user runs several algorithms
+            // in quick succession.
+            if (flashTimer != null && flashTimer.isRunning()) {
+                flashTimer.stop();
+            }
+
+            // Total number of timer ticks needed to complete the requested
+            // number of on/off cycles (each cycle = 1 "on" tick + 1 "off" tick).
+            final int totalTicks = FLASH_CYCLE_COUNT * 2;
+
+            // Simple counter tracking how many ticks have elapsed so far.
+            final int[] tickCount = {0};
+
+            flashTimer = new Timer(FLASH_INTERVAL_MS, e -> {
+                boolean showFlashColor = (tickCount[0] % 2 == 0);
+                setBackground(showFlashColor ? COLOR_FLASH : normalBackground);
+                repaint();
+
+                tickCount[0]++;
+
+                if (tickCount[0] >= totalTicks) {
+                    ((Timer) e.getSource()).stop();
+                    // Always finish on the normal background colour.
+                    setBackground(normalBackground);
+                    repaint();
+                }
+            });
+            flashTimer.setRepeats(true);
+            flashTimer.start();
         });
     }
 

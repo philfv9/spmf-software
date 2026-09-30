@@ -9,7 +9,6 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.uspan.AlgoUSpan;
 /**
  * This file is for testing the USpan algorithm
  * @see Sequence
- * @see SequenceDatabase
  * @author Philippe Fournier-Viger, 2015
  */
 public class MainTestUSpan {
@@ -30,7 +29,6 @@ public class MainTestUSpan {
 		
 		// run the algorithm
 		algo.runAlgorithm(input, output, minutil);
-
 		
 		// print statistics
 		algo.printStatistics();

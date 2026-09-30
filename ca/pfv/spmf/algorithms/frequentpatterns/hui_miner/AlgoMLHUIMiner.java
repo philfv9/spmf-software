@@ -107,6 +107,11 @@ import ca.pfv.spmf.tools.MemoryLogger;
 			startTimeStamp = System.currentTimeMillis();
 			
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Multi-Level High-utility itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
+
 			
 			// we create a map to store the taxonomy information to avoid scanning the database repeatedly
 			mapItemToGeneralizedItem = new LinkedHashMap<Integer, Integer>();

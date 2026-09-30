@@ -1,0 +1,11 @@
+@FILETYPE="Peak high-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+2 3 4 #UTIL: 73 #WINDOWS: [5,5] 
+2 3 4 5 #UTIL: 85 #WINDOWS: [5,5] 
+2 3 5 #UTIL: 74 #WINDOWS: [5,7] 
+2 4 #UTIL: 66 #WINDOWS: [5,5] 
+2 4 5 #UTIL: 78 #WINDOWS: [5,5] 
+2 5 #UTIL: 62 #WINDOWS: [5,5] 
+3 4 #UTIL: 47 #WINDOWS: [5,5] 
+3 4 5 #UTIL: 53 #WINDOWS: [5,5] 
+4 5 #UTIL: 46 #WINDOWS: [5,5] 

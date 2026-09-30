@@ -18,6 +18,8 @@ import ca.pfv.spmf.algorithms.sequenceprediction.ipredict.database.Sequence;
  * IPredict is distributed under The MIT License (MIT).
  * You may obtain a copy of the License at
  * https://opensource.org/licenses/MIT 
+ * 
+ * Do not remove license and copyright information.
  */
 /**
  * The encoder can compress sequences by replacing itemset by a single item

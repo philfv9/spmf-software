@@ -16,7 +16,7 @@ public class MainTestResizeDatabaseTool {
 	public static void main(String[] args) throws Exception{
 		
 		// input file path
-		String input = fileToPath("DB_UtilityPerHUIs.txt");
+		String input = fileToPath("contextResize.txt");
 		// output file path
 		String output = ".//output.txt";
 		

@@ -14,6 +14,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 import java.util.ArrayList;
@@ -33,7 +35,7 @@ public class Sequences {
 	/** Sequences are organized into levels.
 	 In the following list,  the position i (level i) is the
 	 list of sequential containing i items. **/
-	final List<List<Sequence>> levels = new ArrayList<List<Sequence>>();  // itemset classé par taille
+	final List<List<Sequence>> levels = new ArrayList<List<Sequence>>();  // itemset classï¿½ par taille
 	/** the number of sequential patterns */
 	int sequenceCount=0;
 	

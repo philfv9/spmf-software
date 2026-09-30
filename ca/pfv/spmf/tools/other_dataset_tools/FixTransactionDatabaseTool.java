@@ -57,6 +57,8 @@ public class FixTransactionDatabaseTool {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(output));
 				BufferedReader myInput = new BufferedReader(
 						new InputStreamReader(new FileInputStream(new File(input))))) {
+			
+			
 			// for each line (transaction) until the end of file
 			String thisLine;
 			while ((thisLine = myInput.readLine()) != null) {

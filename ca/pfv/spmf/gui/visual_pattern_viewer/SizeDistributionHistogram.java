@@ -1,20 +1,21 @@
 package ca.pfv.spmf.gui.visual_pattern_viewer;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
-import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.ToolTipManager;
+
 /*
  * Copyright (c) 2008-2025 Philippe Fournier-Viger
  *
@@ -37,183 +38,229 @@ import javax.swing.ToolTipManager;
  * Do not remove copyright and license information
  */
 /**
- * A compact panel that draws a bar chart of the pattern-size distribution, used by the visual pattern viewer
+ * A compact bar chart of the pattern-size distribution of the visible
+ * patterns, shown in the sidebar of the Visual Pattern Viewer.
  */
 class SizeDistributionHistogram extends JPanel {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    private static final int HIST_HEIGHT = 100;
-    private static final int BAR_GAP     = 2;
-    private static final int LABEL_AREA  = 16;
-    private static final int TOP_PAD     = 4;
-    private static final int SIDE_PAD    = 8;
+	private static final int SUBTITLE_H = 16;
+	private static final int CHART_H = 92;
+	private static final int LABEL_H = 16;
+	private static final int MAX_BAR_W = 36;
+	private static final int BAR_GAP = 3;
 
-    private static final Color BAR_COLOR       = new Color(46, 134, 193);
-    private static final Color BAR_HOVER_COLOR = new Color(52, 152, 219);
-    private static final Color AXIS_COLOR      = new Color(160, 160, 160);
-    private static final Color LABEL_COLOR     = new Color(100, 100, 100);
-    private static final Color EMPTY_COLOR     = new Color(150, 150, 150);
-    private static final Color COUNT_COLOR     = new Color(60, 60, 60);
+	private final TreeMap<Integer, Integer> distribution = new TreeMap<>();
+	private int maxCount;
+	private int totalPatterns;
+	private int hoveredBarIndex = -1;
+	private double avgSize;
+	private int minSize;
+	private int maxSize;
 
-    private static final Font FONT_LABEL    = new Font("SansSerif", Font.PLAIN, 9);
-    private static final Font FONT_COUNT    = new Font("SansSerif", Font.BOLD, 9);
-    private static final Font FONT_EMPTY    = new Font("SansSerif", Font.ITALIC, 10);
-    private static final Font FONT_SUBTITLE = new Font("SansSerif", Font.PLAIN, 10);
+	// Geometry computed for the current size
+	private int barW;
+	private int barGap;
+	private int startX;
+	private int chartTop;
+	private int chartBottom;
 
-    private TreeMap<Integer, Integer> distribution = new TreeMap<>();
-    private int maxCount = 0, totalPatterns = 0, hoveredBarIndex = -1;
-    private double avgSize = 0;
-    private int minSize = 0, maxSize = 0;
+	SizeDistributionHistogram() {
+		setOpaque(false);
+		setPreferredSize(new Dimension(200, SUBTITLE_H + 4 + CHART_H + LABEL_H));
+		ToolTipManager.sharedInstance().registerComponent(this);
+		addMouseMotionListener(new MouseMotionAdapter() {
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				int h = getBarIndexAt(e.getX(), e.getY());
+				if (h != hoveredBarIndex) {
+					hoveredBarIndex = h;
+					repaint();
+				}
+			}
+		});
+		addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseExited(MouseEvent e) {
+				if (hoveredBarIndex != -1) {
+					hoveredBarIndex = -1;
+					repaint();
+				}
+			}
+		});
+	}
 
-    SizeDistributionHistogram() {
-        setBorder(BorderFactory.createTitledBorder("Size Distribution"));
-        int totalH = HIST_HEIGHT + LABEL_AREA + TOP_PAD + 55;
-        setPreferredSize(new Dimension(VisualPatternViewer.SIDEBAR_WIDTH - 20, totalH));
-        setMinimumSize(new Dimension(VisualPatternViewer.SIDEBAR_WIDTH - 20, totalH));
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, totalH));
-        ToolTipManager.sharedInstance().registerComponent(this);
+	/**
+	 * Recomputes the distribution from the visible patterns of the panel.
+	 */
+	void updateData(PatternsPanel panel) {
+		distribution.clear();
+		maxCount = 0;
+		totalPatterns = 0;
+		hoveredBarIndex = -1;
+		avgSize = 0;
+		minSize = 0;
+		maxSize = 0;
+		List<Integer> sizes = (panel == null) ? null : panel.getVisiblePatternSizes();
+		if (sizes != null && !sizes.isEmpty()) {
+			totalPatterns = sizes.size();
+			long sum = 0;
+			minSize = Integer.MAX_VALUE;
+			maxSize = Integer.MIN_VALUE;
+			for (int sz : sizes) {
+				distribution.merge(sz, 1, Integer::sum);
+				sum += sz;
+				minSize = Math.min(minSize, sz);
+				maxSize = Math.max(maxSize, sz);
+			}
+			avgSize = (double) sum / totalPatterns;
+			for (int c : distribution.values()) {
+				maxCount = Math.max(maxCount, c);
+			}
+		}
+		repaint();
+	}
 
-        addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
-            @Override
-            public void mouseMoved(java.awt.event.MouseEvent e) {
-                int h = getBarIndexAt(e.getX(), e.getY());
-                if (h != hoveredBarIndex) { hoveredBarIndex = h; repaint(); }
-            }
-        });
-        addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent e) {
-                if (hoveredBarIndex != -1) { hoveredBarIndex = -1; repaint(); }
-            }
-        });
-    }
+	/** @return a short summary such as "sizes 1 – 5", or "" if no data */
+	String getSummaryText() {
+		if (totalPatterns == 0) {
+			return "";
+		}
+		return minSize == maxSize ? "size " + minSize : "sizes " + minSize + " \u2013 " + maxSize;
+	}
 
-    void updateData(PatternsPanel panel) {
-        distribution.clear();
-        maxCount = 0; totalPatterns = 0; hoveredBarIndex = -1;
-        avgSize = 0; minSize = 0; maxSize = 0;
-        if (panel == null) { repaint(); return; }
-        List<Integer> sizes = panel.getVisiblePatternSizes();
-        if (sizes == null || sizes.isEmpty()) { repaint(); return; }
-        totalPatterns = sizes.size();
-        long sum = 0;
-        minSize = Integer.MAX_VALUE; maxSize = Integer.MIN_VALUE;
-        for (int sz : sizes) {
-            distribution.merge(sz, 1, Integer::sum);
-            sum += sz;
-            if (sz < minSize) minSize = sz;
-            if (sz > maxSize) maxSize = sz;
-        }
-        avgSize = (double) sum / totalPatterns;
-        for (int c : distribution.values()) if (c > maxCount) maxCount = c;
-        repaint();
-    }
+	private void computeGeometry() {
+		Insets in = getInsets();
+		int left = in.left;
+		int dw = getWidth() - in.left - in.right;
+		int n = Math.max(1, distribution.size());
+		barGap = BAR_GAP;
+		barW = (dw - (n - 1) * barGap) / n;
+		if (barW < 3) {
+			barGap = 1;
+			barW = Math.max(2, (dw - (n - 1)) / n);
+		}
+		barW = Math.min(barW, MAX_BAR_W);
+		startX = left + Math.max(0, (dw - (n * barW + (n - 1) * barGap)) / 2);
+		chartTop = in.top + SUBTITLE_H + 4;
+		chartBottom = getHeight() - in.bottom - LABEL_H;
+	}
 
-    private int getBarIndexAt(int mx, int my) {
-        if (distribution.isEmpty()) return -1;
-        Insets ins = getInsets();
-        int dl = ins.left + SIDE_PAD, dr = getWidth() - ins.right - SIDE_PAD;
-        int dw = dr - dl, sh = 18;
-        int bat = ins.top + TOP_PAD + sh, bab = getHeight() - ins.bottom - LABEL_AREA;
-        if (dw <= 0 || my < bat || my > bab) return -1;
-        int n = distribution.size(), tg = (n - 1) * BAR_GAP;
-        int bw = Math.min(Math.max(4, (dw - tg) / n), 28);
-        int sx = dl + (dw - (n * bw + tg)) / 2;
-        int idx = 0;
-        for (Map.Entry<Integer, Integer> e : distribution.entrySet()) {
-            int bx = sx + idx * (bw + BAR_GAP);
-            if (mx >= bx && mx < bx + bw) return idx;
-            idx++;
-        }
-        return -1;
-    }
+	private int getBarIndexAt(int mx, int my) {
+		if (distribution.isEmpty()) {
+			return -1;
+		}
+		computeGeometry();
+		if (my < chartTop || my > chartBottom || mx < startX) {
+			return -1;
+		}
+		int idx = (mx - startX) / (barW + barGap);
+		return idx < distribution.size() ? idx : -1;
+	}
 
-    @Override
-    public String getToolTipText(java.awt.event.MouseEvent e) {
-        int idx = getBarIndexAt(e.getX(), e.getY());
-        if (idx < 0 || idx >= distribution.size()) return null;
-        int i = 0;
-        for (Map.Entry<Integer, Integer> entry : distribution.entrySet()) {
-            if (i++ == idx) {
-                double pct = totalPatterns > 0
-                        ? 100.0 * entry.getValue() / totalPatterns : 0;
-                return String.format(
-                        "<html><b>Size %d:</b> %d pattern%s (%.1f%%)</html>",
-                        entry.getKey(), entry.getValue(),
-                        entry.getValue() != 1 ? "s" : "", pct);
-            }
-        }
-        return null;
-    }
+	@Override
+	public String getToolTipText(MouseEvent e) {
+		int idx = getBarIndexAt(e.getX(), e.getY());
+		if (idx < 0) {
+			return null;
+		}
+		int i = 0;
+		for (Map.Entry<Integer, Integer> entry : distribution.entrySet()) {
+			if (i++ == idx) {
+				double pct = totalPatterns > 0 ? 100.0 * entry.getValue() / totalPatterns : 0;
+				return String.format("<html><b>Size %d:</b> %d pattern%s (%.1f%%)</html>", entry.getKey(),
+						entry.getValue(), entry.getValue() != 1 ? "s" : "", pct);
+			}
+		}
+		return null;
+	}
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+	@Override
+	protected void paintComponent(Graphics g) {
+		super.paintComponent(g);
+		Graphics2D g2 = (Graphics2D) g.create();
+		try {
+			ViewerStyle.applyRenderingHints(g2);
+			Insets in = getInsets();
+			int left = in.left;
+			int right = getWidth() - in.right;
+			computeGeometry();
 
-        Insets ins = getInsets();
-        int dl = ins.left + SIDE_PAD, dr = getWidth() - ins.right - SIDE_PAD;
-        int dw = dr - dl, sh = 18;
+			// Subtitle
+			g2.setFont(ViewerStyle.smallFont());
+			FontMetrics sfm = g2.getFontMetrics();
+			if (totalPatterns > 0) {
+				String sub = "min " + minSize + "  \u00B7  avg " + ViewerStyle.formatNumber(Math.round(avgSize * 100) / 100.0)
+						+ "  \u00B7  max " + maxSize;
+				g2.setColor(ViewerStyle.TEXT_SECONDARY);
+				g2.drawString(sub, left + (right - left - sfm.stringWidth(sub)) / 2, in.top + sfm.getAscent());
+			}
 
-        if (totalPatterns > 0) {
-            g2.setFont(FONT_SUBTITLE); g2.setColor(LABEL_COLOR);
-            String sub = String.format("min=%d  avg=%.1f  max=%d",
-                    minSize, avgSize, maxSize);
-            FontMetrics fm = g2.getFontMetrics();
-            g2.drawString(sub, dl + (dw - fm.stringWidth(sub)) / 2,
-                    ins.top + TOP_PAD + fm.getAscent());
-        }
+			if (distribution.isEmpty()) {
+				g2.setFont(ViewerStyle.baseFont().deriveFont(Font.ITALIC));
+				g2.setColor(ViewerStyle.TEXT_SECONDARY);
+				FontMetrics fm = g2.getFontMetrics();
+				String msg = "No patterns to summarize";
+				g2.drawString(msg, left + (right - left - fm.stringWidth(msg)) / 2,
+						chartTop + (chartBottom - chartTop) / 2 + fm.getAscent() / 2);
+				return;
+			}
 
-        int bat = ins.top + TOP_PAD + sh;
-        int bab = getHeight() - ins.bottom - LABEL_AREA;
-        int bah = bab - bat;
+			int chartH = chartBottom - chartTop;
+			int labelTop = chartTop + sfm.getAscent() + 2; // room for count labels
+			int usableH = Math.max(10, chartH - (labelTop - chartTop));
 
-        if (distribution.isEmpty()) {
-            g2.setFont(FONT_EMPTY); g2.setColor(EMPTY_COLOR);
-            String msg = "No data";
-            FontMetrics fm = g2.getFontMetrics();
-            g2.drawString(msg, dl + (dw - fm.stringWidth(msg)) / 2,
-                    bat + bah / 2 + fm.getAscent() / 2);
-            return;
-        }
+			g2.setColor(ViewerStyle.AXIS);
+			g2.drawLine(left, chartBottom, right, chartBottom);
 
-        int n = distribution.size(), tg = (n - 1) * BAR_GAP;
-        int bw = Math.min(Math.max(4, (dw - tg) / n), 28);
-        int sx = dl + (dw - (n * bw + tg)) / 2;
+			Font countFont = ViewerStyle.smallFont().deriveFont(Font.BOLD);
+			FontMetrics cfm = g2.getFontMetrics(countFont);
+			int lastLabelRight = Integer.MIN_VALUE;
+			int idx = 0;
+			for (Map.Entry<Integer, Integer> entry : distribution.entrySet()) {
+				int cnt = entry.getValue();
+				int bh = maxCount > 0 ? Math.max(2, (int) Math.round((double) cnt / maxCount * usableH)) : 2;
+				int bx = startX + idx * (barW + barGap);
+				int by = chartBottom - bh;
+				boolean hovered = idx == hoveredBarIndex;
 
-        g2.setColor(AXIS_COLOR);
-        g2.drawLine(dl, bab, dr, bab);
+				if (hovered) {
+					g2.setColor(ViewerStyle.ACCENT_SOFT);
+					g2.fillRect(bx - barGap / 2 - 1, chartTop, barW + barGap + 2, chartH);
+				}
+				g2.setColor(hovered ? ViewerStyle.ACCENT_DARK : ViewerStyle.ACCENT);
+				int r = Math.min(4, barW / 2);
+				if (bh > r) {
+					g2.fillRoundRect(bx, by, barW, bh, 2 * r, 2 * r);
+					g2.fillRect(bx, by + r, barW, bh - r);
+				} else {
+					g2.fillRect(bx, by, barW, bh);
+				}
 
-        int idx = 0;
-        for (Map.Entry<Integer, Integer> entry : distribution.entrySet()) {
-            int cnt = entry.getValue();
-            int bh = maxCount > 0
-                    ? Math.max(2, (int) ((double) cnt / maxCount * bah)) : 2;
-            int bx = sx + idx * (bw + BAR_GAP);
-            int by = bab - bh;
-            g2.setColor(idx == hoveredBarIndex ? BAR_HOVER_COLOR : BAR_COLOR);
-            g2.fillRect(bx, by, bw, bh);
+				// Count above the bar (if it fits)
+				String cs = String.valueOf(cnt);
+				int cw = cfm.stringWidth(cs);
+				if (cw <= barW + barGap + 2 || hovered) {
+					g2.setFont(countFont);
+					g2.setColor(ViewerStyle.TEXT_PRIMARY);
+					g2.drawString(cs, bx + (barW - cw) / 2, by - 3);
+				}
 
-            if (bh > 12 || bah > 40) {
-                g2.setFont(FONT_COUNT); g2.setColor(COUNT_COLOR);
-                FontMetrics fm = g2.getFontMetrics();
-                String cs = String.valueOf(cnt);
-                int cw = fm.stringWidth(cs), cy = by - 2;
-                if (cy >= bat + fm.getAscent())
-                    g2.drawString(cs, bx + (bw - cw) / 2, cy);
-            }
-
-            g2.setFont(FONT_LABEL); g2.setColor(LABEL_COLOR);
-            FontMetrics fl = g2.getFontMetrics();
-            String ss = String.valueOf(entry.getKey());
-            int lw = fl.stringWidth(ss);
-            g2.drawString(ss, bx + (bw - lw) / 2, bab + fl.getAscent() + 1);
-            idx++;
-        }
-    }
+				// Size label under the bar, skipping labels that would overlap
+				g2.setFont(ViewerStyle.smallFont());
+				String ss = String.valueOf(entry.getKey());
+				int lw = sfm.stringWidth(ss);
+				int lx = bx + (barW - lw) / 2;
+				if (lx >= lastLabelRight + 4 || hovered) {
+					g2.setColor(hovered ? ViewerStyle.ACCENT_DARK : ViewerStyle.TEXT_SECONDARY);
+					g2.drawString(ss, lx, chartBottom + sfm.getAscent() + 2);
+					lastLabelRight = lx + lw;
+				}
+				idx++;
+			}
+		} finally {
+			g2.dispose();
+		}
+	}
 }

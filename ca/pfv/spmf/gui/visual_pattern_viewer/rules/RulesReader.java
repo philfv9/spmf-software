@@ -93,7 +93,8 @@ public class RulesReader extends PatternsReader {
 			while ((line = reader.readLine()) != null) {
 
 				// Skip empty or comment/metadata lines
-				if (line.isEmpty() || line.startsWith("#") || line.startsWith("%")) {
+				if (line.isEmpty() || line.startsWith("#") || line.startsWith("%") || line.startsWith("@FILETYPE")
+						|| line.startsWith("@SOURCE")) {
 					continue;
 				}
 				// Parse extended mapping lines: "@ITEM=id=name"

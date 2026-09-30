@@ -41,6 +41,8 @@ import ca.pfv.spmf.tools.MemoryLogger;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 
 /**
@@ -49,7 +51,7 @@ import ca.pfv.spmf.tools.MemoryLogger;
  *
  *Fumarola, F., Lanotte, P. F., Ceci, M., & Malerba, D. (2016).
  * CloFAST: closed sequential pattern mining using sparse and vertical 
- * id-lists. Knowledge and Information Systems, 48(2), 429-463.<br/><br/>
+ * idslists. Knowledge and Information Systems, 48(2), 429-463.<br/><br/>
  * 
  * @author Fabiana Lanotte, Fabio Fumarola, M. Ceci,  D. Malerba et al.
  */
@@ -535,7 +537,11 @@ public class AlgoCloFast {
 
     public void writePatterns(Path outputFile) throws IOException {
         final BufferedWriter out = Files.newBufferedWriter(outputFile);
-
+		out.write("@FILETYPE=\"Frequent closed sequential patterns\"");
+		out.append(System.lineSeparator());
+		out.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		out.append(System.lineSeparator());
+		
         List<ClosedSequenceNode> nodes = getClosedFrequentNodes();
 
         int countClosed = 0;

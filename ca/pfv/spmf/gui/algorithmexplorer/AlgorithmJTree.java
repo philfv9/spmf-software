@@ -2,20 +2,20 @@ package ca.pfv.spmf.gui.algorithmexplorer;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 
-import javax.swing.JLabel;
 import javax.swing.JTree;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 import ca.pfv.spmf.algorithmmanager.AlgorithmManager;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
@@ -40,58 +40,61 @@ import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * JTree that displays the algorithms offered in SPMF
- * 
+ * JTree that displays the algorithms offered in SPMF, grouped by category,
+ * with the ability to highlight algorithms similar to the selected one.
+ *
  * @author Philippe Fournier-Viger
  */
-@SuppressWarnings("serial")
 public class AlgorithmJTree extends JTree {
 
-	// Color constants for better customization
-	private static final Color HIGHLIGHT_COLOR = Color.BLUE;
-	private static final Color NORMAL_COLOR = Color.BLACK;
+	private static final long serialVersionUID = 1L;
+
+	private static final Color HIGHLIGHT_COLOR = new Color(0, 0, 210);
 	private static final Color CATEGORY_COLOR = new Color(50, 50, 50);
-	
-	/** indicate if the highlight function is activated for the JTree */
-	private boolean activatedHighlight = false;
-	
-	/** Cache for algorithm manager to avoid repeated getInstance calls */
-	private AlgorithmManager algorithmManager;
+	/** Category used for algorithms that appear before any category header */
+	private static final String UNCATEGORIZED = "Other";
+
+	/** whether highlighting is currently shown */
+	private boolean activatedHighlight;
+
+	private final AlgorithmManager algorithmManager;
+
+	// ---- Node model ----------------------------------------------------
 
 	/**
-	 * Inner class representing a node in the algorithm tree
+	 * User object stored in each tree node: either a category header or an
+	 * algorithm (with its description).
 	 */
-	class AlgoNode {
+	public static final class AlgoNode {
 		private final String name;
-		private boolean isHighlight;
-		private final boolean isCategory;
+		/** null for category nodes */
+		private final DescriptionOfAlgorithm description;
+		private boolean highlighted;
 
-		/**
-		 * Constructor for AlgoNode
-		 * 
-		 * @param name the name of the algorithm or category
-		 * @param isCategory true if this is a category node
-		 */
-		AlgoNode(String name, boolean isCategory) {
+		AlgoNode(String name, DescriptionOfAlgorithm description) {
 			this.name = Objects.requireNonNull(name, "Node name cannot be null");
-			this.isHighlight = false;
-			this.isCategory = isCategory;
-		}
-
-		public boolean isHighlight() {
-			return isHighlight;
-		}
-
-		public void setHighlight(boolean isHighlight) {
-			this.isHighlight = isHighlight;
-		}
-
-		public boolean isCategory() {
-			return isCategory;
+			this.description = description;
 		}
 
 		public String getName() {
 			return name;
+		}
+
+		/** @return the algorithm description, or null if this node is a category */
+		public DescriptionOfAlgorithm getDescription() {
+			return description;
+		}
+
+		public boolean isCategory() {
+			return description == null;
+		}
+
+		public boolean isHighlighted() {
+			return highlighted;
+		}
+
+		void setHighlighted(boolean highlighted) {
+			this.highlighted = highlighted;
 		}
 
 		@Override
@@ -101,445 +104,342 @@ public class AlgorithmJTree extends JTree {
 
 		@Override
 		public boolean equals(Object o) {
-			if (this == o) return true;
-			if (o == null || getClass() != o.getClass()) return false;
-			AlgoNode algoNode = (AlgoNode) o;
-			return isCategory == algoNode.isCategory && name.equals(algoNode.name);
+			if (this == o) {
+				return true;
+			}
+			if (!(o instanceof AlgoNode)) {
+				return false;
+			}
+			AlgoNode other = (AlgoNode) o;
+			return isCategory() == other.isCategory() && name.equals(other.name);
 		}
 
 		@Override
 		public int hashCode() {
-			return Objects.hash(name, isCategory);
+			return Objects.hash(name, isCategory());
 		}
 	}
 
-	/**
-	 * Custom cell renderer for the algorithm tree
-	 */
-	private class AlgorithmTreeCellRenderer extends DefaultTreeCellRenderer {
+	// ---- Renderer ------------------------------------------------------
+
+	/** Colors categories, algorithms and highlighted algorithms differently. */
+	private final class AlgorithmTreeCellRenderer extends DefaultTreeCellRenderer {
+		private static final long serialVersionUID = 1L;
+
+		private Font baseFont;
+		private Font boldFont;
+
 		@Override
-		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel,
-				boolean expanded, boolean leaf, int row, boolean hasFocus) {
-			JLabel label = (JLabel) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-			
-			// Special case for the root
-			if (((DefaultMutableTreeNode) value).getUserObject() instanceof String) {
-				return label;
+		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded,
+				boolean leaf, int row, boolean hasFocus) {
+			super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+
+			Object userObject = value instanceof DefaultMutableTreeNode
+					? ((DefaultMutableTreeNode) value).getUserObject() : null;
+			if (!(userObject instanceof AlgoNode)) {
+				return this; // root or unknown node: default rendering
 			}
-			
-			// The case of other nodes
-			AlgoNode node = (AlgoNode) ((DefaultMutableTreeNode) value).getUserObject();
-			
-			if (activatedHighlight && node.isHighlight()) {
-				label.setForeground(HIGHLIGHT_COLOR);
-			} else if (node.isCategory()) {
-				label.setForeground(CATEGORY_COLOR);
-			} else {
-				label.setForeground(NORMAL_COLOR);
+
+			AlgoNode node = (AlgoNode) userObject;
+			boolean highlighted = activatedHighlight && node.isHighlighted();
+
+			setFont(highlighted ? boldFontFor(tree.getFont()) : tree.getFont());
+
+			// Never override the foreground of a selected row, it must stay readable.
+			if (!sel) {
+				if (highlighted) {
+					setForeground(HIGHLIGHT_COLOR);
+				} else if (node.isCategory()) {
+					setForeground(CATEGORY_COLOR);
+				} else {
+					setForeground(getTextNonSelectionColor());
+				}
 			}
-			
-			return label;
+			return this;
+		}
+
+		private Font boldFontFor(Font base) {
+			if (boldFont == null || !base.equals(baseFont)) {
+				baseFont = base;
+				boldFont = base.deriveFont(Font.BOLD);
+			}
+			return boldFont;
 		}
 	}
 
+	// ---- Construction --------------------------------------------------
+
 	/**
-	 * Constructor for AlgorithmJTree
-	 * 
-	 * @param showTools true to show tools
-	 * @param showAlgorithms true to show algorithms
-	 * @param showExperimentTools true to show experiment tools
+	 * Constructor.
+	 *
+	 * @param showViewAndTransform true to show "view and transform" tools
+	 * @param showGenerateData     true to show data generators
+	 * @param showTools            true to show tools
+	 * @param showAlgorithms       true to show algorithms
+	 * @param showExperimentTools  true to show experiment tools
 	 */
-	public AlgorithmJTree(boolean showViewAndTransform, boolean showGenerateData, boolean showTools, boolean showAlgorithms, boolean showExperimentTools) {
+	public AlgorithmJTree(boolean showViewAndTransform, boolean showGenerateData, boolean showTools,
+			boolean showAlgorithms, boolean showExperimentTools) {
 		super(new DefaultMutableTreeNode("Root"));
-		this.setRootVisible(false);
-		this.setShowsRootHandles(true);
-		
-		initializeAlgorithmManager();
-		buildTree(showViewAndTransform, showGenerateData, showTools, showAlgorithms, showExperimentTools);
-		setupRenderer();
-		
-		this.setVisible(true);
+		this.algorithmManager = obtainAlgorithmManager();
+
+		setModel(new DefaultTreeModel(buildRootNode(showViewAndTransform, showGenerateData, showTools,
+				showAlgorithms, showExperimentTools)));
+		setRootVisible(false);
+		setShowsRootHandles(true);
+		getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		setCellRenderer(new AlgorithmTreeCellRenderer());
 	}
 
-	/**
-	 * Initialize the algorithm manager
-	 */
-	private void initializeAlgorithmManager() {
+	private static AlgorithmManager obtainAlgorithmManager() {
 		try {
-			algorithmManager = AlgorithmManager.getInstance();
+			return AlgorithmManager.getInstance();
 		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException("Failed to initialize AlgorithmManager", e);
+			throw new IllegalStateException("Failed to initialize AlgorithmManager", e);
 		}
 	}
 
 	/**
-	 * Build the tree structure with algorithms and categories
-	 * 
-	 * @param showTools true to show tools
-	 * @param showAlgorithms true to show algorithms
-	 * @param showExperimentTools true to show experiment tools
+	 * Builds the whole tree structure offline (no model events fired per node).
 	 */
-	private void buildTree(boolean showViewAndTransform, boolean showGenerateData, boolean showTools, boolean showAlgorithms, boolean showExperimentTools) {
-		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) getModel().getRoot();
-		DefaultTreeModel treeModel = new DefaultTreeModel(rootNode);
-		setModel(treeModel);
+	private DefaultMutableTreeNode buildRootNode(boolean showViewAndTransform, boolean showGenerateData,
+			boolean showTools, boolean showAlgorithms, boolean showExperimentTools) {
+		DefaultMutableTreeNode root = new DefaultMutableTreeNode("Root");
+		List<String> entries = algorithmManager.getListOfAlgorithmsAsString(showViewAndTransform,
+				showGenerateData, showTools, showAlgorithms, showExperimentTools);
 
-		List<String> algorithmList = algorithmManager.getListOfAlgorithmsAsString(showViewAndTransform, showGenerateData,
-				showTools, showAlgorithms, showExperimentTools);
-		
-		DefaultMutableTreeNode currentCategoryNode = null;
-
-		for (String algorithmOrCategoryName : algorithmList) {
-			if (isCategory(algorithmOrCategoryName)) {
-				currentCategoryNode = createCategoryNode(algorithmOrCategoryName);
-				addNodeToTreeModel(treeModel, rootNode, currentCategoryNode);
+		DefaultMutableTreeNode currentCategory = null;
+		for (String entry : entries) {
+			DescriptionOfAlgorithm description = algorithmManager.getDescriptionOfAlgorithm(entry);
+			if (description == null) {
+				// An entry without description is a category header
+				currentCategory = new DefaultMutableTreeNode(new AlgoNode(entry, null));
+				root.add(currentCategory);
 			} else {
-				DefaultMutableTreeNode algorithmNode = createAlgorithmNode(algorithmOrCategoryName);
-				addNodeToTreeModel(treeModel, currentCategoryNode, algorithmNode);
+				if (currentCategory == null) {
+					currentCategory = new DefaultMutableTreeNode(new AlgoNode(UNCATEGORIZED, null));
+					root.add(currentCategory);
+				}
+				currentCategory.add(new DefaultMutableTreeNode(new AlgoNode(entry, description)));
 			}
 		}
+		return root;
 	}
 
-	/**
-	 * Check if the given name represents a category
-	 * 
-	 * @param name the name to check
-	 * @return true if it's a category
-	 */
-	private boolean isCategory(String name) {
-		return algorithmManager.getDescriptionOfAlgorithm(name) == null;
-	}
+	// ---- Selection helpers ---------------------------------------------
 
-	/**
-	 * Create a category node
-	 * 
-	 * @param categoryName the category name
-	 * @return the created node
-	 */
-	private DefaultMutableTreeNode createCategoryNode(String categoryName) {
-		AlgoNode categoryAlgoNode = new AlgoNode(categoryName, true);
-		return new DefaultMutableTreeNode(categoryAlgoNode);
-	}
-
-	/**
-	 * Create an algorithm node
-	 * 
-	 * @param algorithmName the algorithm name
-	 * @return the created node
-	 */
-	private DefaultMutableTreeNode createAlgorithmNode(String algorithmName) {
-		AlgoNode algorithmAlgoNode = new AlgoNode(algorithmName, false);
-		return new DefaultMutableTreeNode(algorithmAlgoNode);
-	}
-
-	/**
-	 * Setup the custom cell renderer
-	 */
-	private void setupRenderer() {
-		this.setCellRenderer(new AlgorithmTreeCellRenderer());
-	}
-
-	/**
-	 * Add a node to the tree model
-	 * 
-	 * @param treeModel the tree model
-	 * @param parentNode the parent node
-	 * @param childNode the child node to add
-	 */
-	private static void addNodeToTreeModel(DefaultTreeModel treeModel, 
-			DefaultMutableTreeNode parentNode, DefaultMutableTreeNode childNode) {
-		if (parentNode == null) {
-			throw new IllegalArgumentException("Parent node cannot be null");
+	/** @return the selected node (category or algorithm), or null if none */
+	public AlgoNode getSelectedAlgoNode() {
+		Object component = getLastSelectedPathComponent();
+		if (component instanceof DefaultMutableTreeNode) {
+			Object userObject = ((DefaultMutableTreeNode) component).getUserObject();
+			if (userObject instanceof AlgoNode) {
+				return (AlgoNode) userObject;
+			}
 		}
-		
-		treeModel.insertNodeInto(childNode, parentNode, parentNode.getChildCount());
+		return null;
+	}
 
-		if (parentNode == treeModel.getRoot()) {
-			treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
-		}
+	/** @return the name of the selected algorithm, or null if none / a category is selected */
+	public String getSelectedAlgorithmName() {
+		AlgoNode node = getSelectedAlgoNode();
+		return node == null || node.isCategory() ? null : node.getName();
+	}
+
+	/** @return the description of the selected algorithm, or null if none / a category is selected */
+	public DescriptionOfAlgorithm getSelectedAlgorithmDescription() {
+		AlgoNode node = getSelectedAlgoNode();
+		return node == null ? null : node.getDescription();
 	}
 
 	/**
-	 * Get the highlight activation status
-	 * 
-	 * @return true if highlight is activated
+	 * Selects (and scrolls to) the algorithm with the given name.
+	 *
+	 * @return true if the algorithm was found
 	 */
+	public boolean selectAlgorithm(String algorithmName) {
+		for (DefaultMutableTreeNode treeNode : allAlgoTreeNodes()) {
+			AlgoNode node = toAlgoNode(treeNode);
+			if (!node.isCategory() && node.getName().equals(algorithmName)) {
+				TreePath path = new TreePath(treeNode.getPath());
+				setSelectionPath(path);
+				scrollPathToVisible(path);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** @return number of algorithms (categories excluded) displayed in the tree */
+	public int getAlgorithmCount() {
+		int count = 0;
+		for (DefaultMutableTreeNode treeNode : allAlgoTreeNodes()) {
+			if (!toAlgoNode(treeNode).isCategory()) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+	// ---- Highlighting --------------------------------------------------
+
+	/** @return true if highlighting is currently displayed */
 	public boolean isActivatedHighlight() {
 		return activatedHighlight;
 	}
 
 	/**
-	 * Set the highlight activation status
-	 * 
-	 * @param activatedHighlight true to activate highlight
+	 * Shows or hides the highlighting (does not change which nodes are marked).
 	 */
 	public void setActivatedHighlight(boolean activatedHighlight) {
-		this.activatedHighlight = activatedHighlight;
-		repaint();
-	}
-
-	/**
-	 * Highlight algorithms similar to the selected one
-	 * 
-	 * @param withParameters true to also compare mandatory parameters
-	 */
-	public void highlightSimilarAlgorithmsToSelection(boolean withParameters) {
-		DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) this.getLastSelectedPathComponent();
-		
-		if (selectedNode == null || !(selectedNode.getUserObject() instanceof AlgoNode)) {
-			return;
-		}
-		
-		AlgoNode selectedAlgoNode = (AlgoNode) selectedNode.getUserObject();
-		DescriptionOfAlgorithm selectedDescription = algorithmManager.getDescriptionOfAlgorithm(selectedAlgoNode.getName());
-		
-		if (selectedDescription == null) {
-			return;
-		}
-
-		processNodesForHighlighting(selectedDescription, withParameters);
-		setActivatedHighlight(true);
-		expandHighlightedNodes();
-	}
-
-	/**
-	 * Process all nodes to determine which should be highlighted
-	 * 
-	 * @param selectedDescription the description of the selected algorithm
-	 * @param withParameters true to compare parameters
-	 */
-	private void processNodesForHighlighting(DescriptionOfAlgorithm selectedDescription, boolean withParameters) {
-		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) getModel().getRoot();
-		Enumeration<TreeNode> enumeration = rootNode.depthFirstEnumeration();
-		
-		while (enumeration.hasMoreElements()) {
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) enumeration.nextElement();
-			
-			if (node == rootNode) {
-				continue;
-			}
-			
-			AlgoNode algoNode = (AlgoNode) node.getUserObject();
-			algoNode.setHighlight(false);
-			
-			if (!algoNode.isCategory()) {
-				boolean shouldHighlight = shouldHighlightAlgorithm(algoNode, selectedDescription, withParameters);
-				algoNode.setHighlight(shouldHighlight);
-			}
+		if (this.activatedHighlight != activatedHighlight) {
+			this.activatedHighlight = activatedHighlight;
+			repaint();
 		}
 	}
 
 	/**
-	 * Determine if an algorithm should be highlighted
-	 * 
-	 * @param algoNode the algorithm node to check
-	 * @param selectedDescription the selected algorithm description
-	 * @param withParameters true to compare parameters
-	 * @return true if should be highlighted
+	 * Highlights all algorithms having the same input/output types as the
+	 * selected algorithm (and optionally the same mandatory parameters), and
+	 * expands the categories that contain them.
+	 *
+	 * @param compareMandatoryParameters true to also require identical mandatory
+	 *                                   parameters
+	 * @return the number of highlighted algorithms (0 if nothing is selected)
 	 */
-	private boolean shouldHighlightAlgorithm(AlgoNode algoNode, 
-			DescriptionOfAlgorithm selectedDescription, boolean withParameters) {
-		DescriptionOfAlgorithm currentDescription = algorithmManager.getDescriptionOfAlgorithm(algoNode.getName());
-		
-		if (currentDescription == null) {
-			return false;
+	public int highlightSimilarAlgorithmsToSelection(boolean compareMandatoryParameters) {
+		DescriptionOfAlgorithm selected = getSelectedAlgorithmDescription();
+		if (selected == null) {
+			return 0;
 		}
-		
-		boolean sameInput = arraysEqual(currentDescription.getInputFileTypes(), 
-				selectedDescription.getInputFileTypes());
-		boolean sameOutput = arraysEqual(currentDescription.getOutputFileTypes(), 
-				selectedDescription.getOutputFileTypes());
-		
-		if (!sameInput || !sameOutput) {
-			return false;
-		}
-		
-		if (!withParameters) {
-			return true;
-		}
-		
-		return haveSameMandatoryParameters(
-				currentDescription.getParametersDescription(),
-				selectedDescription.getParametersDescription(),
-				currentDescription.getNumberOfMandatoryParameters(),
-				selectedDescription.getNumberOfMandatoryParameters());
-	}
 
-	/**
-	 * Expand tree nodes that contain highlighted algorithms
-	 */
-	private void expandHighlightedNodes() {
-		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) getModel().getRoot();
-		Enumeration<TreeNode> enumeration = rootNode.depthFirstEnumeration();
-		
-		List<TreePath> pathsToExpand = new ArrayList<>();
-		
-		while (enumeration.hasMoreElements()) {
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) enumeration.nextElement();
-			
-			if (node != rootNode && node.getUserObject() instanceof AlgoNode) {
-				AlgoNode algoNode = (AlgoNode) node.getUserObject();
-				
-				if (algoNode.isHighlight()) {
-					TreePath path = new TreePath(node.getPath());
-					pathsToExpand.add(path.getParentPath());
-				}
-			}
-		}
-		
-		for (TreePath path : pathsToExpand) {
-			this.expandPath(path);
-		}
-	}
-
-	/**
-	 * Check if two algorithms have the same mandatory parameters
-	 * 
-	 * @param params1 first parameter array
-	 * @param params2 second parameter array
-	 * @param count1 number of mandatory parameters in first array
-	 * @param count2 number of mandatory parameters in second array
-	 * @return true if they have the same mandatory parameters
-	 */
-	private boolean haveSameMandatoryParameters(DescriptionOfParameter[] params1,
-			DescriptionOfParameter[] params2, int count1, int count2) {
-		if (count1 != count2) {
-			return false;
-		}
-		
-		if (params1 == null || params2 == null) {
-			return params1 == params2;
-		}
-		
-		for (int i = 0; i < count1; i++) {
-			if (!params1[i].getName().equals(params2[i].getName())) {
-				return false;
-			}
-			
-			// Additional check for parameter type
-			if (!params1[i].getParameterType().equals(params2[i].getParameterType())) {
-				return false;
-			}
-		}
-		
-		return true;
-	}
-
-	/**
-	 * Check if two string arrays are equal
-	 * 
-	 * @param array1 first array
-	 * @param array2 second array
-	 * @return true if arrays are equal
-	 */
-	private boolean arraysEqual(String[] array1, String[] array2) {
-		if (array1 == null && array2 == null) {
-			return true;
-		}
-		
-		if (array1 == null || array2 == null) {
-			return false;
-		}
-		
-		return Arrays.equals(array1, array2);
-	}
-
-	/**
-	 * Clear all highlights from the tree
-	 */
-	public void clearAllHighlights() {
-		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) getModel().getRoot();
-		Enumeration<TreeNode> enumeration = rootNode.depthFirstEnumeration();
-		
-		while (enumeration.hasMoreElements()) {
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) enumeration.nextElement();
-			
-			if (node != rootNode && node.getUserObject() instanceof AlgoNode) {
-				AlgoNode algoNode = (AlgoNode) node.getUserObject();
-				algoNode.setHighlight(false);
-			}
-		}
-		
-		setActivatedHighlight(false);
-	}
-
-	/**
-	 * Get the count of highlighted algorithms
-	 * 
-	 * @return the number of highlighted algorithms
-	 */
-	public int getHighlightedAlgorithmCount() {
 		int count = 0;
-		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) getModel().getRoot();
-		Enumeration<TreeNode> enumeration = rootNode.depthFirstEnumeration();
-		
-		while (enumeration.hasMoreElements()) {
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) enumeration.nextElement();
-			
-			if (node != rootNode && node.getUserObject() instanceof AlgoNode) {
-				AlgoNode algoNode = (AlgoNode) node.getUserObject();
-				if (algoNode.isHighlight()) {
-					count++;
-				}
+		List<TreePath> categoriesToExpand = new ArrayList<>();
+		for (DefaultMutableTreeNode treeNode : allAlgoTreeNodes()) {
+			AlgoNode node = toAlgoNode(treeNode);
+			boolean match = !node.isCategory()
+					&& isSimilar(node.getDescription(), selected, compareMandatoryParameters);
+			node.setHighlighted(match);
+			if (match) {
+				count++;
+				categoriesToExpand.add(new TreePath(treeNode.getPath()).getParentPath());
 			}
 		}
-		
+
+		setActivatedHighlight(true);
+		categoriesToExpand.forEach(this::expandPath);
+		scrollPathToVisible(getSelectionPath());
+		repaint();
 		return count;
 	}
 
-	/**
-	 * Get a list of all highlighted algorithm names
-	 * 
-	 * @return list of highlighted algorithm names
-	 */
+	/** Removes all highlight marks and hides highlighting. */
+	public void clearAllHighlights() {
+		for (DefaultMutableTreeNode treeNode : allAlgoTreeNodes()) {
+			toAlgoNode(treeNode).setHighlighted(false);
+		}
+		setActivatedHighlight(false);
+		repaint();
+	}
+
+	/** @return the names of the currently highlighted algorithms */
 	public List<String> getHighlightedAlgorithmNames() {
-		List<String> highlightedNames = new ArrayList<>();
-		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) getModel().getRoot();
-		Enumeration<TreeNode> enumeration = rootNode.depthFirstEnumeration();
-		
-		while (enumeration.hasMoreElements()) {
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) enumeration.nextElement();
-			
-			if (node != rootNode && node.getUserObject() instanceof AlgoNode) {
-				AlgoNode algoNode = (AlgoNode) node.getUserObject();
-				if (algoNode.isHighlight() && !algoNode.isCategory()) {
-					highlightedNames.add(algoNode.getName());
-				}
+		List<String> names = new ArrayList<>();
+		for (DefaultMutableTreeNode treeNode : allAlgoTreeNodes()) {
+			AlgoNode node = toAlgoNode(treeNode);
+			if (!node.isCategory() && node.isHighlighted()) {
+				names.add(node.getName());
 			}
 		}
-		
-		return highlightedNames;
+		return names;
+	}
+
+	/** @return the number of currently highlighted algorithms */
+	public int getHighlightedAlgorithmCount() {
+		return getHighlightedAlgorithmNames().size();
 	}
 
 	/**
-	 * Search for algorithms by name (case-insensitive)
-	 * 
-	 * @param searchText the text to search for
-	 * @return list of matching algorithm names
+	 * Searches algorithms whose name contains the given text (case-insensitive).
+	 *
+	 * @return matching algorithm names (empty list if the text is blank)
 	 */
 	public List<String> searchAlgorithms(String searchText) {
-		List<String> matchingAlgorithms = new ArrayList<>();
-		
 		if (searchText == null || searchText.trim().isEmpty()) {
-			return matchingAlgorithms;
+			return Collections.emptyList();
 		}
-		
-		String searchLower = searchText.toLowerCase();
-		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) getModel().getRoot();
-		Enumeration<TreeNode> enumeration = rootNode.depthFirstEnumeration();
-		
-		while (enumeration.hasMoreElements()) {
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) enumeration.nextElement();
-			
-			if (node != rootNode && node.getUserObject() instanceof AlgoNode) {
-				AlgoNode algoNode = (AlgoNode) node.getUserObject();
-				if (!algoNode.isCategory() && algoNode.getName().toLowerCase().contains(searchLower)) {
-					matchingAlgorithms.add(algoNode.getName());
+		String needle = searchText.trim().toLowerCase();
+		List<String> matches = new ArrayList<>();
+		for (DefaultMutableTreeNode treeNode : allAlgoTreeNodes()) {
+			AlgoNode node = toAlgoNode(treeNode);
+			if (!node.isCategory() && node.getName().toLowerCase().contains(needle)) {
+				matches.add(node.getName());
+			}
+		}
+		return matches;
+	}
+
+	// ---- Similarity ----------------------------------------------------
+
+	private static boolean isSimilar(DescriptionOfAlgorithm candidate, DescriptionOfAlgorithm reference,
+			boolean compareMandatoryParameters) {
+		if (!Arrays.equals(candidate.getInputFileTypes(), reference.getInputFileTypes())) {
+			return false;
+		}
+		if (!Arrays.equals(candidate.getOutputFileTypes(), reference.getOutputFileTypes())) {
+			return false;
+		}
+		return !compareMandatoryParameters || haveSameMandatoryParameters(
+				candidate.getParametersDescription(), reference.getParametersDescription());
+	}
+
+	private static boolean haveSameMandatoryParameters(DescriptionOfParameter[] params1,
+			DescriptionOfParameter[] params2) {
+		List<DescriptionOfParameter> mandatory1 = mandatoryParameters(params1);
+		List<DescriptionOfParameter> mandatory2 = mandatoryParameters(params2);
+		if (mandatory1.size() != mandatory2.size()) {
+			return false;
+		}
+		for (int i = 0; i < mandatory1.size(); i++) {
+			DescriptionOfParameter p1 = mandatory1.get(i);
+			DescriptionOfParameter p2 = mandatory2.get(i);
+			if (!Objects.equals(p1.getName(), p2.getName())
+					|| !Objects.equals(p1.getParameterType(), p2.getParameterType())) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static List<DescriptionOfParameter> mandatoryParameters(DescriptionOfParameter[] params) {
+		List<DescriptionOfParameter> result = new ArrayList<>();
+		if (params != null) {
+			for (DescriptionOfParameter param : params) {
+				if (param != null && !param.isOptional()) {
+					result.add(param);
 				}
 			}
 		}
-		
-		return matchingAlgorithms;
+		return result;
+	}
+
+	// ---- Traversal -----------------------------------------------------
+
+	/** @return every tree node (categories and algorithms) whose user object is an {@link AlgoNode} */
+	private List<DefaultMutableTreeNode> allAlgoTreeNodes() {
+		List<DefaultMutableTreeNode> nodes = new ArrayList<>();
+		DefaultMutableTreeNode root = (DefaultMutableTreeNode) getModel().getRoot();
+		Enumeration<?> enumeration = root.depthFirstEnumeration();
+		while (enumeration.hasMoreElements()) {
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) enumeration.nextElement();
+			if (node.getUserObject() instanceof AlgoNode) {
+				nodes.add(node);
+			}
+		}
+		return nodes;
+	}
+
+	private static AlgoNode toAlgoNode(DefaultMutableTreeNode treeNode) {
+		return (AlgoNode) treeNode.getUserObject();
 	}
 }

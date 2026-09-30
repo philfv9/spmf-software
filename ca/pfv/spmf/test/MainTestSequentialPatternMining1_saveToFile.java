@@ -17,6 +17,7 @@ public class MainTestSequentialPatternMining1_saveToFile {
 		//In this example, the result is saved to a file
 		String outputFilePath = ".//output.txt";
 		
+		// Frequent sequential patterns with timestamps
 		
 		// Load a sequence database
 		SequenceDatabase sequenceDatabase = new SequenceDatabase(); 

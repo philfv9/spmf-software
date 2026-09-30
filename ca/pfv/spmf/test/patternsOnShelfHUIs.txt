@@ -1,0 +1,11 @@
+@FILETYPE="On-shelf high-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+7 2 5 #UTIL: 9 #RUTIL: 0.8181818181818182
+7 2 5 3 #UTIL: 11 #RUTIL: 1.0
+7 5 #UTIL: 16 #RUTIL: 1.0
+7 5 3 #UTIL: 24 #RUTIL: 1.5
+7 5 3 1 #UTIL: 7 #RUTIL: 1.4
+7 3 #UTIL: 15 #RUTIL: 0.9375
+4 2 5 #UTIL: 36 #RUTIL: 0.9
+4 2 5 3 #UTIL: 40 #RUTIL: 1.0
+4 2 3 #UTIL: 34 #RUTIL: 0.85

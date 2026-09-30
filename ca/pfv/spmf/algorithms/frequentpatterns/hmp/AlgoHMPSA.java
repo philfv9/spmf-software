@@ -368,7 +368,11 @@ public class AlgoHMPSA {
 	 */
 	private void writePatternsToFile(String outputPath) {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath))) {
-
+			writer.write("@FILETYPE=\"Frequent itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
+			
 			// Write the final code table and results to the file
 			for (Entry<PatternKey, Integer> entry : itemsetCount.entrySet()) {
 				int[] pattern = entry.getKey().pattern;
@@ -556,6 +560,13 @@ public class AlgoHMPSA {
 		try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
+				
+				// if the line is a comment, is empty or is a
+				// kind of metadata, skip it
+				if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+					continue;
+				}
+				
 				String[] items = line.split("\\s+");
 
 				int[] transaction = new int[items.length];

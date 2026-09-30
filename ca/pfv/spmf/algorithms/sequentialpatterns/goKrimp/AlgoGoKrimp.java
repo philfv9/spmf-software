@@ -40,6 +40,8 @@ import java.util.Iterator;
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
  * 
+ * Do not remove copyright and license information.
+ * 
  * @see DataReader
  * @see Event
  * @see MyPattern
@@ -764,7 +766,7 @@ public class AlgoGoKrimp {
 			}
 		} else { // if save to file
 			StringBuilder buffer = new StringBuilder();
-
+			
 			if (labels == null || labels.isEmpty()) {
 				for (int j = 0; j < pattern.ids.size(); j++)
 					writer.write(pattern.ids.get(j) + " ");
@@ -781,6 +783,10 @@ public class AlgoGoKrimp {
 
 	public void setOutputFilePath(String outputFilePath) throws IOException {
 		writer = new BufferedWriter(new FileWriter(outputFilePath));
+		writer.write("@FILETYPE=\"Compressing sequential patterns\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
 	}
 
 }

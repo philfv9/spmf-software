@@ -128,6 +128,10 @@ public class AlgoEclat_Bitset {
 	    }else{ // if the user want to save the result to a file
 	    	frequentItemsets = null;
 			writer = new BufferedWriter(new FileWriter(output)); 
+			writer.write("@FILETYPE=\"Frequent itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 		}
 
 		// reset the number of itemset found to 0

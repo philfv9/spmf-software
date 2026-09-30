@@ -34,6 +34,8 @@ import java.util.Set;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  *
  * @author agomariz
  */
@@ -41,8 +43,9 @@ public class SequenceDatabase {
 
     private Map<Item, BitSet> frequentItems = new HashMap<Item, BitSet>();
     private List<Sequence> sequences = new LinkedList<Sequence>();
-    private ItemFactory<Integer> itemFactory = new ItemFactory<Integer>();
-    
+
+    private HashMap<Integer, Item> pool = new HashMap<Integer, Item>();
+
     /**
      * From a file located at the given string path, we create a database
      * composed of a list of sequences
@@ -117,7 +120,7 @@ public class SequenceDatabase {
                 sequences.add(sequence);
             } else {
                     // extract the value for an item
-                    Item item = itemFactory.getItem(Integer.parseInt(integers[i]));
+                    Item item = getItem(Integer.parseInt(integers[i]));
                     if (counted.get(item) == null) {
                         counted.put(item, Boolean.TRUE);
                         BitSet appearances = frequentItems.get(item);
@@ -130,6 +133,21 @@ public class SequenceDatabase {
                     itemset.addItem(item);
             }
         }
+    }
+    
+    /**
+     * Method which get an item from the pool. If such item does not exist, 
+     * a new item is created
+     * @param key the item
+     * @return the item instance (Item).
+     */
+    public Item getItem(Integer key){
+        Item item = pool.get(key);
+        if(item==null){
+            item = new Item(key);
+            pool.put(key, item);
+        }
+        return item;
     }
 
     /**
@@ -184,15 +202,4 @@ public class SequenceDatabase {
         return frequentItems;
     }
 
-    public void clear() {
-        if (frequentItems != null) {
-            frequentItems.clear();
-        }
-        frequentItems = null;
-        if (sequences != null) {
-            sequences.clear();
-        }
-        sequences = null;
-        itemFactory = null;
-    }
 }

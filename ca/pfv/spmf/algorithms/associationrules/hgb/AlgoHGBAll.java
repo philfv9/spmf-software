@@ -126,6 +126,10 @@ public class AlgoHGBAll {
 
 		// we prepare the object for writing the output file
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"High-utility association rules\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		// create a string buffer
 		StringBuilder buffer = new StringBuilder();

@@ -32,7 +32,9 @@ import ca.pfv.spmf.tools.MemoryLogger;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
-*/
+ * 
+ * Do not remove license and copyright information.
+ */
 /**
  * The SeqMiner algorithm as described in this paper: <br/>
  * <br/>
@@ -201,6 +203,11 @@ public class AlgoTSeqMiner {
 			patternPathFile.createNewFile();
 		System.out.println(ParametersSetting.PATTERN_PATH);
 		bw = new BufferedWriter(new FileWriter(ParametersSetting.PATTERN_PATH));
+		bw.write("@FILETYPE=\"Significant Trend Sequences\"");
+		bw.newLine();
+		bw.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		bw.newLine();
+		
 		String head = "sequence     support of tail itemset     significance\n";
 		bw.write(head);
 

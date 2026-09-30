@@ -128,6 +128,10 @@ public class AlgoCharm_Bitset {
 	    }else{ // if the user wants to save the result to a file
 	    	closedItemsets = null;
 			writer = new BufferedWriter(new FileWriter(output)); 
+			writer.write("@FILETYPE=\"Frequent closed itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 		}
 		
 		// Create the hash table to store itemsets for closeness checking

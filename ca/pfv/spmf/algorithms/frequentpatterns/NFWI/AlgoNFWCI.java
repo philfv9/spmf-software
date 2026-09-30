@@ -135,6 +135,10 @@ public class AlgoNFWCI extends AlgoNFWIBase {
 		this.closedItemsetsByWs = new HashMap<>();
 
 		writer = new BufferedWriter(new FileWriter(output), 65536);
+		writer.write("@FILETYPE=\"Frequent weighted itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		// Steps 1-5: shared pipeline (database loading, WN-tree construction, code
 		// assignment)

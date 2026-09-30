@@ -58,7 +58,7 @@ public class Graph {
     private Map<Integer, Vertex[]> neighborCache;
 
     /** The list of vertices */
-    Vertex[] vertices;
+    public Vertex[] vertices;
     
     /** Map each vertex label to the list of vertex ids having this label */
     Map<Integer, int[]> mapLabelToVertexIDs;

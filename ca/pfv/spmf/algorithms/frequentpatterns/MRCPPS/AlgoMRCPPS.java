@@ -168,6 +168,10 @@ public class AlgoMRCPPS {
 		} else { // if the user want to save the result to a file
 			patterns = null;
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Rare correlated itemsets common to multiple sequences\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 		}
 
 		// (1) PREPROCESSING: Initial database scan to determine the RCPPSlist of each

@@ -37,7 +37,8 @@ import java.util.stream.Collectors;
 
 /**
  * An implementation of the FHSAR algorithm for hiding sensitive association
- * rules in a transaction database. This algorithm is described in the paper: <br/>
+ * rules in a transaction database. This algorithm is described in the paper:
+ * <br/>
  * <br/>
  * Weng, C. C., Chen, S. T., & Lo, H. C. (2008, November). A Novel Algorithm for
  * Completely Hiding Sensitive Association Rules. In Intelligent Systems Design
@@ -50,11 +51,11 @@ import java.util.stream.Collectors;
 public class AlgoFHSAR {
 
 	/** the number of transactions in the last database read **/
-	int tidcount = 0; // 
-	/**  the start time of the last execution **/
-	long startTimestamp = 0; 
-	/**  the end time of the last execution **/
-	long endTimeStamp = 0; 
+	int tidcount = 0; //
+	/** the start time of the last execution **/
+	long startTimestamp = 0;
+	/** the end time of the last execution **/
+	long endTimeStamp = 0;
 
 	// the relative minimum support (integer) chosen by the user
 	private int minSuppRelative;
@@ -62,23 +63,17 @@ public class AlgoFHSAR {
 	/**
 	 * Run the FHSAR algorithm
 	 * 
-	 * @param input
-	 *            the file path to a transaction database
-	 * @param inputSAR
-	 *            the file path to a set of sensitive association rules to be
-	 *            hidden
-	 * @param output
-	 *            the output file path for writing the modified transaction
-	 *            database
-	 * @param minsup
-	 *            the minimum support threshold
-	 * @param minconf
-	 *            the minimum confidence threshold
-	 * @throws IOException
-	 *             exception if an error while writing the file
+	 * @param input    the file path to a transaction database
+	 * @param inputSAR the file path to a set of sensitive association rules to be
+	 *                 hidden
+	 * @param output   the output file path for writing the modified transaction
+	 *                 database
+	 * @param minsup   the minimum support threshold
+	 * @param minconf  the minimum confidence threshold
+	 * @throws IOException exception if an error while writing the file
 	 */
-	public void runAlgorithm(String input, String inputSAR, String output,
-			double minsup, double minconf) throws IOException {
+	public void runAlgorithm(String input, String inputSAR, String output, double minsup, double minconf)
+			throws IOException {
 		// record the start time
 		startTimestamp = System.currentTimeMillis();
 
@@ -118,8 +113,7 @@ public class AlgoFHSAR {
 			// if the line is not a comment, is not empty or is not other
 			// kind of metadata
 
-			if (line.isEmpty() == true || line.charAt(0) == '#'
-					|| line.charAt(0) == '%' || line.charAt(0) == '@') {
+			if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
 				continue;
 			}
 			// we split the current transactions into items by separating the
@@ -174,8 +168,7 @@ public class AlgoFHSAR {
 
 					// if the left side of this sensitive rule matches with this
 					// transaction
-					if (matchLeft.size() != rule.leftSide.size()
-							&& rule.leftSide.contains(item)) {
+					if (matchLeft.size() != rule.leftSide.size() && rule.leftSide.contains(item)) {
 						matchLeft.add(item);
 						// if the antecedent was completely found
 						if (matchLeft.size() == rule.leftSide.size()) {
@@ -185,15 +178,13 @@ public class AlgoFHSAR {
 						// transaction
 						// but we have not seen all items from the right side
 						// yet
-					else if (matchRight.size() != rule.rightSide.size()
-							&& rule.rightSide.contains(item)) {
+					else if (matchRight.size() != rule.rightSide.size() && rule.rightSide.contains(item)) {
 						matchRight.add(item);
 					}
 
 					// if the rule completely matches with this transaction...
 					// (both left and right sides)
-					if (matchLeft.size() == rule.leftSide.size()
-							&& matchRight.size() == rule.rightSide.size()) {
+					if (matchLeft.size() == rule.leftSide.size() && matchRight.size() == rule.rightSide.size()) {
 						// increase the support of the rule
 						rule.count++;
 						// remember that this rule appears in this transaction
@@ -239,16 +230,10 @@ public class AlgoFHSAR {
 				// (represented as max(|rk| in the paper) and keep it
 
 				// add: sort itemRank
-				Map<Integer, Integer> itemCount = mapItemCount
-						.entrySet()
-						.stream()
-						.sorted((o1, o2) -> o2.getValue().compareTo(
-								o1.getValue()))
-						.collect(
-								Collectors.toMap(Map.Entry::getKey,
-										Map.Entry::getValue, (oldValue,
-												newValue) -> oldValue,
-										LinkedHashMap::new));
+				Map<Integer, Integer> itemCount = mapItemCount.entrySet().stream()
+						.sorted((o1, o2) -> o2.getValue().compareTo(o1.getValue()))
+						.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+								(oldValue, newValue) -> oldValue, LinkedHashMap::new));
 				setItemRank = itemCount.keySet();
 
 				// end sort.
@@ -298,8 +283,8 @@ public class AlgoFHSAR {
 				Transaction tdd = pwt.poll();
 				List<Rule> checkingRules = new ArrayList<Rule>();
 				for (Rule checkRule : checkRules) {
-					if ((tdd.items.containsAll(checkRule.leftSide) && tdd.items
-							.containsAll(checkRule.rightSide)) == false) {
+					if ((tdd.items.containsAll(checkRule.leftSide)
+							&& tdd.items.containsAll(checkRule.rightSide)) == false) {
 						checkingRules.add(checkRule);
 					}
 				}
@@ -323,7 +308,7 @@ public class AlgoFHSAR {
 
 				}
 
-			}//
+			} //
 				// end
 
 			// Now we calculate the new wi for this transaction if we remove the
@@ -338,15 +323,14 @@ public class AlgoFHSAR {
 			for (Rule rule : sensitiveRules) {
 
 				// if the transaction td contains the rule
-				if (td.items.containsAll(rule.leftSide)
-						&& td.items.containsAll(rule.rightSide)) {
+				if (td.items.containsAll(rule.leftSide) && td.items.containsAll(rule.rightSide)) {
 					// if the antecedent of the rule contains "maxItem"
 					if (rule.leftSide.contains(maxItem)) {
 						// decrease the counts
 						rule.count--;
 						rule.leftSideCount--;
 
-					}// if the consequent of the rule contains "maxItem"
+					} // if the consequent of the rule contains "maxItem"
 					else if (rule.rightSide.contains(maxItem)) {
 						// decrease the count
 						rule.count--;
@@ -394,8 +378,7 @@ public class AlgoFHSAR {
 			while (iter.hasNext()) { // for each rule
 				Rule rule = iter.next();
 				// if the threshold are not satisfied anymore, remove it
-				if (rule.count < minSuppRelative
-						|| ((rule.count / (double) rule.leftSideCount) < minconf)) {
+				if (rule.count < minSuppRelative || ((rule.count / (double) rule.leftSideCount) < minconf)) {
 					// add rule have sup>=min_sup into checkRules
 					if (rule.count >= minSuppRelative) {
 						checkRules.add(rule);
@@ -413,16 +396,10 @@ public class AlgoFHSAR {
 
 			if (atLeastOneRule) {
 				// add sort itemRank
-				Map<Integer, Integer> itemCount = mapItemCount
-						.entrySet()
-						.stream()
-						.sorted((o1, o2) -> o2.getValue().compareTo(
-								o1.getValue()))
-						.collect(
-								Collectors.toMap(Map.Entry::getKey,
-										Map.Entry::getValue, (oldValue,
-												newValue) -> oldValue,
-										LinkedHashMap::new));
+				Map<Integer, Integer> itemCount = mapItemCount.entrySet().stream()
+						.sorted((o1, o2) -> o2.getValue().compareTo(o1.getValue()))
+						.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+								(oldValue, newValue) -> oldValue, LinkedHashMap::new));
 				Set<Integer> newsetItemRank = itemCount.keySet();
 
 				// sort end.
@@ -448,6 +425,10 @@ public class AlgoFHSAR {
 
 		// Now, write the transformed transaction database to disk!
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Simple transaction database\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		for (Set<Integer> transaction : transactions) {
 			// we sort the transaction in lexical order because we were
 			// using a set that was not sorted
@@ -475,20 +456,23 @@ public class AlgoFHSAR {
 	/**
 	 * This method reads the sensitive rules into memory
 	 * 
-	 * @param inputSAR
-	 *            the file path to a set of sensitive association rules
-	 * @param rules
-	 *            a structure for storing the sensitive association rules
-	 * @throws IOException
-	 *             if error reading the file
+	 * @param inputSAR the file path to a set of sensitive association rules
+	 * @param rules    a structure for storing the sensitive association rules
+	 * @throws IOException if error reading the file
 	 */
-	private void readSensitiveRulesIntoMemory(String inputSAR, List<Rule> rules)
-			throws IOException {
+	private void readSensitiveRulesIntoMemory(String inputSAR, List<Rule> rules) throws IOException {
 		// open the input file
 		BufferedReader reader = new BufferedReader(new FileReader(inputSAR));
 		String line;
 		// for each line (rule) until the end of the file
 		while (((line = reader.readLine()) != null)) {
+
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+				continue;
+			}
+
 			// Each rule should have the format "4 ==> 5" in the file
 			// So we split the line according to the arrow:
 
@@ -527,11 +511,9 @@ public class AlgoFHSAR {
 	 */
 	public void printStats() {
 		System.out.println("=============  FSHAR 2.36 - STATS =============");
-		System.out.println(" Transactions count from original database : "
-				+ tidcount);
+		System.out.println(" Transactions count from original database : " + tidcount);
 		System.out.println(" minsup : " + minSuppRelative + " transactions");
-		System.out.println(" Total time ~ " + (endTimeStamp - startTimestamp)
-				+ " ms");
+		System.out.println(" Total time ~ " + (endTimeStamp - startTimestamp) + " ms");
 		System.out.println("============================================");
 
 	}

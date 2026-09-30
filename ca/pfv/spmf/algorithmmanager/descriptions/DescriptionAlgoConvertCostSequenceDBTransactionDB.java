@@ -68,7 +68,7 @@ public class DescriptionAlgoConvertCostSequenceDBTransactionDB extends Descripti
 
 	@Override
 	public String getURLOfDocumentation() {
-		return "http://www.philippe-fournier-viger.com/spmf/Converting_a_sequence_database_to_transaction_database.php";
+		return "http://www.philippe-fournier-viger.com/spmf/Converting_a_cost_sequence_database_to_cost_transaction_database.php";
 	}
 
 	@Override
@@ -98,8 +98,9 @@ public class DescriptionAlgoConvertCostSequenceDBTransactionDB extends Descripti
 
 	@Override
 	public String[] getInputFileTypes() {
-		return new String[] { "Database of instances", "Sequence database", "Cost sequence database" };
+		return new String[]{"Database of instances","Sequence database", "Sequence database with cost and numeric utility"};
 	}
+
 
 	@Override
 	public String[] getOutputFileTypes() {

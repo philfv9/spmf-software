@@ -1,28 +1,30 @@
 package ca.pfv.spmf.gui.viewers.arffviewer;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLDecoder;
+
+import javax.swing.SwingUtilities;
 
 /**
- * Example of how to use the ARFF file viewer
- *   from the source code.
+ * Example of how to use the ARFF file viewer from the source code.
+ * 
  * @author Philippe Fournier-Viger (Copyright 2024)
  */
 public class MainTestARFFViewer {
 
-	public static void main(String [] arg) throws IOException{
+	public static void main(String[] arg) throws UnsupportedEncodingException {
+		final String input = fileToPath("test.arff");
 
-//		String input = fileToPath("example_contextZart.arff");
-		String input = fileToPath("test.arff");
-
-		// Applying the viewer
-		ARFFDatabaseViewer viewer = new ARFFDatabaseViewer(true, input);
+		// Swing components must be created on the event dispatch thread
+		SwingUtilities.invokeLater(() -> new ARFFDatabaseViewer(true, input));
 	}
-	
-	public static String fileToPath(String filename) throws UnsupportedEncodingException{
-//		System.out.println("filename : " + filename);
+
+	public static String fileToPath(String filename) throws UnsupportedEncodingException {
 		URL url = MainTestARFFViewer.class.getResource(filename);
-		 return java.net.URLDecoder.decode(url.getPath(),"UTF-8");
+		if (url == null) {
+			throw new IllegalArgumentException("Resource not found on the classpath: " + filename);
+		}
+		return URLDecoder.decode(url.getPath(), "UTF-8");
 	}
 }

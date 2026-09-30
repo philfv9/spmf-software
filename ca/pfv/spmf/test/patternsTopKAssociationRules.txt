@@ -1,0 +1,4 @@
+@FILETYPE="Top-k association rules"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+2  ==> 5  #SUP: 4 #CONF: 1.0
+5  ==> 2  #SUP: 4 #CONF: 1.0

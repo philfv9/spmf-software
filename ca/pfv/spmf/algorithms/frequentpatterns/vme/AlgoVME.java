@@ -109,6 +109,11 @@ public class AlgoVME {
 		
 		// create writer
 		writer = new BufferedWriter(new FileWriter(output)); 
+		writer.write("@FILETYPE=\"Erasable itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+		
 		// reset number of erasale itemsts o 0
 		erasableItemsetCount = 0;
 		

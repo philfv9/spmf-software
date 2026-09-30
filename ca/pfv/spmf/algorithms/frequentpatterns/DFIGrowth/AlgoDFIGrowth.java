@@ -127,6 +127,12 @@ public class AlgoDFIGrowth {
 		FileReader fl = new FileReader(path);
 		BufferedReader br = new BufferedReader(fl);
 		while( (line=br.readLine())!=null ) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+				continue;
+			}
+			
 			transactionCount++;
 			subdata = new ArrayList<String>(); 
 			token = line.split(" #SUP: ");
@@ -520,6 +526,11 @@ public class AlgoDFIGrowth {
 	public void writeOutPut(String output) throws IOException {
 		FileWriter fw = new FileWriter(output);
 		BufferedWriter bfw = new BufferedWriter(fw);
+		bfw.write("@FILETYPE=\"Frequent itemsets\"");
+		bfw.append(System.lineSeparator());
+		bfw.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		bfw.append(System.lineSeparator());
+		
 		for(int i=0;i<Intdata.size();i++) {
 			for(int j=0;j<Intdata.get(i).size();j++) {
 				if(j<Intdata.get(i).size()-1) {

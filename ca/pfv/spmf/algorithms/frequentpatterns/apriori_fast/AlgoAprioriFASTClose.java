@@ -259,6 +259,11 @@ public class AlgoAprioriFASTClose {
 		} else {
 			// prepare object for writing the file
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Frequent closed itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
+			
 			patterns = null;
 		}
 		// === END NEW ===

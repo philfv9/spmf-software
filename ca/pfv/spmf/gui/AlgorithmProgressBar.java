@@ -1,13 +1,10 @@
 package ca.pfv.spmf.gui;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 import javax.swing.JProgressBar;
 import javax.swing.Timer;
 
 /*
- * Copyright (c) 2008-2023 Philippe Fournier-Viger
+ * Copyright (c) 2008-2026 Philippe Fournier-Viger
  *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
@@ -23,71 +20,91 @@ import javax.swing.Timer;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license
  */
 /**
- * This class is a custom JProgress bar that displays the time that an algorithm has been running in seconds
- * using the intedeterminate types of display. It has two main methods: startAlgorithm and endAlgorithm that
- * should be called when an algorithm starts to run and terminates, respectively.
- * 
+ * An indeterminate progress bar that shows how long the current algorithm has
+ * been running. Call {@link #startAlgorithm()} when a run starts and
+ * {@link #endAlgorithm()} when it finishes.
+ *
  * @author Philippe Fournier-Viger, 2024
  */
 public class AlgorithmProgressBar extends JProgressBar {
-    /**
-	 * serial UID
-	 */
-	private static final long serialVersionUID = -3266198875763956855L;
-	/** A timer thread */
-	private Timer timer;
-	/** the start time */
-    private long startTime;
 
-    /** The constructor */
+    private static final long serialVersionUID = -3266198875763956855L;
+
+    /** Refresh period; shorter than one second so no displayed second is skipped. */
+    private static final int TICK_MS = 500;
+
+    private final Timer timer;
+    private long startTime;
+    private boolean running;
+
     public AlgorithmProgressBar() {
         super();
         setStringPainted(true);
         setString("");
+        timer = new Timer(TICK_MS, e -> updateText());
+        timer.setCoalesce(true);
     }
 
-    /**
-     *  Call this method to start the timer and progress bar
-     */
+    /** Starts (or restarts) the elapsed-time display. */
     public void startAlgorithm() {
         startTime = System.currentTimeMillis();
-        setIndeterminate(true); 
-        if (timer != null) {
-            timer.stop(); // Stop any existing timer
-        }
-        timer = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                long elapsedTime = System.currentTimeMillis() - startTime;
-                setString(formatElapsedTime(elapsedTime) + " s");
-            }
-        });
-        timer.start();
+        running = true;
+        setIndeterminate(true);
+        updateText();
+        timer.restart();
     }
 
-    /**
-     * Call this method to stop the timer and progress bar
-     */
+    /** Stops the elapsed-time display and clears the bar. */
     public void endAlgorithm() {
-        if (timer != null) {
-            timer.stop();
-            setString("");
-        }
+        timer.stop();
+        running = false;
         setIndeterminate(false);
+        setValue(0);
+        setString("");
+    }
+
+    /** @return true between {@link #startAlgorithm()} and {@link #endAlgorithm()} */
+    public boolean isRunningAlgorithm() {
+        return running;
+    }
+
+    /** @return milliseconds since {@link #startAlgorithm()} was called (0 if not running) */
+    public long getElapsedMillis() {
+        return running ? System.currentTimeMillis() - startTime : 0;
+    }
+
+    private void updateText() {
+        setString("Running\u2026  " + formatElapsed(getElapsedMillis()));
     }
 
     /**
-     * Helper method to format the elapsed time in hours, minutes, and seconds
-     * @param elapsedTime  the elapsed time
-     * @return a string displaying the elapsed time
+     * Formats a duration as "5 s", "1 min 05 s" or "1 h 02 min 03 s".
+     *
+     * @param millis the duration in milliseconds
+     * @return a human-readable string
      */
-    private String formatElapsedTime(long elapsedTime) {
-        int seconds = (int) (elapsedTime / 1000) % 60 ;
-        int minutes = (int) ((elapsedTime / (1000*60)) % 60);
-        int hours   = (int) ((elapsedTime / (1000*60*60)) % 24);
-        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    public static String formatElapsed(long millis) {
+        long seconds = Math.max(0, millis / 1000);
+        if (seconds < 60) {
+            return seconds + " s";
+        }
+        long minutes = seconds / 60;
+        seconds %= 60;
+        if (minutes < 60) {
+            return String.format("%d min %02d s", minutes, seconds);
+        }
+        long hours = minutes / 60;
+        minutes %= 60;
+        return String.format("%d h %02d min %02d s", hours, minutes, seconds);
     }
 
+    @Override
+    public void removeNotify() {
+        timer.stop();
+        super.removeNotify();
+    }
 }

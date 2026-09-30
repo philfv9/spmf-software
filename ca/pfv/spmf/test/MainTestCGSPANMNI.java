@@ -44,6 +44,10 @@ public class MainTestCGSPANMNI {
 
         algo.setPdfsAutomorphismOptimization(true);
         
+        // The following parameter can be set to false to use the closure definition of cgSpan or true
+        //  to use the closure definition of the CloseGraph paper.  By default: true.
+//        algo.setClosedByThreshold(false);
+        
         // for debugging
 //        algo.setDebugMode(true);
 

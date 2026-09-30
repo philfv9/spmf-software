@@ -150,6 +150,11 @@ public class AlgoTKQ {
 
 		k = topk;
 		writer_hqui = new BufferedWriter(new FileWriter(output));
+		writer_hqui.write("@FILETYPE=\"Quantitative high utility itemsets\"");
+		writer_hqui.newLine();
+		writer_hqui.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer_hqui.newLine();
+		
 		coefficient = coef;
 		combiningMethod = combinationmethod;
 
@@ -389,6 +394,13 @@ public class AlgoTKQ {
 		// 1. Build mapItemToProfit
 		String str;
 		while ((str = br_profitTable.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (str.isEmpty() == true || str.charAt(0) == '#' ||
+					str.charAt(0) == '%' || str.charAt(0) == '@') {
+				continue;
+			}
+			
 			String[] itemProfit = str.split(", ");
 
 			if (itemProfit.length >= 2) {
@@ -407,6 +419,13 @@ public class AlgoTKQ {
 		currentQitem = new Qitem(0, 0);
 		Qitem Q;
 		while ((str = br_inputDatabase.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (str.isEmpty() == true || str.charAt(0) == '#' ||
+					str.charAt(0) == '%' || str.charAt(0) == '@') {
+				continue;
+			}
+			
 			tid++;
 			String[] itemInfo = str.split(" ");// (A,2) (B, 5)
 			int transactionU = 0;
@@ -466,6 +485,13 @@ public class AlgoTKQ {
 		PriorityQueue<Long> ktopls = new PriorityQueue<Long>();
 		mapFMAP = new HashMap<Qitem, Map<Qitem, InfoTKQ>>();
 		while ((str = br_inputDatabase.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (str.isEmpty() == true || str.charAt(0) == '#' ||
+					str.charAt(0) == '%' || str.charAt(0) == '@') {
+				continue;
+			}
+			
 			tid++;
 			String[] itemInfo = str.split(" ");
 			int remainingUtility = 0;

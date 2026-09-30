@@ -365,7 +365,12 @@ public class AlgoHTKnegFIN {
 
     private void writeFIM(String path) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
-            for (Itemset is : finalTopK) {
+    		writer.write("@FILETYPE=\"Frequent itemsets\"");
+    		writer.append(System.lineSeparator());
+    		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+    		writer.append(System.lineSeparator());
+    		
+    		for (Itemset is : finalTopK) {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < is.items.length; i++) {
                     sb.append(is.items[i]);

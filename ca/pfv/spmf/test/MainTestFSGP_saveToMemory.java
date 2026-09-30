@@ -5,9 +5,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.List;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.BIDE_and_prefixspan.AlgoFSGP;
-import ca.pfv.spmf.algorithms.sequentialpatterns.BIDE_and_prefixspan.SequentialPattern;
-import ca.pfv.spmf.input.sequence_database_list_integers.SequenceDatabase;
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.AlgoFSGP2;
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.AlgoFSGP2.FSGPPattern;
 
 
 /**
@@ -17,23 +16,22 @@ import ca.pfv.spmf.input.sequence_database_list_integers.SequenceDatabase;
 public class MainTestFSGP_saveToMemory {
 
 	public static void main(String [] arg) throws IOException{    
-		// Load a sequence database
-		SequenceDatabase sequenceDatabase = new SequenceDatabase(); 
-		sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"));
-		// print the database to console
-		sequenceDatabase.print();
+		// Input sequence database
+		String inputFile = fileToPath("contextPrefixSpan.txt");
 		
 		// Create an instance of the algorithm 
-		AlgoFSGP algo = new AlgoFSGP(); 
+		AlgoFSGP2 algo = new AlgoFSGP2(); 
 //		algo.setMaximumPatternLength(3);
 		
 		// execute the algorithm with minsup = 50 %
 		boolean performPruning = true;// to activate pruning of search space
-		List<SequentialPattern> patterns = algo.runAlgorithm(sequenceDatabase, 0.5, performPruning);    
-		algo.printStatistics(sequenceDatabase.size());
+		List<FSGPPattern> patterns = algo.runAlgorithm(inputFile, 0.5, performPruning);    
+		algo.printStatistics();
+		
 		System.out.println(" == PATTERNS ==");
-		for(SequentialPattern pattern : patterns){
-			System.out.println(pattern + " support : " + pattern.getAbsoluteSupport());
+		boolean displaySequenceIdentifiers = false;
+		for(FSGPPattern pattern : patterns){
+			System.out.println(pattern.toString(displaySequenceIdentifiers));
 		}
 	}
 	

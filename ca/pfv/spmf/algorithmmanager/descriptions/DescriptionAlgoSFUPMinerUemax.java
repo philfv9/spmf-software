@@ -62,7 +62,7 @@ public class DescriptionAlgoSFUPMinerUemax extends DescriptionOfAlgorithm {
 	@Override
 	public String[] getInputFileTypes() {
 		return new String[] { "Database of instances", "Transaction database",
-				"Transaction database with utility values skymine format" };
+				"Transaction database with utility values" };
 	}
 
 	@Override

@@ -1,6 +1,6 @@
 package ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.savers;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Pattern;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Pattern;
 
 /**
  * This is the definition of a interface in order to decide where the user wants
@@ -23,6 +23,8 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Patt
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  *
  * @author agomariz
  */

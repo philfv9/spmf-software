@@ -121,7 +121,11 @@ public class AlgoAprioriTIDClose {
 			patterns =  new Itemsets("FREQUENT CLOSED ITEMSETS");
 	    }else{ // if the user want to save the result to a file
 			patterns = null;
-			writer = new BufferedWriter(new FileWriter(outputFile)); 
+			writer = new BufferedWriter(new FileWriter(outputFile));
+			writer.write("@FILETYPE=\"Frequent closed itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 		}
 
 		this.minSuppRelative = (int) Math.ceil(minsupp * database.size());
@@ -302,7 +306,7 @@ public class AlgoAprioriTIDClose {
 		
 		// if the result should be saved to a file
  		if(writer != null){
-			writer.write(itemset.toString() + " #SUP: "
+			writer.write(itemset.toString() + "#SUP: "
 					+ itemset.getTransactionsIds().size() );
 			if(showTransactionIdentifiers) {
 	        	writer.append(" #TID:");

@@ -258,11 +258,6 @@ public class AlgoCGSPANSupport extends AlgoCGSPANAbstract {
      */
     protected void cgSpanDFS(DFSCode c, List<DatabaseGraph> graphDB, Set<Integer> graphIds, ProjectedCompact projected, IEarlyTerminationFailureHandler earlyTerminationFailureHandler)
             throws IOException, ClassNotFoundException, InterruptedException {
-        // If we have reached the maximum size, we do not need to extend this graph
-        if (c.size() == maxNumberOfEdges - 1) {
-            return;
-        }
-
         // check if DFS tree should not be further extended
         EarlyTerminationResult earlyTerminationResult = earlyTermination(graphIds, projected, earlyTerminationFailureHandler);
         if (earlyTerminationResult.isEarlyTerminationFailure()) {
@@ -274,11 +269,19 @@ public class AlgoCGSPANSupport extends AlgoCGSPANAbstract {
             return;
         }
 
+        // If we have reached the maximum size, we do not extend this graph any further, but we still evaluate and
+        // save the current graph below (it is a valid frequent subgraph of the maximum allowed size).
+        boolean atMaximumSize = (c.size() == maxNumberOfEdges - 1);
+
         // Find all the extensions of this graph, with their support values
         // They are stored in a map where the key is an extended edge, and the value is
         // the
         // is the list of graph ids where this edge extends the current subgraph c.
-        Map<ExtendedEdge, ProjectedCompact> extensions = rightMostPathExtensions(c, graphDB, projected);
+        Map<ExtendedEdge, ProjectedCompact> extensions = atMaximumSize ? null : rightMostPathExtensions(c, graphDB, projected);
+
+        // remember how many closed subgraphs were already found before extending "c";
+        // every closed subgraph discovered by the recursive calls below is a supergraph of "c"
+        int closedCountBeforeExtensions = closedSubgraphs.size();
 
         // For each extension
         if (extensions != null) {
@@ -310,7 +313,8 @@ public class AlgoCGSPANSupport extends AlgoCGSPANAbstract {
 
         if (c.size() > 0) {
             // analyze current DFS code for early termination failure conditions
-            if (detectEarlyTerminationFailure) {
+            // (only when the graph was actually extended; at the maximum size there are no extensions to analyze)
+            if (detectEarlyTerminationFailure && !atMaximumSize) {
                 earlyTerminationFailureHandler.analyze(c, projected, extensions);
             }
 
@@ -334,8 +338,34 @@ public class AlgoCGSPANSupport extends AlgoCGSPANAbstract {
             if (!hasEquivalentOccurrence) {
                 // Save the graph
                 ClosedSubgraph subgraph = new ClosedSubgraph(c, graphIds, graphIds.size(), projected,graphIds.size());
+
+                // Determine whether this cgSpan closed subgraph is also closed by the threshold based (CloseGraph)
+                // definition, but only when the output is restricted to threshold based closed subgraphs. When the
+                // restriction is disabled, the flag is not computed (it stays true) and every cgSpan closed subgraph
+                // is output.
+                if (closedByThreshold) {
+                    // Case 1: if a supergraph with the same support was already discovered by the recursive extension
+                    // above, then "c" is not closed by threshold. Every closed subgraph added since
+                    // closedCountBeforeExtensions is a supergraph of "c", so equal support size implies equal support set.
+                    boolean subgraphClosedByThreshold = true;
+                    for (int i = closedCountBeforeExtensions; i < closedSubgraphs.size(); i++) {
+                        if (closedSubgraphs.get(i).support == graphIds.size()) {
+                            subgraphClosedByThreshold = false;
+                            break;
+                        }
+                    }
+
+                    // Case 2: otherwise, examine all one edge extensions from every vertex in every support graph. This
+                    // is skipped when "c" already has the maximum number of edges, because a supergraph would exceed
+                    // the size limit and is therefore not part of the frequent set.
+                    if (subgraphClosedByThreshold && !atMaximumSize) {
+                        subgraphClosedByThreshold = isClosedByThreshold(c, projected, graphIds);
+                    }
+                    subgraph.setClosedByThreshold(subgraphClosedByThreshold);
+                }
+
                 closedSubgraphs.add(subgraph);
-                System.out.println("closed subgraph " + closedSubgraphs.size() + " added");
+                //System.out.println("closed subgraph " + closedSubgraphs.size() + " added (closed by threshold: " + subgraph.isClosedByThreshold() + ")");
                 updateClosedSubgraphsHashTable(subgraph);
             }
         }

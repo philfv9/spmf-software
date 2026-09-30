@@ -27,6 +27,8 @@ import ca.pfv.spmf.datastructures.collections.map.MapIntToShort.ValueIterator;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove the copyright and license information.
  */
 /**
  * A Hashmap, optimized to map integers to float (primitive types). The hash

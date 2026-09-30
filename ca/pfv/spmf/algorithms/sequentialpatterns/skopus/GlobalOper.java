@@ -15,6 +15,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.skopus;
 // * 
 // * You should have received a copy of the GNU General Public License
 // * along with Skopus.  If not, see <http://www.gnu.org/licenses/>.
+//
+//* Do not remove copyright and license information.
 // ******************************************************************************/
 
 import java.io.FileWriter;
@@ -75,6 +77,10 @@ public class GlobalOper {
         try {
             //��һ��д�ļ��������캯���еĵڶ�������true��ʾ��׷����ʽд�ļ�  
             FileWriter writer = new FileWriter(fileName, true);
+			writer.write("@FILETYPE=\"Top-k frequent sequential patterns with leverage\"");
+			writer.write(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.write(System.lineSeparator());
             writer.write(content);
             writer.close();
         } catch (IOException e) {

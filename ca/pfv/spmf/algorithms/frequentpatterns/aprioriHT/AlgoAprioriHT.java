@@ -116,6 +116,10 @@ public class AlgoAprioriHT {
 		
 		// prepare object for writing the file
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Frequent itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
 		
 		// reset statistics
 		itemsetCount = 0;
@@ -451,7 +455,7 @@ public class AlgoAprioriHT {
 	 * @throws IOException
 	 */
 	void saveItemsetToFile(Itemset itemset) throws IOException {
-		writer.write(itemset.toString() + " #SUP: "
+		writer.write(itemset.toString() + "#SUP: "
 				+ itemset.getAbsoluteSupport());
 		writer.newLine();
 		itemsetCount++;

@@ -658,6 +658,15 @@ public class AlgoCarpenter {
 	 */
 	private void writeItemsetsToFile(String outputPath) throws IOException {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath))) {
+			if(mineMaximalPatterns) {
+				writer.write("@FILETYPE=\"Frequent maximal itemsets\"");
+			}else {
+				writer.write("@FILETYPE=\"Frequent closed itemsets\"");
+			}
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
+			
 			for (List<Itemset> level : patternsFound.getLevels()) {
 				for (Itemset itemset : level) {
 					StringBuilder buffer = new StringBuilder();

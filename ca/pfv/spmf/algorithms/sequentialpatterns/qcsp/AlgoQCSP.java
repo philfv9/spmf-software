@@ -217,6 +217,10 @@ public class AlgoQCSP {
 			if(!output.getParentFile().exists())
 				output.getParentFile().mkdirs();
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Top-k sequential patterns with quantile-based cohesion\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 		}
 		System.out.println("============================");
 		System.out.println("QC Patterns:");
@@ -224,13 +228,13 @@ public class AlgoQCSP {
 			Pair<SequentialPattern, Double> pattern =  sortedPatterns.get(i);
 			String patternToString = null;
 			if(data.hasLabels()){
-				patternToString = String.format("%s   #SUP: %d   #QCOH: %.3f",  //pattern, quantile-based cohesion, support
+				patternToString = String.format("%s#SUP: %d #QCOH: %.3f",  //pattern, quantile-based cohesion, support
 					toString(pattern.getFirst().pattern), 
 					data.support(pattern.getFirst().pattern),
 					pattern.getSecond());
 			}
 			else {
-				patternToString = String.format("%s   #SUP: %d   #QCOH: %.3f",  //pattern, quantile-based cohesion, support
+				patternToString = String.format("%s#SUP: %d #QCOH: %.3f",  //pattern, quantile-based cohesion, support
 						toStringSPMF(pattern.getFirst().pattern), 
 						data.support(pattern.getFirst().pattern),
 						pattern.getSecond());

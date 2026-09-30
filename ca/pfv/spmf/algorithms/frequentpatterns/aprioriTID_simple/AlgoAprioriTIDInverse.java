@@ -162,6 +162,10 @@ public class AlgoAprioriTIDInverse {
 	    }else{ // if the user wants to save the result to a file
 			patterns = null;
 			writer = new BufferedWriter(new FileWriter(output)); 
+			writer.write("@FILETYPE=\"Perfectly rare itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 		}
 		
 		// (1) count the tid set of each item in the database in one database
@@ -381,7 +385,7 @@ public class AlgoAprioriTIDInverse {
 		
 		// if the result should be saved to a file
 		if(writer != null){
-			writer.write(itemset.toString() + " #SUP: "
+			writer.write(itemset.toString() + "#SUP: "
 					+ itemset.getTransactionsIds().size() );
 			if(showTransactionIdentifiers) {
 	        	writer.append(" #TID:");

@@ -89,6 +89,10 @@ public class AlgoUVEclat {
         startTimestamp = System.currentTimeMillis();
         itemsetCount = 0;
         writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Uncertain frequent itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
         // Phase 1: vertical transformation
         itemToTidList = new HashMap<Integer, AugmentedTidList>();

@@ -1,7 +1,7 @@
 package ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.savers;
 
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Pattern;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Sequences;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Pattern;
 
 /**
  * This is an implementation of a class implementing the Saver interface. By 
@@ -27,6 +27,8 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Patt
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  *
  * @author agomariz
  */
@@ -38,14 +40,10 @@ public class SaverIntoMemory implements Saver{
     boolean outputSequenceIdentifiers;
     
     public SaverIntoMemory(boolean outputSequenceIdentifiers){
-        patterns = new Sequences("FREQUENT SEQUENTIAL PATTERNS");
+        patterns = new Sequences();
         this.outputSequenceIdentifiers = outputSequenceIdentifiers;
     }
     
-    public SaverIntoMemory(String name, boolean outputSequenceIdentifiers){
-        patterns = new Sequences(name);
-        this.outputSequenceIdentifiers = outputSequenceIdentifiers;
-    }
     
     @Override
     public void savePattern(Pattern p) {

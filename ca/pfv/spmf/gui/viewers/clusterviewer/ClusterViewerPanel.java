@@ -1,56 +1,63 @@
 package ca.pfv.spmf.gui.viewers.clusterviewer;
 
-import java.awt.AWTException;
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.MouseInfo;
-import java.awt.PointerInfo;
+import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.Robot;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseWheelEvent;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JViewport;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import ca.pfv.spmf.gui.preferences.PreferencesManager;
 import ca.pfv.spmf.gui.visuals.heatmap.ClusterViewerPanelListener;
 import ca.pfv.spmf.gui.visuals.plot.Plot;
-import ca.pfv.spmf.gui.visuals.plot.Plot.Data;
+import ca.pfv.spmf.gui.visuals.plot.Plot.AxisFormat;
 import ca.pfv.spmf.gui.visuals.plot.Plot.LegendFormat;
 import ca.pfv.spmf.gui.visuals.plot.Plot.Line;
 import ca.pfv.spmf.gui.visuals.plot.Plot.Marker;
+import ca.pfv.spmf.gui.visuals.plot.Plot.PointHit;
 import ca.pfv.spmf.patterns.cluster.Cluster;
 import ca.pfv.spmf.patterns.cluster.DoubleArray;
 import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
 
 /* This file is copyright (c) 2008-2016 Philippe Fournier-Viger
-* 
+*
 * This file is part of the SPMF DATA MINING SOFTWARE
 * (http://www.philippe-fournier-viger.com/spmf).
-* 
+*
 * SPMF is free software: you can redistribute it and/or modify it under the
 * terms of the GNU General Public License as published by the Free Software
 * Foundation, either version 3 of the License, or (at your option) any later
 * version.
-* 
+*
 * SPMF is distributed in the hope that it will be useful, but WITHOUT ANY
 * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -59,530 +66,549 @@ import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
 */
 
 /**
- * This is the panel in the Cluster viewer window
- * @author Philippe Fournier-Viger, 2016
+ * The panel of the cluster viewer (scatter plot of two attributes). The chart
+ * is drawn as vectors directly on the component (crisp on HiDPI screens), the
+ * plot is rebuilt only when the data or an option changes, and the point under
+ * the mouse is found geometrically (no screen-pixel probing).
  *
+ * @author Philippe Fournier-Viger, 2016
  */
-public class ClusterViewerPanel extends JPanel {
-	
-	/**
-	 * static UID
-	 */
+public class ClusterViewerPanel extends JPanel implements Scrollable {
+
 	private static final long serialVersionUID = 1L;
 
-	/** The object used to draw plots **/
-	Plot plot = null;
-	
-	/** This indicates the level of zoom */
-	double scaleLevel = 1.0;
-	
-	/**  The height **/
-	int height;
-	
-	/** The width **/
+	/** Max pixel distance between the mouse and a point to consider it hovered */
+	private static final int HOVER_RADIUS = 12;
+	private static final int MAX_CANVAS_SIZE = 30_000;
+	private static final Marker[] MARKER_TYPES = {
+			Marker.CIRCLE, Marker.DIAMOND, Marker.SQUARE, Marker.TRIANGLE };
+
+	/** The clusters to be displayed */
+	private final List<Cluster> multipleClusters;
+	/** Colour of each cluster */
+	private final Color[] multipleClustersColors;
+	/** Series key of each cluster */
+	private final String[] clusterKeys;
+	/** Attribute names (axis titles) */
+	private String[] attributeNames;
+
+	private Plot plot;
+	private boolean plotDirty = true;
+
+	/** Logical canvas size; zoom changes these */
 	int width;
-	
-	/** the heigth after scaling **/
-	int originalHeigth;
-	
-	/** the width after scaling **/
+	int height;
 	int originalWidth;
+	int originalHeigth;
 
-	/** The time series to be displayed **/
-	private List<Cluster> multipleClusters;
-	
-	/** The color of each time series **/
-	private Color multipleClustersColors[];
-	
-	/** min and max values on the X axis **/
-    double minX = 0;
-    double maxX = Double.MIN_VALUE;
-	
-	/** min and max values on the Y axis **/
-    double minY = Double.MAX_VALUE;
-    double maxY = Double.MIN_VALUE;
-    
-    /**  If true, the grid will be drawn **/
-    boolean drawTheGrid = false;
-	
-    /**  The size of the markers in points**/
+	boolean drawTheGrid = false;
+	private boolean drawCentroids = true;
 	private int markerSize = 5;
+	LegendFormat legendFormat = LegendFormat.BOTTOM;
 
-    /**  If true, the legend will be drawn **/
-    LegendFormat legendFormat = LegendFormat.BOTTOM;
-    
-    /** The listeners **/
-    List<ClusterViewerPanelListener> listeners = new ArrayList<ClusterViewerPanelListener>();
-
-	/** The set of basic colors */
-	Color[] colors = new Color[]{Color.blue, Color.green, Color.red, Color.yellow, Color.magenta, Color.orange, Color.cyan, Color.pink,  Color.darkGray, Color.gray, Color.lightGray, };
-	
-    /** The selected attribute for the X axis */
 	private int attributeSelectedX;
-	
-	 /** The selected attribute for the Y axis */
 	private int attributeSelectedY;
 
-	
-    /**
-     * Constructor
-     * @param clusters a list of cluster to display
+	private PointHit hover;
+	private final List<ClusterViewerPanelListener> listeners = new ArrayList<ClusterViewerPanelListener>();
+
+	/**
+	 * Constructor
+	 * @param clusters a list of clusters to display
 	 * @param attributeSelectedX the attribute selected on the X axis
 	 * @param attributeSelectedY the attribute selected on the Y axis
-     */
-	public ClusterViewerPanel(List<Cluster> clusters, int attributeSelectedX, int attributeSelectedY){
-		this.attributeSelectedX = attributeSelectedX;
-		this.attributeSelectedY = attributeSelectedY;
-		
-		addMouseMotionListener(new MouseMotionAdapter() {
-			@Override
-			public void mouseMoved(MouseEvent e) {
-				// Get the coordinates of the chart area
-				Rectangle area = plot.getPlotAreaRectangle();
-				
-				// Get the relative X and Y position in the chart area
-				double x = e.getX()/scaleLevel - area.getX();
-				double y = area.getHeight() - (e.getY()/scaleLevel - area.getY());
-				
-				// Calculate the location of the mouse on the X axis of the chart
-				double chartMouseX = ((x / area.width) * (maxX - minX)) + minX;
-				// Calculate the location of the mouse on the Y axis of the chart
-				double chartMouseY = ((y / area.height) * (maxY - minY)) + minY;
-				
-				// The color under the mouse
-				Color colorUnderMouse = Color.WHITE;
-				
-				// The current time series under the mouse
-				String timeSeriesUnderMouse = "";
+	 */
+	public ClusterViewerPanel(List<Cluster> clusters, int attributeSelectedX, int attributeSelectedY) {
+		this(clusters, attributeSelectedX, attributeSelectedY, null);
+	}
 
-				
-				// If the mouse is not in the chart area
-				if(chartMouseX < minX  ||chartMouseX > maxX ||
-						chartMouseY < minY  ||chartMouseY > maxY){
-					// we use the default cursor
-					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-					
-					// inform all listeners that the cursor position has changed
-					for(ClusterViewerPanelListener listener : listeners){
-						listener.notifyMouseOutOfChart();
-					}
-				}else{
-					// otherwise, we use the crosshair cursor
-					setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
-//					System.out.println(chartMouseX + "     " + chartMouseY);
-					
-					// Get the color under the mouse
-					try {
-						Robot robot = new Robot();
-						PointerInfo pi = MouseInfo.getPointerInfo();
-						 colorUnderMouse = robot.getPixelColor(pi.getLocation().x, pi.getLocation().y);
-					} catch (AWTException e1) {
-						e1.printStackTrace();
-					}
-					
-					// Get the time series corresponding to that color
-					// For each time series
-					for(int i = 0; i < multipleClustersColors.length; i++){
-						// if the color of the time series and the color of the pixel under the mouse match
-						if(colorUnderMouse.equals(multipleClustersColors[i])){
-							// we found the time series and stop searching
-							timeSeriesUnderMouse = "Cluster" + (i+1);
-							break;
-						}
-					}
-					
-					// inform all listeners that the cursor position has changed
-					for(ClusterViewerPanelListener listener : listeners){
-						listener.notifyOfNewMousePosition(chartMouseX, chartMouseY, colorUnderMouse, timeSeriesUnderMouse);
-					}
-				}	
+	public ClusterViewerPanel(List<Cluster> clusters, int attributeSelectedX, int attributeSelectedY,
+			String[] attributeNames) {
+		this.multipleClusters = clusters != null ? clusters : new ArrayList<Cluster>();
+		this.attributeSelectedX = Math.max(0, attributeSelectedX);
+		this.attributeSelectedY = Math.max(0, attributeSelectedY);
+		this.attributeNames = attributeNames;
 
-			}
-		});
-		this.multipleClusters = clusters;
-		
-		//  ========  Assign a different color to each time series ======== 
-
-		multipleClustersColors = new Color[multipleClusters.size()];
-		for(int i = 0; i< multipleClusters.size(); i++){
-        	Color color = colors[i%colors.length];
-        	// To make sure that each color is unique, we  slightly alter the color
-        	// by adding 1 to the red, green and blue components of the color
-        	// This should not be visible to the eye but it will help to detect what the mouse of the user is pointing to.
-        	int newBlue = color.getBlue() == 255 ? color.getBlue() : color.getBlue()+1;
-        	int newGreen = color.getGreen() == 255 ? color.getGreen() : color.getGreen()+1;
-        	int newRed = color.getRed() == 255 ? color.getRed() : color.getRed()+1;
-        	Color alteredColor = new Color(newRed, newGreen, newBlue);
-        	multipleClustersColors[i] = alteredColor;
+		int n = multipleClusters.size();
+		multipleClustersColors = new Color[n];
+		clusterKeys = new String[n];
+		for (int i = 0; i < n; i++) {
+			multipleClustersColors[i] = Plot.DEFAULT_PALETTE[i % Plot.DEFAULT_PALETTE.length];
+			clusterKeys[i] = "Cluster " + (i + 1);
 		}
-		
-//		// calculate the size of the panel
-//		int maxTimeSeriesLength = 0;
-//		for(TimeSeries singleTimeSeries : timeSeries){
-//			if(singleTimeSeries.size() > maxTimeSeriesLength){
-//				maxTimeSeriesLength = singleTimeSeries.size();
-//			}
-//		}
-		
+
 		originalWidth = width = 600;
 		originalHeigth = height = 500;
-		
-		setPreferredSize(new Dimension(width,height));
-		
-		plot = 	null;		
-	}
-	
-	@Override
-	protected void paintComponent(Graphics g) {
-		
-        super.paintComponent(g);
-        
-        Graphics2D g2 = ( Graphics2D ) g; // cast g to Graphics2D  
 
-        // Draw the plot
-        Image image = drawThePlot();
-        g2.drawImage(image,0,0, this);
+		setBackground(Color.WHITE);
+		setOpaque(true);
+		setPreferredSize(new Dimension(width, height));
+		installMouseHandling();
 	}
 
-	private Image drawThePlot() {
-        Image image = createImage(width, height);
-        
-        // if nothing to draw
-        if(multipleClusters.size() == 0){
-           return image;
-        }
-        
-        // grid color
-        Color gridColor = (drawTheGrid) ? Color.BLACK : Color.WHITE;
-        
-        // Choose the type of legend
-        
-        plot = 	Plot.plot(Plot.plotOpts().
-//				title("Time series").
-//				titleFont(new Font("Arial", Font.ITALIC, 16)).
-				width(width).
-				height(height).
-				bgColor(Color.WHITE).
-				fgColor(Color.BLACK).
-			//	padding(50). // padding for the whole image
-//				plotPadding(30). // padding between plot border and the very plot
-//				labelPadding(20). // padding between label and other elements
-				labelFont(new Font("Arial", Font.BOLD, 12)).
-			//	grids(5, 5).
-				gridColor(gridColor).
-			//	gridStroke(new BasicStroke(1)).
-				//tickSize(10).
-				legend(legendFormat));
+	// ---------------------------------------------------------------
+	// Plot construction
+	// ---------------------------------------------------------------
 
-        minX = 0;
-        maxX = 0;
-        minY = 0;
-        maxY = 0;
-        
-        // For each time series
-        int seriesCount = 0;
-        for(int i = 0; i < multipleClusters.size(); i++){
-
-            int count = 0;
-        	Cluster cluster = multipleClusters.get(i);
-        	Data data = plot.data();
-        	
-        	// For each data point
-        	for(int j = 0; j < cluster.getVectors().size(); j++){
-        		DoubleArray point = cluster.getVectors().get(j);
-
-        		data.xy(point.data[attributeSelectedX], point.data[attributeSelectedY]);
-        		
-        		if(point.data[1] < minY){
-        			minY = point.data[1];
-        		}
-        		if(point.data[1] > maxY){
-        			maxY = point.data[1];
-        		}
-        		
-        		if(point.data[0] < minX){
-        			minX = point.data[0];
-        		}
-        		if(point.data[0] > maxX){
-        			maxX = point.data[0];
-        		}
-        	}  	
-        	
-        	// automatically set the color of the time series
-//        	Color color = colors[i%colors.length];
-        	Color color = multipleClustersColors[i];
-        	
-//        	public enum Line { NONE, SOLID, DASHED };
-        	
-//        	Marker markersType = (markerSize) ? Marker.DIAMOND : Marker.NONE;
-//        	markerTypes
-        	
-            // Automatically assign the marker type if we run out of colors
-            Marker[] markerTypes = new Marker[]{Marker.CIRCLE, Marker.DIAMOND, Marker.SQUARE};
-            int numberOfBasicColors = colors.length;
-            int markerIndex = ((i) / numberOfBasicColors) % markerTypes.length;
-        	Marker markerType = markerTypes[markerIndex];
-        	
-        	// Code for debugging the colors and marker types
-//            for(int j = 0; j < 100; j++){
-//	            int markerIndex = ((j) / numberOfBasicColors) % markerTypes.length;
-//	        	Marker markerType = markerTypes[markerIndex];
-//	        	System.out.println(j + " " + "markerType " + markerType.toString() + " color: " + j%colors.length);
-//            }
-        	
-        	
-        	plot.series("Cluster" + (i+1), data,
-    				Plot.seriesOpts().
-    					color(color).
-    					line(Line.NONE).
-    					marker(markerType).
-    					markerColor(color).
-    					markerSize(markerSize)
-    					);
-        }
-        
-
-		// configuring axes
-        // Automatically choosing the maximum on the X axis and Y axis
-//        int TICKCOUNT = 5;
-//        {
-//	    	double rangeX = Math.abs(maxX - minX);
-//	    	double unroundedTickSize = rangeX/(TICKCOUNT-1);
-//	    	double x = Math.ceil(Math.log10(unroundedTickSize)-1);
-//	    	double pow10x = Math.pow(10, x);
-//	    	double roundedTickRange = Math.ceil(unroundedTickSize / pow10x) * pow10x;
-//	    	maxX = roundedTickRange*TICKCOUNT;
-//        }
-//        // Automatically choosing the maximum on the Y axis
-//        {
-//	    	double rangeY = Math.abs(maxY - minY);
-//	    	double unroundedTickSize = rangeY/(TICKCOUNT-1);
-//	    	double x = Math.ceil(Math.log10(unroundedTickSize)-1);
-//	    	double pow10x = Math.pow(10, x);
-//	    	double roundedTickRange = Math.ceil(unroundedTickSize / pow10x) * pow10x;
-//	    	maxY = roundedTickRange*TICKCOUNT;
-//        }
-    	
-        plot.
-		xAxis("x", Plot.axisOpts().format(Plot.AxisFormat.NUMBER)/*.range(minX, maxX)*/).
-		yAxis("y", Plot.axisOpts()/*.range(minY, maxY)*/);
-        
-
-        plot.drawChartOnGraphics2D((Graphics2D)image.getGraphics());
-		return image;
-	}
-	
-	@Override
-	public void update(Graphics g) {
-		super.update(g);
-		
-		paintComponent(g);
-	}
-	
-//	@Override
-	public Dimension getPreferredSize() {
-		return new Dimension((int)scaleLevel*width, (int)scaleLevel*height);
+	private String attributeName(int index) {
+		if (attributeNames != null && index >= 0 && index < attributeNames.length
+				&& attributeNames[index] != null && !attributeNames[index].isEmpty()) {
+			return attributeNames[index];
+		}
+		return "Attribute " + index;
 	}
 
-	public void increaseZoom() {
-		//scaleLevel *= 2.0;
-		width *= 2.0;
-		height *= 2.0;
+	private Plot buildPlot() {
+		Plot p = Plot.plot(Plot.plotOpts()
+				.width(Math.max(1, getWidth() > 0 ? getWidth() : width))
+				.height(Math.max(1, getHeight() > 0 ? getHeight() : height))
+				.bgColor(Color.WHITE)
+				.plotPadding(Math.max(8, markerSize + 4))
+				.legend(legendFormat));
 
-//		System.out.println(scaleLevel);
-		// necessary to update the scroll bar(s) if this panel is in a JScrollPane
-		revalidate();
-		// necessary to redraw the image correctly
-		repaint();
-	}
-	
-	public void decreaseZoom() {
-		// Adjust the width and height		
-		// If the width and height are not less than 50 % of the original value, we zoom out
-		if(width >= originalWidth){
-			width /= 2;
-			height /= 2;
-//			System.out.println(scaleLevel);
-			// necessary to update the scroll bar(s) if this panel is in a JScrollPane
-			revalidate();
-			// necessary to redraw the image correctly
-			repaint();
+		for (int i = 0; i < multipleClusters.size(); i++) {
+			Cluster cluster = multipleClusters.get(i);
+			List<DoubleArray> vectors = cluster.getVectors();
+			int size = vectors != null ? vectors.size() : 0;
+			double[] x = new double[size];
+			double[] y = new double[size];
+			for (int j = 0; j < size; j++) {
+				double[] d = vectors.get(j).data;
+				boolean ok = d != null && attributeSelectedX < d.length && attributeSelectedY < d.length;
+				x[j] = ok ? d[attributeSelectedX] : Double.NaN;
+				y[j] = ok ? d[attributeSelectedY] : Double.NaN;
+			}
+			Marker marker = markerSize > 0
+					? MARKER_TYPES[(i / Plot.DEFAULT_PALETTE.length) % MARKER_TYPES.length]
+					: Marker.NONE;
+			p.series(clusterKeys[i], Plot.data().xy(x, y), Plot.seriesOpts()
+					.color(multipleClustersColors[i])
+					.line(Line.NONE)
+					.marker(marker)
+					.markerSize(Math.max(1, markerSize)));
 		}
 
+		p.xAxis("x", Plot.axisOpts().format(AxisFormat.NUMBER).title(attributeName(attributeSelectedX))
+				.niceRange(true).gridLines(drawTheGrid))
+		 .yAxis("y", Plot.axisOpts().format(AxisFormat.NUMBER).title(attributeName(attributeSelectedY))
+				.niceRange(true).gridLines(drawTheGrid));
+		return p;
 	}
 
-	
+	private Plot ensurePlot() {
+		if (plot == null || plotDirty) {
+			plot = buildPlot();
+			plotDirty = false;
+		}
+		return plot;
+	}
 
-	
-	/**
-	 * This method is for printing the panel
-	 */
+	private void invalidatePlot() {
+		plotDirty = true;
+		hover = null;
+		revalidate();
+		repaint();
+	}
+
+	public Plot getPlot() {
+		return ensurePlot();
+	}
+
+	// ---------------------------------------------------------------
+	// Painting
+	// ---------------------------------------------------------------
+
+	@Override
+	protected void paintComponent(Graphics g) {
+		super.paintComponent(g);
+		Graphics2D g2 = (Graphics2D) g.create();
+		try {
+			Plot p = ensurePlot();
+			p.resize(getWidth(), getHeight(), g2);
+			p.drawChartOnGraphics2D(g2);     // vectors, inherits HiDPI transform
+			drawOverlays(g2, p);
+		} finally {
+			g2.dispose();
+		}
+	}
+
+	private void drawOverlays(Graphics2D g2, Plot p) {
+		Rectangle r = p.getPlotAreaRectangle();
+		Graphics2D g = (Graphics2D) g2.create();
+		try {
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+			g.clip(r);
+			if (drawCentroids) {
+				drawCentroids(g, p);
+			}
+			if (hover != null) {
+				drawHover(g, p, r);
+			}
+		} finally {
+			g.dispose();
+		}
+	}
+
+	/** Draws a big "x" at the centroid of each cluster (for the selected attributes). */
+	private void drawCentroids(Graphics2D g, Plot p) {
+		double size = Math.max(7, markerSize + 5);
+		for (int i = 0; i < multipleClusters.size(); i++) {
+			double[] c = centroid(multipleClusters.get(i));
+			if (c == null) continue;
+			double px = p.xToPixel(c[0]);
+			double py = p.yToPixel(c[1]);
+			if (Double.isNaN(px) || Double.isNaN(py)) continue;
+			// white halo then coloured cross
+			g.setColor(Color.WHITE);
+			g.setStroke(new BasicStroke(5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			g.draw(new Line2D.Double(px - size, py - size, px + size, py + size));
+			g.draw(new Line2D.Double(px - size, py + size, px + size, py - size));
+			Color col = multipleClustersColors[i];
+			g.setColor(new Color(Math.round(col.getRed() * 0.7f), Math.round(col.getGreen() * 0.7f),
+					Math.round(col.getBlue() * 0.7f)));
+			g.setStroke(new BasicStroke(2.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			g.draw(new Line2D.Double(px - size, py - size, px + size, py + size));
+			g.draw(new Line2D.Double(px - size, py + size, px + size, py - size));
+		}
+	}
+
+	private double[] centroid(Cluster cluster) {
+		List<DoubleArray> vectors = cluster.getVectors();
+		if (vectors == null || vectors.isEmpty()) return null;
+		double sx = 0, sy = 0;
+		int n = 0;
+		for (DoubleArray v : vectors) {
+			double[] d = v.data;
+			if (d == null || attributeSelectedX >= d.length || attributeSelectedY >= d.length) continue;
+			if (Double.isNaN(d[attributeSelectedX]) || Double.isNaN(d[attributeSelectedY])) continue;
+			sx += d[attributeSelectedX];
+			sy += d[attributeSelectedY];
+			n++;
+		}
+		return n == 0 ? null : new double[] { sx / n, sy / n };
+	}
+
+	private void drawHover(Graphics2D g, Plot p, Rectangle r) {
+		Color c = colorOf(hover.seriesName);
+		// thin crosshair
+		g.setColor(new Color(0, 0, 0, 60));
+		g.setStroke(new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f,
+				new float[] { 3f, 3f }, 0f));
+		g.draw(new Line2D.Double(r.x, hover.pixelY, r.x + r.width, hover.pixelY));
+		g.draw(new Line2D.Double(hover.pixelX, r.y, hover.pixelX, r.y + r.height));
+		// ring around the point
+		double rad = Math.max(markerSize, 4) + 3;
+		Ellipse2D ring = new Ellipse2D.Double(hover.pixelX - rad, hover.pixelY - rad, 2 * rad, 2 * rad);
+		g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), 60));
+		g.fill(ring);
+		g.setColor(c);
+		g.setStroke(new BasicStroke(1.6f));
+		g.draw(ring);
+	}
+
+	private Color colorOf(String seriesKey) {
+		for (int i = 0; i < clusterKeys.length; i++) {
+			if (clusterKeys[i].equals(seriesKey)) return multipleClustersColors[i];
+		}
+		return Color.DARK_GRAY;
+	}
+
+	// ---------------------------------------------------------------
+	// Mouse handling
+	// ---------------------------------------------------------------
+
+	private void installMouseHandling() {
+		MouseAdapter adapter = new MouseAdapter() {
+			@Override public void mouseMoved(MouseEvent e) { handleMouse(e.getPoint()); }
+			@Override public void mouseDragged(MouseEvent e) { handleMouse(e.getPoint()); }
+			@Override public void mouseExited(MouseEvent e) { handleMouse(null); }
+
+			@Override
+			public void mouseWheelMoved(MouseWheelEvent e) {
+				if (e.isControlDown()) {
+					if (e.getWheelRotation() < 0) increaseZoom();
+					else decreaseZoom();
+					e.consume();
+					return;
+				}
+				Container parent = getParent();
+				if (parent != null) {
+					parent.dispatchEvent(SwingUtilities.convertMouseEvent(ClusterViewerPanel.this, e, parent));
+				}
+			}
+		};
+		addMouseListener(adapter);
+		addMouseMotionListener(adapter);
+		addMouseWheelListener(adapter);
+	}
+
+	private void handleMouse(Point pt) {
+		if (plot == null || plotDirty) return;
+		Rectangle area = plot.getPlotAreaRectangle();
+
+		if (pt == null || !area.contains(pt)) {
+			setCursor(Cursor.getDefaultCursor());
+			if (hover != null) {
+				hover = null;
+				repaint();
+			}
+			for (ClusterViewerPanelListener l : listeners) l.notifyMouseOutOfChart();
+			return;
+		}
+
+		setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+		double chartX = plot.pixelToX(pt.x);
+		double chartY = plot.pixelToY(pt.y);
+
+		PointHit hit = plot.nearestPoint(pt.x, pt.y, HOVER_RADIUS);
+		String name = "";
+		Color color = Color.BLACK;
+		if (hit != null) {
+			name = hit.seriesName + "   [point " + (hit.index + 1) + ": ("
+					+ String.format(Locale.US, "%.4g", hit.x) + ", "
+					+ String.format(Locale.US, "%.4g", hit.y) + ")]";
+			color = colorOf(hit.seriesName);
+		}
+		for (ClusterViewerPanelListener l : listeners) {
+			l.notifyOfNewMousePosition(chartX, chartY, color, name);
+		}
+
+		boolean changed = (hit == null) != (hover == null)
+				|| (hit != null && (hit.index != hover.index || !hit.seriesName.equals(hover.seriesName)));
+		if (changed) {
+			hover = hit;
+			repaint();
+		}
+	}
+
+	// ---------------------------------------------------------------
+	// Zoom / Scrollable
+	// ---------------------------------------------------------------
+
+	public void increaseZoom() {
+		if (width * 2 > MAX_CANVAS_SIZE || height * 2 > MAX_CANVAS_SIZE) return;
+		width *= 2;
+		height *= 2;
+		invalidatePlot();
+	}
+
+	public void decreaseZoom() {
+		if (width >= originalWidth) {
+			width /= 2;
+			height /= 2;
+			invalidatePlot();
+		}
+	}
+
+	/** Restores the initial size (the chart then fills the window). */
+	public void resetZoom() {
+		width = originalWidth;
+		height = originalHeigth;
+		invalidatePlot();
+	}
+
+	@Override
+	public Dimension getPreferredSize() {
+		return new Dimension(width, height);
+	}
+
+	@Override
+	public Dimension getPreferredScrollableViewportSize() {
+		return getPreferredSize();
+	}
+
+	@Override
+	public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+		return 24;
+	}
+
+	@Override
+	public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+		return orientation == SwingConstants.HORIZONTAL ? visibleRect.width : visibleRect.height;
+	}
+
+	@Override
+	public boolean getScrollableTracksViewportWidth() {
+		Container p = getParent();
+		return p instanceof JViewport && p.getWidth() > getPreferredSize().width;
+	}
+
+	@Override
+	public boolean getScrollableTracksViewportHeight() {
+		Container p = getParent();
+		return p instanceof JViewport && p.getHeight() > getPreferredSize().height;
+	}
+
+	// ---------------------------------------------------------------
+	// Export / print
+	// ---------------------------------------------------------------
+
+	/** Renders the chart as currently displayed ({@code scale} = 2 for HiDPI). */
+	public BufferedImage renderImage(double scale) {
+		int w = Math.max(1, getWidth() > 0 ? getWidth() : width);
+		int h = Math.max(1, getHeight() > 0 ? getHeight() : height);
+		double s = Math.max(1.0, Math.min(scale, 16000.0 / Math.max(w, h)));
+		BufferedImage img = new BufferedImage((int) Math.ceil(w * s), (int) Math.ceil(h * s),
+				BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = img.createGraphics();
+		try {
+			g.scale(s, s);
+			g.setColor(Color.WHITE);
+			g.fillRect(0, 0, w, h);
+			Plot p = ensurePlot();
+			p.resize(w, h, g);
+			p.drawChartOnGraphics2D(g);
+			if (drawCentroids) {
+				g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g.clip(p.getPlotAreaRectangle());
+				drawCentroids(g, p);
+			}
+		} finally {
+			g.dispose();
+		}
+		return img;
+	}
+
+	/** Called when the user clicks the button to export the current plot to a PNG file. */
+	protected void export() {
+		String path = promptForFilePath("png", "PNG image");
+		if (path == null) return;
+		try {
+			ImageIO.write(renderImage(2.0), "png", new File(path));
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(this,
+					"An error occurred while attempting to save the plot. ERROR MESSAGE = " + e,
+					"Error", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	/** Prints the chart as vectors. */
 	public void doPrint() {
 		PrinterJob pj = PrinterJob.getPrinterJob();
-		pj.setJobName(" SPMF print time series");
-
+		pj.setJobName("SPMF print clusters");
 		pj.setPrintable(new Printable() {
 			@Override
-			public int print(Graphics pg, PageFormat pageFormat, int pageNum)
-					throws PrinterException {
-			      if(pageNum > 0){
-					return Printable.NO_SUCH_PAGE;
+			public int print(Graphics pg, PageFormat pageFormat, int pageNum) throws PrinterException {
+				if (pageNum > 0) return Printable.NO_SUCH_PAGE;
+				int cw = Math.max(1, getWidth() > 0 ? getWidth() : width);
+				int ch = Math.max(1, getHeight() > 0 ? getHeight() : height);
+				Graphics2D g2 = (Graphics2D) pg.create();
+				try {
+					g2.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+					double s = Math.min(pageFormat.getImageableWidth() / cw, pageFormat.getImageableHeight() / ch);
+					g2.scale(s, s);
+					Plot p = ensurePlot();
+					p.resize(cw, ch, g2);
+					p.drawChartOnGraphics2D(g2);
+					if (drawCentroids) {
+						g2.clip(p.getPlotAreaRectangle());
+						drawCentroids(g2, p);
+					}
+				} finally {
+					g2.dispose();
 				}
-
-		        Image image = drawThePlot();
-		        
-		        Graphics2D g2 = (Graphics2D) pg;
-		        g2.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
-		        g2.scale(pageFormat.getImageableWidth()/width, pageFormat.getImageableHeight()/ height);
-		        g2.drawImage(image,0,0, null);
-		        return Printable.PAGE_EXISTS;
+				return Printable.PAGE_EXISTS;
 			}
-		}); 
-		if (pj.printDialog() == false)
-			return;
-
+		});
+		if (!pj.printDialog()) return;
 		try {
 			pj.print();
 		} catch (PrinterException ex) {
-			// handle exception
+			JOptionPane.showMessageDialog(this, "Printing failed: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
-	
-	/**
-	 * Add a listener to the changes to this panel
-	 * @param listener a listener
-	 */
-	public void addListener(ClusterViewerPanelListener listener){
-		listeners.add(listener);
+	private String promptForFilePath(String extension, String description) {
+		try {
+			File initialDir = getInitialDirectory();
+			JFileChooser fc = initialDir != null ? new JFileChooser(initialDir) : new JFileChooser();
+			fc.setDialogTitle("Save as " + extension.toUpperCase(Locale.ROOT));
+			fc.setFileFilter(new FileNameExtensionFilter(description + " (*." + extension + ")", extension));
+			fc.setSelectedFile(new File(fc.getCurrentDirectory(), "clusters." + extension));
+			while (true) {
+				if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return null;
+				File file = fc.getSelectedFile();
+				if (!file.getName().toLowerCase(Locale.ROOT).endsWith("." + extension)) {
+					file = new File(file.getPath() + "." + extension);
+				}
+				if (file.exists()) {
+					int r = JOptionPane.showConfirmDialog(this,
+							"\"" + file.getName() + "\" already exists. Overwrite?", "Confirm overwrite",
+							JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+					if (r == JOptionPane.CANCEL_OPTION || r == JOptionPane.CLOSED_OPTION) return null;
+					if (r == JOptionPane.NO_OPTION) continue;
+				}
+				PreferencesManager.getInstance().setOutputFilePath(file.getParent());
+				return file.getPath();
+			}
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(this,
+					"An error occurred while opening the save plot dialog. ERROR MESSAGE = " + e,
+					"Error", JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
 	}
 
-	/**
-	 * Set the option to draw the grid of the chart to true or false
-	 * @param drawTheGrid a boolean indicating whether the grid should be drawn
-	 */
+	private static File getInitialDirectory() {
+		try {
+			String previousPath = PreferencesManager.getInstance().getOutputFilePath();
+			if (previousPath != null) return new File(previousPath);
+			URL main = MainTestApriori_simple_saveToFile.class.getResource("MainTestApriori_saveToFile.class");
+			if (main != null && "file".equalsIgnoreCase(main.getProtocol())) {
+				return new File(main.getPath()).getParentFile();
+			}
+		} catch (Exception ignored) {
+			// default directory
+		}
+		return null;
+	}
+
+	// ---------------------------------------------------------------
+	// Listeners / options
+	// ---------------------------------------------------------------
+
+	public void addListener(ClusterViewerPanelListener listener) {
+		if (listener != null) listeners.add(listener);
+	}
+
 	public void setDrawGrid(boolean drawTheGrid) {
 		this.drawTheGrid = drawTheGrid;
-		
-		// necessary to update the scroll bar(s) if this panel is in a JScrollPane
-		revalidate();
-		// necessary to redraw the image correctly
-		repaint();
+		invalidatePlot();
 	}
-	
 
-	/**
-	 * Set the option to draw the legend and where
-	 * @param selection a LegendFormat object indicating where the legend should be drawn
-	 */
 	public void setDrawLegend(LegendFormat selection) {
-		this.legendFormat = selection;
-		
-		// necessary to update the scroll bar(s) if this panel is in a JScrollPane
-		revalidate();
-		// necessary to redraw the image correctly
-		repaint();
+		this.legendFormat = selection != null ? selection : LegendFormat.NONE;
+		invalidatePlot();
 	}
 
-	/**
-	 * 
-	 * Set the size of the markers
-	 * @param selection true will draw the markers, otherwise not
-	 */
+	/** @param selection marker size in points (0 = no markers) */
 	public void setMarkersSize(int selection) {
-		this.markerSize = selection;
-		
-		// necessary to update the scroll bar(s) if this panel is in a JScrollPane
-		revalidate();
-		// necessary to redraw the image correctly
+		this.markerSize = Math.max(0, selection);
+		invalidatePlot();
+	}
+
+	/** Shows / hides the centroid ("x") of each cluster. */
+	public void setDrawCentroids(boolean draw) {
+		this.drawCentroids = draw;
 		repaint();
 	}
 
+	/** Sets the attribute names used as axis titles. */
+	public void setAttributeNames(String[] names) {
+		this.attributeNames = names;
+		invalidatePlot();
+	}
+
 	/**
-	 * Set the selection of atributes
+	 * Set the selection of attributes
 	 * @param attributeSelectedX the attribute selected on the X axis
 	 * @param attributeSelectedY the attribute selected on the Y axis
 	 */
 	public void setAttributeSelection(int attributeSelectedX, int attributeSelectedY) {
-		this.attributeSelectedX = attributeSelectedX;
-		this.attributeSelectedY = attributeSelectedY;
-		
-		// necessary to update the scroll bar(s) if this panel is in a JScrollPane
-		revalidate();
-		// necessary to redraw the image correctly
-		repaint();
+		this.attributeSelectedX = Math.max(0, attributeSelectedX);
+		this.attributeSelectedY = Math.max(0, attributeSelectedY);
+		invalidatePlot();
 	}
-	
-	/**
-	 * This method is called when the user click on the button to export the current plot to a file
-	 * @throws IOException if an error occurs
-	 */
-	protected void export() {
-		
-		// ask the user to choose the filename and path
-		String outputFilePath = null;
-		try {
-		    File path;
-		    // Get the last path used by the user, if there is one
-		    String previousPath = PreferencesManager.getInstance().getOutputFilePath();
-		    // If there is no previous path (first time user), 
-		    // show the files in the "examples" package of
-		    // the spmf distribution.
-		    if (previousPath == null) {
-		        URL main = MainTestApriori_simple_saveToFile.class.getResource("MainTestApriori_saveToFile.class");
-		        if (!"file".equalsIgnoreCase(main.getProtocol())) {
-		            path = null;
-		        } else {
-		            path = new File(main.getPath());
-		        }
-		    } else {
-		        // Otherwise, use the last path used by the user.
-		        path = new File(previousPath);
-		    }
-
-		    // ASK THE USER TO CHOOSE A FILE
-		    final JFileChooser fc;
-		    if (path != null) {
-		        fc = new JFileChooser(path.getAbsolutePath());
-		    } else {
-		        fc = new JFileChooser();
-		    }
-		    int returnVal = fc.showSaveDialog(ClusterViewerPanel.this);
-
-		    // If the user chose a file
-		    if (returnVal == JFileChooser.APPROVE_OPTION) {
-		        File file = fc.getSelectedFile();
-		        outputFilePath = file.getPath(); // save the file path
-		        // save the path of this folder for next time.
-		        if (fc.getSelectedFile() != null) {
-		            PreferencesManager.getInstance().setOutputFilePath(fc.getSelectedFile().getParent());
-		        }
-		    }else{
-		    	// the user did not choose so we return
-		    	return;
-		    }
-
-		} catch (Exception e) {
-		    JOptionPane.showMessageDialog(null,
-		            "An error occured while opening the save plot dialog. ERROR MESSAGE = " + e.toString(), "Error",
-		            JOptionPane.ERROR_MESSAGE);
-		}
-
-		try{
-			
-			// add the .png extension
-			if(outputFilePath.endsWith("png") == false){
-				outputFilePath = outputFilePath + ".png";
-			}
-			File outputFile = new File(outputFilePath);
-			BufferedImage image = (BufferedImage)drawThePlot();
-			ImageIO.write(image, "png", outputFile);
-
-		}catch (Exception e) {
-		    JOptionPane.showMessageDialog(null,
-		            "An error occured while attempting to save the plot. ERROR MESSAGE = " + e.toString(), "Error",
-		            JOptionPane.ERROR_MESSAGE);
-		}
-	}
-
 }

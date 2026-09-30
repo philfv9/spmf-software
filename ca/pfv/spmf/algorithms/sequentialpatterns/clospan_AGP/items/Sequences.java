@@ -5,8 +5,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Pattern;
-
 /** Inspired in SPMF
  * This class implements a list of frequent sequence lists (or frequent 
  * pattern lists) that it is organized by levels.
@@ -32,6 +30,8 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Patt
  * You should have received a copy of the GNU General Public License
  * along with SPMF.  If not, see <http://www.gnu.org/licenses/>.
  * 
+ * Do not remove copyright and license information.
+ * 
  * @author agomariz
  */
 public class Sequences {
@@ -54,10 +54,8 @@ public class Sequences {
 
     public List<List<Pattern>> levels = new ArrayList<List<Pattern>>();  // itemset class� par taille
     public int nbSequeencesFrequentes = 0;
-    private final String name;
 
-    public Sequences(String name) {
-        this.name = name;
+    public Sequences() {
         levels.add(new ArrayList<Pattern>()); // on cr�� le niveau z�ro vide par d�faut.
     }
 

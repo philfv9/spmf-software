@@ -119,6 +119,10 @@ public class AlgoWFIM {
         this.pruneCondition2 = 0;
 
         writer = new BufferedWriter(new FileWriter(output), 65536);
+        writer.write("@FILETYPE=\"Frequent weighted itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
         weightTable = loadWeightTable(inputWeights);
         List<int[]> rawTransactions = loadRawTransactions(inputDatabase);

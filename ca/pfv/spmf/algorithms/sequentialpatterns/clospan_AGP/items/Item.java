@@ -22,21 +22,23 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items;
  * You should have received a copy of the GNU General Public License
  * along with SPMF.  If not, see <http://www.gnu.org/licenses/>.
  * 
+ * Do not remove copyright and license information.
+ * 
  * @author agomariz
  */
-public class Item<T extends Comparable> implements Comparable<Item> {
+public class Item implements Comparable<Item> {
 
     /**
      * Content of the item. Is implemented in a generic way in order to manage
      * several types of items.
      */
-    private T id;
+    private Integer id;
 
     /**
      * General constructor.
      * @param id Content of the item.
      */
-    public Item(T id) {
+    public Item(Integer id) {
         this.id = id;
     }
 
@@ -44,7 +46,7 @@ public class Item<T extends Comparable> implements Comparable<Item> {
      * It gets the content of the item.
      * @return the content T
      */
-    public T getId() {
+    public Integer getId() {
         return id;
     }
 

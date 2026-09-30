@@ -4,26 +4,29 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.BIDE_and_prefixspan.AlgoTSP_nonClosed;
-import ca.pfv.spmf.input.sequence_database_list_integers.SequenceDatabase;
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.AlgoTSP_nonClosed2;
 
 
 /**
- * Example of how to use the PrefixSpanWithSupportRising algorithm in source code.
- * @author Philippe Fournier-Viger
+ * Example of how to use the TSP_NonClosed algorithm in source code.
+ * @author copyright Philippe Fournier-Viger 2026
  */
 public class MainTestTSP_nonClosed {
 
 	public static void main(String [] arg) throws IOException{    
-		// Load a sequence database
-		long startTime = System.currentTimeMillis();
-		SequenceDatabase sequenceDatabase = new SequenceDatabase(); 
-		sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"));
-		System.out.println(System.currentTimeMillis() - startTime + " ms (database load time)");
-		// print the database to console
-//		sequenceDatabase.print();
+		// Input sequence database
+		String inputFile = fileToPath("contextPrefixSpan.txt");
+		
+		// Output file path
+		String outputPath = ".//output.txt";
 			
-		AlgoTSP_nonClosed algo = new AlgoTSP_nonClosed(); 
+		AlgoTSP_nonClosed2 algo = new AlgoTSP_nonClosed2(); 
+		
+		// This optional parameter allows to specify the minimum pattern length:
+//		algo.setMinimumPatternLength(1);  // optional
+
+		// This optional parameter allows to specify the maximum pattern length:
+//		algo.setMaximumPatternLength(2);  // optional
 		
         // if you set the following parameter to true, the sequence ids of the sequences where
         // each pattern appears will be shown in the result
@@ -32,9 +35,9 @@ public class MainTestTSP_nonClosed {
 		int k = 2; // we use a k of 2 sequences.
 		
 		// execute the algorithm
-		algo.runAlgorithm(sequenceDatabase, k);    
+		algo.runAlgorithm(inputFile, k);    
 		algo.writeResultTofile("output.txt");
-		algo.printStatistics(sequenceDatabase.size());
+		algo.printStatistics();
 	}
 	
 	public static String fileToPath(String filename) throws UnsupportedEncodingException{

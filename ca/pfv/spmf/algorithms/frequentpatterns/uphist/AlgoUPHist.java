@@ -106,6 +106,10 @@ public class AlgoUPHist {
 		startTimestamp = System.currentTimeMillis();
 		
 		writer = new BufferedWriter(new FileWriter(outputFile));
+		writer.write("@FILETYPE=\"High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		MemoryLogger.getInstance().checkMemory();
 		

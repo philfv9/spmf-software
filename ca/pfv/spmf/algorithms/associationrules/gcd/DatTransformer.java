@@ -135,6 +135,12 @@ public class DatTransformer {
 		Map<Integer, Integer> freqs = new HashMap<Integer, Integer>();
 		int cols = 0;
 		for (String line : inputLines) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+				continue;
+			}
+			
 			++rows;
 			String[] tokens = line.split("\\s+");
 			Integer[] numbers = new Integer[tokens.length];

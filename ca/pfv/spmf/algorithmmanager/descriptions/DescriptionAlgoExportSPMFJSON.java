@@ -84,7 +84,7 @@ public class DescriptionAlgoExportSPMFJSON extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getOutputFileTypes() {
-		return new String[] { "SPMF algorithm list (JSON)" };
+		return new String[] { "JSON file" };
 	}
 
 	@Override

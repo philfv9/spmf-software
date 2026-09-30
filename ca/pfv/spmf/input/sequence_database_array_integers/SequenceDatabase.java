@@ -65,6 +65,13 @@ public class SequenceDatabase {
 		try (BufferedReader myInput = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path))))) {
 			// for each line until the end of the file
 			while ((thisLine = myInput.readLine()) != null) {
+				// if the line is a comment, is empty or is a
+				// kind of metadata, skip it
+				if (thisLine.isEmpty() == true || thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%'
+						|| thisLine.charAt(0) == '@') {
+					continue;
+				}
+
 				// if the line is not a comment, is not empty or is not other
 				// kind of metadata
 				if (thisLine.startsWith("@ITEM")) {
@@ -277,7 +284,7 @@ public class SequenceDatabase {
 //		std = Math.sqrt(std);
 //		
 //		System.out.println("mean item count" + meansizeItems + " std : " + std);
-////		System.out.println("mean itemset count" + meansize);
+	//// System.out.println("mean itemset count" + meansize);
 //	}
 
 //	public void loadFile(String path, int maxlineCount) throws IOException {
@@ -399,9 +406,7 @@ public class SequenceDatabase {
 //				// ajoute une s�quence
 //				String[] split = thisLine.split(" ");
 //				i++;
-////				if (nblinetoread == i) {
-////					break;
-////				}
+	//// if (nblinetoread == i) { / break; / }
 //				if(split.length < 25){
 //					continue;
 //				}

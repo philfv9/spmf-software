@@ -22,7 +22,7 @@ public class MainTestQCSP_multipleSequences {
 		boolean showDebugInformation = false;
 		
 		//save output
-		String output = "./output_jmlr.txt";
+		String output = "./output.txt";
 		
 		// frequency threshold on single item
 		int minsup = 4;

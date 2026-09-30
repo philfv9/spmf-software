@@ -27,8 +27,24 @@ import java.util.BitSet;
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copackage ca.pfv.spmf.algorithms.sequentialpatterns.lapin;
+ * Do not remove copyright and license information.
+*/
+import java.util.BitSet;
+
+/***
+ * This is an implementation of a position vector in the Item-is-exist table of
+ * LAPIN-SPAM.
+ * 
+ * The LAPIN-SPAM algorithm was originally described in this paper:
+ * 
+ * Zhenlu Yang and Masrau Kitsuregawa. LAPIN-SPAM: An improved algorithm for
+ * mining sequential pattern In Proc. of Int'l Special Workshop on Databases For
+ * Next Generation Researchers (SWOD'05) in conjunction with ICDE'05, pp. 8-11,
+ * Tokyo, Japan, Apr. 2005.
+ *
+ * Copyright (c) 2008-2013 Philippe Fournier-Viger
+ * 
  */
 public class PositionVector {
 

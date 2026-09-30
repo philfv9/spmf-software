@@ -149,6 +149,10 @@ public class AlgoTSPIN {
 		} else {
 			patterns = null;
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Top-k Stable Periodic frequent itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 			itemsetOutputBuffer = new int[BUFFERS_SIZE];
 			
 		}

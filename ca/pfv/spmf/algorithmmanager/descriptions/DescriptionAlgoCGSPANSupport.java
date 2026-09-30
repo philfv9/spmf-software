@@ -82,11 +82,19 @@ public class DescriptionAlgoCGSPANSupport extends DescriptionOfAlgorithm {
 		if (parameters.length >=7 && "".equals(parameters[6]) == false) {
 			outputDebug = getParamAsBoolean(parameters[6]);
 		}
-		
-		// Apply the algorithm 
+
+		// If true, output only subgraphs that are closed with respect to the support threshold
+		// (no proper supergraph with the same support). If false, output all cgSpan closed subgraphs.
+		boolean closedByThreshold = true;
+		if (parameters.length >=8 && "".equals(parameters[7]) == false) {
+			closedByThreshold = getParamAsBoolean(parameters[7]);
+		}
+
+		// Apply the algorithm
 		AlgoCGSPANSupport algo = new AlgoCGSPANSupport();
 		algo.setDetectEarlyTerminationFailure(detectFailure);
 		algo.setDebugMode(outputDebug);
+		algo.setClosedByThreshold(closedByThreshold);
 		algo.runAlgorithm(inputFile, outputFile, minSupport, outputSingleFrequentVertices, 
 				outputDotFile, maxNumberOfEdges, outputGraphIds);
 		
@@ -97,7 +105,7 @@ public class DescriptionAlgoCGSPANSupport extends DescriptionOfAlgorithm {
 	@Override
 	public DescriptionOfParameter[] getParametersDescription() {
         
-		DescriptionOfParameter[] parameters = new DescriptionOfParameter[7];
+		DescriptionOfParameter[] parameters = new DescriptionOfParameter[8];
 		parameters[0] = new DescriptionOfParameter("Minsup (%)", "(e.g. 0.9 or 90%)", Double.class, false);
 		parameters[1] = new DescriptionOfParameter("Max Number of Edges", "(e.g. 2)", Integer.class, true);
 		parameters[2] = new DescriptionOfParameter("Output Single Vertices", "(e.g. true)", Boolean.class, true);
@@ -105,6 +113,7 @@ public class DescriptionAlgoCGSPANSupport extends DescriptionOfAlgorithm {
 		parameters[4] = new DescriptionOfParameter("Output Graph IDs", "(e.g. true)", Boolean.class, true);
 		parameters[5] = new DescriptionOfParameter("Failure dectection", "(e.g. true)", Boolean.class, true);
 		parameters[6] = new DescriptionOfParameter("Output Debug Info", "(e.g. false)", Boolean.class,  true);
+		parameters[7] = new DescriptionOfParameter("Closed By Threshold", "(e.g. true)", Boolean.class,  true);
 		return parameters;
 	}
 

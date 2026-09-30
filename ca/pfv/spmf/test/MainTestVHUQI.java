@@ -36,10 +36,10 @@ public class MainTestVHUQI {
 	public static void main(String[] args) throws IOException {
 		
 		// The input file path of the file indicating the profit value of each item
-		String inputFileProfitPath = fileToPath("HUQI_DB_profit.txt");
+		String inputFileProfitPath = fileToPath("dbHUQI_p.txt");
 		
 		// the input file path containing the transactions with quantities
-		String inputFileDBPath = fileToPath("HUQI_DB.txt");
+		String inputFileDBPath = fileToPath("dbHUQI.txt");
 		
 		// the output file path for writing the result
 		String output = "output.txt";

@@ -33,6 +33,8 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.spm_fc_p.items.patterns.Pattern
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  *
  * @author agomariz
  */
@@ -54,6 +56,11 @@ public class SaverIntoFile implements Saver {
     public SaverIntoFile(String outputFilePath, boolean outputSequenceIdentifiers) throws IOException {
         path = outputFilePath;
         writer = new BufferedWriter(new FileWriter(outputFilePath));
+		writer.write("@FILETYPE=\"Frequent sequential patterns\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
         this.outputSequenceIdentifiers = outputSequenceIdentifiers;
     }
 

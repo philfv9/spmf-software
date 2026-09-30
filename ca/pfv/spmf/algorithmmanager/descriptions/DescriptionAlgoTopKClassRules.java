@@ -52,7 +52,7 @@ public class DescriptionAlgoTopKClassRules extends DescriptionOfAlgorithm {
 
 	@Override
 	public String getURLOfDocumentation() {
-		return "http://www.philippe-fournier-viger.com/spmf/TopKAClassAssociationRules.php";
+		return "http://www.philippe-fournier-viger.com/spmf/TopKClassAssociationRules.php";
 	}
 
 	@Override

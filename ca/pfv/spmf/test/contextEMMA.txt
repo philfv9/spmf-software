@@ -1,3 +1,5 @@
+@FILETYPE="Transaction database with timestamps"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
 1|1
 1|2
 1 2|3

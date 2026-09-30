@@ -150,6 +150,8 @@ public class ProjectedIteratorConsumer implements Iterator<PDFSCompact> {
 
     @Override
     public PDFSCompact next() {
+        // surface any producer failure before proceeding
+        checkProducerError();
         // return null if there is no active producers
         if (numRunningProducers == 0) {
             return null;
@@ -179,6 +181,9 @@ public class ProjectedIteratorConsumer implements Iterator<PDFSCompact> {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+
+        // a producer may have failed while we were consuming
+        checkProducerError();
 
         return pdfs;
     }
@@ -234,6 +239,9 @@ public class ProjectedIteratorConsumer implements Iterator<PDFSCompact> {
                 Thread.currentThread().interrupt();
             }
         }
+
+        // surface any producer failure that occurred during the initial consumption
+        checkProducerError();
     }
 
     /**
@@ -248,6 +256,27 @@ public class ProjectedIteratorConsumer implements Iterator<PDFSCompact> {
 
     public class Control {
         public volatile boolean runFlag = true;
+        // first unrecoverable failure thrown by any producer thread, or null if none.
+        // used to surface producer failures to the consumer instead of silently swallowing them.
+        public volatile Throwable producerError = null;
+    }
+
+    /**
+     * If any producer thread recorded an unrecoverable failure, rethrow it here so the
+     * run fails fast instead of deadlocking or silently returning truncated results.
+     */
+    private void checkProducerError() {
+        Throwable error = control.producerError;
+        if (error == null) {
+            return;
+        }
+        if (error instanceof RuntimeException) {
+            throw (RuntimeException) error;
+        }
+        if (error instanceof Error) {
+            throw (Error) error;
+        }
+        throw new RuntimeException(error);
     }
 
     public ProjectedCompact getProjected() {

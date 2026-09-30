@@ -1,0 +1,6 @@
+@FILETYPE="Local Periodic frequent itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+5 #TIME-INTERVALS: [6,18]   
+2 5 #TIME-INTERVALS: [6,18]   
+3 #TIME-INTERVALS: [6,18]   
+2 #TIME-INTERVALS: [6,25] 

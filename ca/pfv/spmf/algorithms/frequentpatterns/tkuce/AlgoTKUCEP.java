@@ -242,6 +242,11 @@ public class AlgoTKUCEP {
 		startTimestamp = System.currentTimeMillis();
 		/** initialize object to write output to file */
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Top-k High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		mapItemToU = new HashMap<>();
 		mapItemToTWU = new HashMap<>();
 		// scan the database first time to calculate the TWU of each item.

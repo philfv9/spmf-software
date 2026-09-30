@@ -168,6 +168,11 @@ public class AlgoMRICE {
 
         FPattern = new ArrayList<>();
         writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Minimal rare itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
         // create a map to store the frequency of each item
         mapItemToF = new HashMap<>();
         startTimestamp = System.currentTimeMillis();
@@ -482,7 +487,7 @@ public class AlgoMRICE {
             if (entry.getValue() >= min_sup){
                 FPattern.add(entry.getKey());
             }else {
-                MRIInit.add(entry.getKey() + " " + "#SUP:" + entry.getValue());
+                MRIInit.add(entry.getKey() + " " + "#SUP: " + entry.getValue());
             }
         }
 
@@ -909,7 +914,7 @@ public class AlgoMRICE {
                     temp.append(' ');
                 }
             }
-            temp.append("#SUP:" +
+            temp.append("#SUP: " +
                     particle.fitness);
             writer.write(temp.toString());
             writer.newLine();

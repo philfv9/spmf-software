@@ -1,0 +1,16 @@
+@FILETYPE="Local high-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+4 1 2 #UTIL: 50 #WINDOWS: [5,5] 
+4 1 2 5 #UTIL: 56 #WINDOWS: [5,5] 
+4 1 2 5 3 #UTIL: 58 #WINDOWS: [5,5] 
+4 1 2 3 #UTIL: 52 #WINDOWS: [5,5] 
+4 2 #UTIL: 66 #WINDOWS: [3,5] 
+4 2 5 #UTIL: 78 #WINDOWS: [3,5] 
+4 2 5 3 #UTIL: 85 #WINDOWS: [3,5] 
+4 2 3 #UTIL: 73 #WINDOWS: [3,5] 
+4 5 #UTIL: 46 #WINDOWS: [3,5] 
+4 5 3 #UTIL: 53 #WINDOWS: [3,5] 
+4 3 #UTIL: 47 #WINDOWS: [3,5] 
+1 5 3 #UTIL: 62 #WINDOWS: [5,6] 
+2 5 #UTIL: 62 #WINDOWS: [3,5] 
+2 5 3 #UTIL: 74 #WINDOWS: [3,7] 

@@ -32,7 +32,7 @@ public class MainTestPatternVizualizer {
 
 	public static void main(String[] args) throws ParseException, IOException {
 		// the path of the file containing patterns for this test
-		String patternFilePath = fileToPath("test.txt");
+		String patternFilePath = fileToPath("patterns40.txt");
 		
 		// create the frame
 		PatternVizualizer frame = new PatternVizualizer(patternFilePath);

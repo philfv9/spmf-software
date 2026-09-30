@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.frequentpatterns.mehuim_closed.*;
+import ca.pfv.spmf.algorithms.frequentpatterns.mehuim_closed.AlgoMEHUIMClosed;
+import ca.pfv.spmf.algorithms.frequentpatterns.mehuim_closed.Itemsets;
 
 
 /**

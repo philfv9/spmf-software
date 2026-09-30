@@ -1,6 +1,8 @@
 package ca.pfv.spmf.algorithms.sequentialpatterns.qcsp;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,43 +70,68 @@ public class QCSPData {
 				FileStream fs2 = new FileStream(labelsFile,' ','\n');
 				String label = fs2.nextToken();
 				while(label != null){
+					// if the line is a comment, is empty or is a
+					// kind of metadata, skip it
+					if (label.isEmpty() == true || label.charAt(0) == '#' || label.charAt(0) == '%' || label.charAt(0) == '@') {
+						label = fs2.nextToken();
+						continue;
+					}
 					labelsList.add(label);
 					label = fs2.nextToken();
 				}
 			}
 			//Step 2: Load sequence
-			FileStream fs = new FileStream(sequenceFile,' ','\n');
-			String token = fs.nextToken();
 			int sizeSequence = 0;
-			while(token !=null){
-				token = fs.nextToken();
-				sizeSequence++;
+			try(BufferedReader reader = new BufferedReader(new FileReader(sequenceFile))) {
+				String line = reader.readLine();
+				while(line != null){
+					// if the line is a comment, is empty or is a
+					// kind of metadata, skip it
+					if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+						line = reader.readLine();
+						continue;
+					}
+					String[] lineSplit = line.split(" ");
+					sizeSequence += lineSplit.length;
+					line = reader.readLine();
+				}
 			}
 			if(debug) {
 				System.out.println("Sequence size: " + sizeSequence);
 			}
 			this.sequenceList = new ArrayList<Integer>(sizeSequence);
-			fs = new FileStream(sequenceFile,' ','\n');
-			token = fs.nextToken();
-			while(token !=null){
-				Integer item = Integer.parseInt(token);
-				if(item == NULL_ITEM) { //if item 0, add gap
-					sequenceList.add(null);
-					token = fs.nextToken();
-				}
-				else if(item == SEPERATOR_ITEM) { //if item -1, ignore
-					token = fs.nextToken();
-				}
-				else if(item == END_ITEM) { //if item -2, add max_size * alpha gaps, to avoid that quantile-based cohesive pattern occurrence spans multiple sequences
-					for(int i=0; i < alpha * maxsize; i++) {
-						sequenceList.add(null);
+			try(BufferedReader reader = new BufferedReader(new FileReader(sequenceFile))) {
+				String line = reader.readLine();
+				while(line != null){
+					// if the line is a comment, is empty or is a
+					// kind of metadata, skip it
+					if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+						line = reader.readLine();
+						continue;
 					}
-					token = fs.nextToken();
+					String[] lineSplit = line.split(" ");
+					for(String token: lineSplit) {
+						if(token.isEmpty()) {
+							continue;
+						}
+						Integer item = Integer.parseInt(token);
+						if(item == NULL_ITEM) { //if item 0, add gap
+							sequenceList.add(null);
+						}
+						else if(item == SEPERATOR_ITEM) { //if item -1, ignore
+							//do nothing
+						}
+						else if(item == END_ITEM) { //if item -2, add max_size * alpha gaps, to avoid that quantile-based cohesive pattern occurrence spans multiple sequences
+							for(int i=0; i < alpha * maxsize; i++) {
+								sequenceList.add(null);
+							}
+						}
+						else {
+							sequenceList.add(item); 
+						}
+					}
+					line = reader.readLine();
 				}
-				else {
-					sequenceList.add(item); 
-					token = fs.nextToken();
-				}	
 			}
 
 			//Step 3: Pre-compute support

@@ -15,6 +15,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.skopus;
 // * 
 // * You should have received a copy of the GNU General Public License
 // * along with Skopus.  If not, see <http://www.gnu.org/licenses/>.
+//
+//* Do not remove copyright and license information.
 // ******************************************************************************/
 import java.util.Collections;
 

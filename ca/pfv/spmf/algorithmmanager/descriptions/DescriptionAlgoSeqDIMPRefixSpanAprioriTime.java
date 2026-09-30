@@ -53,7 +53,7 @@ public class DescriptionAlgoSeqDIMPRefixSpanAprioriTime extends DescriptionOfAlg
 
 	@Override
 	public String getURLOfDocumentation() {
-		return "http://www.philippe-fournier-viger.com/spmf/index.php?link=documentation.php#example14";
+		return "https://www.philippe-fournier-viger.com/spmf/MultiDimensional_SequentialPatternsWithTime.php";
 	}
 
 	@Override
@@ -82,16 +82,13 @@ public class DescriptionAlgoSeqDIMPRefixSpanAprioriTime extends DescriptionOfAlg
 
 		// Print results
 		algoSeqDim2.printStatistics(contextMDDatabase.size());
-		// NOTE : IF YOU DON'T WANT TO MINE *CLOSED* MD-SEQUENCES, JUST
-		// CHANGE THE FOUR VALUES "true" for
-		// "FALSE" in this example.
 	}
 
 	@Override
 	public DescriptionOfParameter[] getParametersDescription() {
         
 		DescriptionOfParameter[] parameters = new DescriptionOfParameter[5];
-		parameters[0] = new DescriptionOfParameter("Minsup (%)", "(e.g. 0.4 or 40%)", Double.class, false);
+		parameters[0] = new DescriptionOfParameter("Minsup (%)", "(e.g. 0.5 or 50%)", Double.class, false);
 		parameters[1] = new DescriptionOfParameter("Min time interval", "(e.g. 1 itemsets)", Double.class, false);
 		parameters[2] = new DescriptionOfParameter("Max time interval", "(e.g. 5 itemsets)", Double.class, false);
 		parameters[3] = new DescriptionOfParameter("Min whole time interval", "(e.g. 1 itemsets)", Double.class, false);

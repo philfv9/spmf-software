@@ -48,6 +48,11 @@ public class AlgoEMSFUI_D{
 		maxMemory =0;		
 		startTimestamp = System.currentTimeMillis();		
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Skyline Frequent High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		//  We create a  map to store the TWU of each item
 		ISU_1 = new HashMap<Integer, int[]>();
 		mapItemToTWU = new HashMap<Integer,Integer>();

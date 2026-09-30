@@ -69,6 +69,11 @@ public class AlgoLevelWise {
 		String line, tempString;
 		String del = "#SUP";
 		while ((line = Br.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+				continue;
+			}
 			MemoryUsage();
 			tempString = line;
 			transactioncount++;
@@ -113,6 +118,7 @@ public class AlgoLevelWise {
 
 			FileWriter dataFile = new FileWriter(Output_Path + S + ".txt");
 			BufferedWriter input = new BufferedWriter(dataFile);
+
 
 			for (Map.Entry<String, Integer> entry : DB.entrySet()) {
 				MemoryUsage();
@@ -194,6 +200,11 @@ public class AlgoLevelWise {
 			String line2, tempString2;
 
 			while ((line = Br.readLine()) != null) {
+				// if the line is a comment, is empty or is a
+				// kind of metadata, skip it
+				if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+					continue;
+				}
 				MemoryUsage();
 				tempString = line;
 				temp.add(tempString.split(":"));
@@ -201,6 +212,12 @@ public class AlgoLevelWise {
 			gen_ItemSpace(DB, temp);
 
 			while ((line2 = Br2.readLine()) != null) {
+				// if the line is a comment, is empty or is a
+				// kind of metadata, skip it
+				if (line2.isEmpty() == true || line2.charAt(0) == '#' 
+						|| line2.charAt(0) == '%' || line2.charAt(0) == '@') {
+					continue;
+				}
 				MemoryUsage();
 				tempString2 = line2;
 				temp1.add(tempString2.split(":"));
@@ -289,6 +306,28 @@ public class AlgoLevelWise {
 	public static void Write() throws IOException {
 		FileWriter dataFile = new FileWriter(Output_Path, true);
 		BufferedWriter input = new BufferedWriter(dataFile);
+		
+
+		for (Map.Entry<String, Integer> entry : DB.entrySet()) {
+			MemoryUsage();
+			String k = entry.getKey();
+			int v = entry.getValue();
+
+			input.write(k);
+			input.write(" #SUP: ");
+			input.write(v + "\n");
+		}
+		input.close();
+	}
+	
+	/* write the frequent itemsets into file */
+	public static void WriteFirst() throws IOException {
+		FileWriter dataFile = new FileWriter(Output_Path, true);
+		BufferedWriter input = new BufferedWriter(dataFile);
+		input.write("@FILETYPE=\"Frequent itemsets\"");
+		input.append(System.lineSeparator());
+		input.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		input.append(System.lineSeparator());
 
 		for (Map.Entry<String, Integer> entry : DB.entrySet()) {
 			MemoryUsage();
@@ -318,7 +357,7 @@ public class AlgoLevelWise {
 	public static void Subsets_process() throws IOException {
 		MemoryUsage();
 		Initial_Read_level();
-		Write();
+		WriteFirst();
 		gen_subsets();
 		initial();
 		Write();
@@ -338,6 +377,11 @@ public class AlgoLevelWise {
 
 		String line;
 		while ((line = Br.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (line.isEmpty() == true || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+				continue;
+			}
 			itemsetCount++;
 		}
 		Br.close();

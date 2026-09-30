@@ -1,0 +1,9 @@
+@FILETYPE="Frequent fuzzy itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+1.M #FVL: 4.2
+1.M 2.L #FVL: 2.0
+1.M 3.H #FVL: 2.6000001
+2.L #FVL: 3.6
+4.L #FVL: 2.8
+4.L 3.H #FVL: 2.6000001
+3.H #FVL: 4.0000005

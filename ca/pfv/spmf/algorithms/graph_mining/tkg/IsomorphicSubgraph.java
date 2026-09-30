@@ -334,59 +334,44 @@ public class IsomorphicSubgraph {
                     // outgoing edges
                     if (outgoingEdgesIndices.contains(i)) {
                         ExtendedEdge extendedEdge = isomorphismDfsCode.getAt(i);
-                        int isomorphicVertexLabel;
-                        if (isomorphicEdgesVertices.contains(extendedEdge.v1)) {
-                            isomorphicVertexLabel = extendedEdge.vLabel1;
-                        }
-                        else {
-                            isomorphicVertexLabel = extendedEdge.vLabel2;
-                        }
+                        int edgeLabel = extendedEdge.edgeLabel;
+                        // one endpoint of an outgoing edge is isomorphic and the other is not.
+                        // the isomorphic endpoint is the one whose projection we vary; the other stays fixed.
+                        boolean isoIsV1 = isomorphicEdgesVertices.contains(extendedEdge.v1);
+                        int isomorphicVertexLabel = isoIsV1? extendedEdge.vLabel1 : extendedEdge.vLabel2;
 
-                        ProjectedEdge outgoingProjectedEdge = pdfs.get(i);
+                        // getProjected().get(i) is keyed by the image of the DFS "from" vertex (extendedEdge.v1).
+                        // For the projection under test, that image is edge.v2 when the projected edge is reversed
+                        // and edge.v1 otherwise; the "to" vertex (extendedEdge.v2) gets the opposite endpoint.
+                        Edge outgoingEdge = pdfs.get(i).getEdgeEnumeration().getEdge();
+                        int fromImage = pdfs.get(i).isReversed()? outgoingEdge.v2 : outgoingEdge.v1;
+                        int toImage = pdfs.get(i).isReversed()? outgoingEdge.v1 : outgoingEdge.v2;
 
-                        Edge outgoingEdge = outgoingProjectedEdge.getEdgeEnumeration().getEdge();
                         // add edges in the lexicographical order of projected vertices
                         // create all possible edges in the lexicographical order of projected vertices and add an edge if it exists
-                        if (isomorphicVertices.contains(outgoingEdge.v1)) {
-                            for (int v1: labelIsomorphicVerticesSorted.get(isomorphicVertexLabel)) {
-                                if (!projectedCompact.getProjected().get(i).get(gid).containsKey(v1)) {
+                        List<Integer> isomorphicCandidates = labelIsomorphicVerticesSorted.get(isomorphicVertexLabel);
+                        if (isomorphicCandidates != null) {
+                            for (int candidate: isomorphicCandidates) {
+                                // vary the isomorphic endpoint, keep the non-isomorphic endpoint fixed.
+                                // the lookup/storage key is always the image of the DFS "from" vertex,
+                                // consistent with how getProjected() is keyed.
+                                int fromCandidate = isoIsV1? candidate : fromImage;
+                                int toCandidate = isoIsV1? toImage : candidate;
+
+                                if (!projectedCompact.getProjected().get(i).get(gid).containsKey(fromCandidate)) {
                                     continue;
                                 }
-                                Edge edge = new Edge(v1, outgoingEdge.v2, outgoingEdge.getEdgeLabel());
-                                Edge edgeDB = new Edge(edge.v1 < edge.v2? edge.v1: edge.v2, edge.v1 < edge.v2? edge.v2: edge.v1, edge.getEdgeLabel());
+
+                                Edge edgeDB = new Edge(fromCandidate < toCandidate? fromCandidate: toCandidate, fromCandidate < toCandidate? toCandidate: fromCandidate, edgeLabel);
                                 EdgeEnumeration edgeEnumeration = new EdgeEnumeration(gid, edgeDB);
-                                boolean reversed = edge.v1 != edgeDB.v1;
-                                if (outgoingProjectedEdge.isReversed()) {
-                                    reversed = !reversed;
-                                }
+                                boolean reversed = fromCandidate != edgeDB.v1;
                                 ProjectedEdge projectedEdge = ProjectedEdge.getIfExists(edgeEnumeration, reversed);
 
-                                if (projectedEdge != null && projectedCompact.getProjected().get(i).get(gid).get(v1).contains(projectedEdge)) {
-                                    if (!projectionsAt.get(gid).containsKey(v1)) {
-                                        projectionsAt.get(gid).put(v1, new LinkedHashSet<ProjectedEdge>());
+                                if (projectedEdge != null && projectedCompact.getProjected().get(i).get(gid).get(fromCandidate).contains(projectedEdge)) {
+                                    if (!projectionsAt.get(gid).containsKey(fromCandidate)) {
+                                        projectionsAt.get(gid).put(fromCandidate, new LinkedHashSet<ProjectedEdge>());
                                     }
-                                    projectionsAt.get(gid).get(v1).add(projectedEdge);
-                                }
-                            }
-                        }
-                        else {
-                            if (projectedCompact.getProjected().get(i).get(gid).containsKey(outgoingEdge.v1)) {
-                                for (int v2 : labelIsomorphicVerticesSorted.get(isomorphicVertexLabel)) {
-                                    Edge edge = new Edge(outgoingEdge.v1, v2, outgoingEdge.getEdgeLabel());
-                                    Edge edgeDB = new Edge(edge.v1 < edge.v2 ? edge.v1 : edge.v2, edge.v1 < edge.v2 ? edge.v2 : edge.v1, edge.getEdgeLabel());
-                                    EdgeEnumeration edgeEnumeration = new EdgeEnumeration(gid, edgeDB);
-                                    boolean reversed = edge.v1 != edgeDB.v1;
-                                    if (outgoingProjectedEdge.isReversed()) {
-                                        reversed = !reversed;
-                                    }
-                                    ProjectedEdge projectedEdge = ProjectedEdge.getIfExists(edgeEnumeration, reversed);
-
-                                    if (projectedEdge != null && projectedCompact.getProjected().get(i).get(gid).get(outgoingEdge.v1).contains(projectedEdge)) {
-                                        if (!projectionsAt.get(gid).containsKey(outgoingEdge.v1)) {
-                                            projectionsAt.get(gid).put(outgoingEdge.v1, new LinkedHashSet<ProjectedEdge>());
-                                        }
-                                        projectionsAt.get(gid).get(outgoingEdge.v1).add(projectedEdge);
-                                    }
+                                    projectionsAt.get(gid).get(fromCandidate).add(projectedEdge);
                                 }
                             }
                         }

@@ -82,6 +82,11 @@ class AlgoCHUD_Phase2 {
 		BufferedReader reader = new BufferedReader(new FileReader(filePathPhase1));
 		int level =1;
 		BufferedWriter writer = new BufferedWriter(new FileWriter(filePathOutput)); 
+		writer.write("@FILETYPE=\"Closed high-utility itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+		
 		String line = reader.readLine();
 		int tidcount = 0;
 		while( line != null && line.length() > 2){

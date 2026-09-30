@@ -222,6 +222,10 @@ public class AlgoTUP_Combined {
 	 */
 	public void writeResultTofile(String path) throws IOException {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(path)); 
+		writer.write("@FILETYPE=\"Top-k High-Utility episodes\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		
 		for (Episode_preinsertion_EWU episode : TUPCGlobalVariables.topKBuffer) {
 			

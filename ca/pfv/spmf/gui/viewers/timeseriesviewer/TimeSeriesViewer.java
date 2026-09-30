@@ -1,233 +1,217 @@
 package ca.pfv.spmf.gui.viewers.timeseriesviewer;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.List;
 
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.border.EtchedBorder;
+import javax.swing.JSeparator;
+import javax.swing.SwingConstants;
 
 import ca.pfv.spmf.algorithms.timeseries.TimeSeries;
+import ca.pfv.spmf.gui.Main;
 import ca.pfv.spmf.gui.visuals.plot.Plot.LegendFormat;
 
 /* This file is copyright (c) 2008-2016 Philippe Fournier-Viger
-* 
+*
 * This file is part of the SPMF DATA MINING SOFTWARE
 * (http://www.philippe-fournier-viger.com/spmf).
-* 
+*
 * SPMF is free software: you can redistribute it and/or modify it under the
 * terms of the GNU General Public License as published by the Free Software
 * Foundation, either version 3 of the License, or (at your option) any later
 * version.
-* 
+*
 * SPMF is distributed in the hope that it will be useful, but WITHOUT ANY
 * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
 */
+
 /**
- * This is the SPMF time series viewer
+ * The SPMF time series viewer.
+ *
  * @author Philippe Fournier-Viger, 2016
  */
-public class TimeSeriesViewer extends JFrame implements TimeSeriesViewerPanelListener{
-	
-	/** Title of this panel */
-	String title = "SPMF Time Series Viewer 2.08";
-	
-	/** Serial ID */
+public class TimeSeriesViewer extends JFrame implements TimeSeriesViewerPanelListener {
+
 	private static final long serialVersionUID = 1L;
-	
-	/** This panel is used to draw the time series	 */
-	TimeSeriesViewerPanel panelChart = null;
 
-	private JLabel labelX;
+	private static final Color BAR_BG = new Color(248, 249, 251);
+	private static final Color LINE_COLOR = new Color(210, 214, 220);
+	private static final String[] POINT_SIZES = {
+			"NONE", "1 pts", "2 pts", "3 pts", "4 pts", "5 pts", "6 pts", "7 pts", "8 pts", "9 pts", "10 pts" };
 
-	private JLabel labelY;
+	/** Title of this window */
+	String title = "SPMF Time Series Viewer " + Main.SPMF_VERSION;
 
-	private JLabel labelName;
+	/** The panel used to draw the time series */
+	TimeSeriesViewerPanel panelChart;
 
-	
+	private final JLabel labelX = new JLabel("x = ");
+	private final JLabel labelY = new JLabel("y = ");
+	private final JLabel labelName = new JLabel("name = ");
+	private final DecimalFormat df = new DecimalFormat("0.00");
+
 	public TimeSeriesViewer(List<TimeSeries> timeSeries) {
-//		setResizable(false);
-		
-		// Initialize this JFrame
 		setTitle(title);
-		setSize(900,600);
-		setLocationRelativeTo(null); 
-		setMinimumSize(new Dimension(884,648));
-		
-        // Initialize the panel to display time series
+		setSize(900, 600);
+		setMinimumSize(new Dimension(720, 450));
+		setLocationRelativeTo(null);
+
 		panelChart = new TimeSeriesViewerPanel(timeSeries);
-		panelChart.setForeground(Color.WHITE);
 		panelChart.addListener(this);
-		getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
-		
-		// Put the panel inside a scrollpane to have scrollbars.
+
 		JScrollPane scrollPane = new JScrollPane(panelChart);
-		scrollPane.setAutoscrolls(true);
-		this.getContentPane().add(scrollPane);
-		
-		JPanel panelTools = new JPanel();
-//		panelTools.setBounds(0, 0, 800, 100);
-		panelTools.setMinimumSize(new Dimension(900,100));
-		panelTools.setPreferredSize(new Dimension(900,100));
-		panelTools.setMaximumSize(new Dimension(900,100));
-		getContentPane().add(panelTools);
-		panelTools.setLayout(null);
-		
-		JPanel panel = new JPanel();
-		panel.setBounds(15, 16, 199, 63);
-		panelTools.add(panel);
-		panel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
-		panel.setVisible(true);
-		panel.setLayout(null);
-		
-		labelX = new JLabel("x = ");
-		labelX.setBounds(15, 7, 61, 20);
-		panel.add(labelX);
-		
-		labelY = new JLabel("y = ");
-		labelY.setBounds(104, 7, 51, 20);
-		panel.add(labelY);
-		
-		labelName = new JLabel("name = ");
-		labelName.setBounds(15, 27, 169, 20);
-		panel.add(labelName);
-		
-		JButton buttonZoomIn = new JButton("");
-		buttonZoomIn.setBounds(218, 16, 50, 29);
-		panelTools.add(buttonZoomIn);
-		buttonZoomIn.setIcon(new ImageIcon(TimeSeriesViewer.class.getResource("/ca/pfv/spmf/gui/icons/zoomin.gif")));
-		
-		JButton buttonZoomOut = new JButton("");
-		buttonZoomOut.setBounds(270, 16, 50, 29);
-		panelTools.add(buttonZoomOut);
-		buttonZoomOut.setIcon(new ImageIcon(TimeSeriesViewer.class.getResource("/ca/pfv/spmf/gui/icons/zoomout.gif")));
-		
-		JLabel lblLegend = new JLabel("Legend:");
-		lblLegend.setBounds(353, 25, 59, 20);
-		panelTools.add(lblLegend);
-		
-		JLabel lblLines = new JLabel("Series lines:");
-		lblLines.setBounds(325, 59, 87, 20);
-		panelTools.add(lblLines);
+		scrollPane.setBorder(BorderFactory.createEmptyBorder());
+		scrollPane.getViewport().setBackground(Color.WHITE);
 
-		
-		JComboBox comboBoxLegend = new JComboBox(LegendFormat.values());
-		comboBoxLegend.setBounds(416, 19, 87, 26);
-		panelTools.add(comboBoxLegend);
-		comboBoxLegend.setSelectedIndex(3);
-		
-		JComboBox comboBoxSeriesLine = new JComboBox(new String[]{"NONE", "1 pts", "2 pts", "3 pts", "4 pts", "5 pts", "6 pts", "7 pts", "8 pts", "9 pts", "10 pts"});
-		comboBoxSeriesLine.setBounds(416, 56, 87, 26);
-		comboBoxSeriesLine.setSelectedIndex(1);
-		panelTools.add(comboBoxSeriesLine);
-		comboBoxSeriesLine.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int selection = comboBoxSeriesLine.getSelectedIndex();
-				panelChart.setSeriesLineWidth(selection);
-				
-			}
-		});
-		
-		JComboBox comboBoxGrid = new JComboBox(new String[]{"VISIBLE", "NONE"});
-		comboBoxGrid.setBounds(592, 19, 87, 26);
-		panelTools.add(comboBoxGrid);
-		
-		JLabel lblGrid = new JLabel("Grid:");
-		lblGrid.setBounds(533, 25, 44, 20);
-		panelTools.add(lblGrid);
-		
-		JLabel lblMarkers = new JLabel("Markers:");
-		lblMarkers.setBounds(517, 59, 70, 20);
-		panelTools.add(lblMarkers);
-		
-		JComboBox comboBoxMarkers = new JComboBox(new String[]{"NONE", "1 pts", "2 pts", "3 pts", "4 pts", "5 pts", "6 pts", "7 pts", "8 pts", "9 pts", "10 pts"});
-		comboBoxMarkers.setSelectedIndex(5);
-		comboBoxMarkers.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int selection = comboBoxMarkers.getSelectedIndex();
-				panelChart.setMarkersSize(selection);
-			}
-		});
-		comboBoxMarkers.setBounds(592, 53, 87, 26);
-		panelTools.add(comboBoxMarkers);
-		
-		JButton buttonSaveAsPng = new JButton("Save as PNG");
-		buttonSaveAsPng.setBounds(694, 50, 163, 29);
-		panelTools.add(buttonSaveAsPng);
-		buttonSaveAsPng.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				panelChart.export();
-			}
-		});
-		buttonSaveAsPng.setIcon(new ImageIcon(TimeSeriesViewer.class.getResource("/ca/pfv/spmf/gui/icons/save.gif")));
-		
-		JButton buttonPrint = new JButton("Print");
-		buttonPrint.setBounds(694, 16, 163, 29);
-		panelTools.add(buttonPrint);
-		buttonPrint.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				panelChart.doPrint();
-			}
-		});
-		buttonPrint.setIcon(new ImageIcon(TimeSeriesViewer.class.getResource("/ca/pfv/spmf/gui/icons/print.gif")));
-
-		comboBoxGrid.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String selection = (String)comboBoxGrid.getSelectedItem();
-				panelChart.setDrawGrid("VISIBLE".equals(selection));
-			}
-		});
-
-		
-		comboBoxLegend.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				LegendFormat selection = (LegendFormat) comboBoxLegend.getSelectedItem();
-				panelChart.setDrawLegend( selection);
-			}
-		});
-		buttonZoomOut.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				panelChart.decreaseZoom();
-			}
-		});
-		buttonZoomIn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				panelChart.increaseZoom();
-			}
-		});
+		getContentPane().setLayout(new BorderLayout());
+		getContentPane().add(buildToolbar(), BorderLayout.NORTH);
+		getContentPane().add(scrollPane, BorderLayout.CENTER);
+		getContentPane().add(buildStatusBar(), BorderLayout.SOUTH);
 	}
+
+	// ---------------------------------------------------------------
+	// UI
+	// ---------------------------------------------------------------
+
+	private JPanel buildToolbar() {
+		JPanel toolbar = new JPanel();
+		toolbar.setLayout(new BoxLayout(toolbar, BoxLayout.Y_AXIS));
+		toolbar.setBackground(BAR_BG);
+		toolbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LINE_COLOR));
+
+		// ---- row 1: display options ----------------------------------
+		JPanel row1 = newRow();
+
+		row1.add(new JLabel("Legend:"));
+		JComboBox<LegendFormat> comboBoxLegend = new JComboBox<LegendFormat>(LegendFormat.values());
+		comboBoxLegend.setSelectedItem(LegendFormat.BOTTOM);
+		comboBoxLegend.addActionListener(e ->
+				panelChart.setDrawLegend((LegendFormat) comboBoxLegend.getSelectedItem()));
+		row1.add(comboBoxLegend);
+
+		row1.add(createSeparator());
+
+		row1.add(new JLabel("Series lines:"));
+		JComboBox<String> comboBoxSeriesLine = new JComboBox<String>(POINT_SIZES);
+		comboBoxSeriesLine.setSelectedIndex(1);
+		comboBoxSeriesLine.addActionListener(e ->
+				panelChart.setSeriesLineWidth(comboBoxSeriesLine.getSelectedIndex()));
+		row1.add(comboBoxSeriesLine);
+
+		row1.add(new JLabel("Markers:"));
+		JComboBox<String> comboBoxMarkers = new JComboBox<String>(POINT_SIZES);
+		comboBoxMarkers.setSelectedIndex(5);
+		comboBoxMarkers.addActionListener(e ->
+				panelChart.setMarkersSize(comboBoxMarkers.getSelectedIndex()));
+		row1.add(comboBoxMarkers);
+
+		row1.add(createSeparator());
+
+		JCheckBox checkGrid = new JCheckBox("Grid", true);
+		checkGrid.setOpaque(false);
+		checkGrid.setFocusable(false);
+		checkGrid.addActionListener(e -> panelChart.setDrawGrid(checkGrid.isSelected()));
+		row1.add(checkGrid);
+
+		// ---- row 2: zoom + export -------------------------------------
+		JPanel row2 = newRow();
+
+		row2.add(new JLabel("Zoom:"));
+		row2.add(createButton("", "/ca/pfv/spmf/gui/icons/zoomin.gif", "Zoom in (Ctrl + wheel)",
+				e -> panelChart.increaseZoom(), "+"));
+		row2.add(createButton("", "/ca/pfv/spmf/gui/icons/zoomout.gif", "Zoom out (Ctrl + wheel)",
+				e -> panelChart.decreaseZoom(), "\u2212"));
+		row2.add(createButton("Fit", null, "Fit the chart in the window",
+				e -> panelChart.resetZoom(), "Fit"));
+
+		row2.add(createSeparator());
+
+		row2.add(createButton("Save as PNG", "/ca/pfv/spmf/gui/icons/save.gif",
+				"Save the chart as a PNG image (2x resolution)", e -> panelChart.export(), null));
+		row2.add(createButton("Print", "/ca/pfv/spmf/gui/icons/print.gif",
+				"Print the chart", e -> panelChart.doPrint(), null));
+
+		toolbar.add(row1);
+		toolbar.add(row2);
+		return toolbar;
+	}
+
+	private JPanel buildStatusBar() {
+		JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 4));
+		bar.setBackground(BAR_BG);
+		bar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, LINE_COLOR));
+		Font f = labelX.getFont().deriveFont(Font.PLAIN, 12f);
+		for (JLabel l : new JLabel[] { labelX, labelY, labelName }) {
+			l.setFont(f);
+		}
+		labelX.setPreferredSize(new Dimension(110, 18));
+		labelY.setPreferredSize(new Dimension(110, 18));
+		bar.add(labelX);
+		bar.add(labelY);
+		bar.add(labelName);
+		return bar;
+	}
+
+	private JPanel newRow() {
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 3));
+		row.setOpaque(false);
+		row.setBorder(BorderFactory.createEmptyBorder(1, 4, 1, 4));
+		return row;
+	}
+
+	private JSeparator createSeparator() {
+		JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
+		sep.setPreferredSize(new Dimension(1, 22));
+		return sep;
+	}
+
+	private JButton createButton(String text, String iconPath, String tooltip,
+			java.awt.event.ActionListener l, String fallbackText) {
+		JButton b = new JButton(text);
+		URL url = iconPath != null ? TimeSeriesViewer.class.getResource(iconPath) : null;
+		if (url != null) {
+			b.setIcon(new ImageIcon(url));
+		} else if (fallbackText != null && text.isEmpty()) {
+			b.setText(fallbackText);
+		}
+		b.setToolTipText(tooltip);
+		b.setFocusable(false);
+		b.addActionListener(l);
+		return b;
+	}
+
+	// ---------------------------------------------------------------
+	// TimeSeriesViewerPanelListener
+	// ---------------------------------------------------------------
 
 	@Override
 	public void notifyOfNewMousePosition(double x, double y, Color colorUnderMouse, String timeSeriesUnderMouse) {
-		
-		// display the mouse position
-		// we will only show two decimals
-		DecimalFormat df = new DecimalFormat("0.00");
-		df.setMaximumFractionDigits(2);
-		String stringX = df.format(x);
-		String stringY = df.format(y);
-		labelX.setText("x = " + stringX);
-		labelY.setText("y = " + stringY);
-		
-		// display the time series name
-		labelName.setText("Name = "  + timeSeriesUnderMouse);
-		if("".equals(timeSeriesUnderMouse) == false){
-			labelName.setForeground(colorUnderMouse);
-		}else{
-			labelName.setForeground(Color.black);
+		labelX.setText("x = " + df.format(x));
+		labelY.setText("y = " + df.format(y));
+		if (timeSeriesUnderMouse != null && !timeSeriesUnderMouse.isEmpty()) {
+			labelName.setText("Name = " + timeSeriesUnderMouse);
+			labelName.setForeground(colorUnderMouse != null ? colorUnderMouse : Color.BLACK);
+		} else {
+			labelName.setText("Name = ");
+			labelName.setForeground(Color.BLACK);
 		}
 	}
 
@@ -235,5 +219,7 @@ public class TimeSeriesViewer extends JFrame implements TimeSeriesViewerPanelLis
 	public void notifyMouseOutOfChart() {
 		labelX.setText("x = ");
 		labelY.setText("y = ");
+		labelName.setText("Name = ");
+		labelName.setForeground(Color.BLACK);
 	}
 }

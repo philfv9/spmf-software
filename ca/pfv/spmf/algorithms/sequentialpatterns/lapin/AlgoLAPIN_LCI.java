@@ -8,14 +8,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import ca.pfv.spmf.datastructures.triangularmatrix.AbstractTriangularMatrix;
 import ca.pfv.spmf.datastructures.triangularmatrix.SparseTriangularMatrix;
@@ -32,16 +30,16 @@ import ca.pfv.spmf.tools.MemoryLogger;
  * the original LAPIN-SPAM, position-lists are instead updated. But because this
  * would be consume too much memory, we took the design decision of doing it
  * differently.
- * 
+ *
  * The LAPIN-SPAM algorithm was originally described in this paper:
- * 
+ *
  * Zhenlu Yang and Masaru Kitsuregawa. LAPIN-SPAM: An improved algorithm for
  * mining sequential pattern In Proc. of Int'l Special Workshop on Databases For
  * Next Generation Researchers (SWOD'05) in conjunction with ICDE'05, pp. 8-11,
  * Tokyo, Japan, Apr. 2005.
  *
  * Copyright (c) 2008-2013 Philippe Fournier-Viger
- * 
+ *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
  *
@@ -56,8 +54,9 @@ import ca.pfv.spmf.tools.MemoryLogger;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license from this file.
  */
-
 public class AlgoLAPIN_LCI {
 
 	/** for statistics **/
@@ -69,16 +68,28 @@ public class AlgoLAPIN_LCI {
 	/** Minimum support threshold **/
 	private int minsup = 0;
 
+	/**
+	 * Minimum number of items that a pattern must contain to be output
+	 * (default = 0, meaning no minimum constraint).
+	 **/
+	private int minPatternLength = 0;
+
+	/**
+	 * Maximum number of items that a pattern is allowed to contain
+	 * (default = Integer.MAX_VALUE, meaning no maximum constraint).
+	 **/
+	private int maxPatternLength = Integer.MAX_VALUE;
+
 	/** Buffered writer for output **/
 	BufferedWriter writer = null;
 
 	/** Item-is-exist table, one per sequence **/
 	Table[] tables = null;
 
-	/** Position lists for SE (Sequence Extension) **/
+	/** Position lists for SE (Sequence Extension), one per sequence **/
 	SEPositionList[] sePositionList;
 
-	/** Position lists for IE (Item Extension) 2-itemsets **/
+	/** Position lists for IE (Item Extension) 2-itemsets, one per sequence **/
 	IEPositionList[] iePositionList;
 
 	/** Enable or disable debug mode **/
@@ -94,10 +105,35 @@ public class AlgoLAPIN_LCI {
 	String input = null;
 
 	/**
+	 * Flat in-memory encoding of all sequences (each is a run of tokens with -1 as
+	 * itemset separator and -2 as sequence terminator), used so the file is read only once.
+	 */
+	private int[][] sequenceTokens;
+
+	/**
 	 * Default constructor
 	 */
 	public AlgoLAPIN_LCI() {
+	}
 
+	/**
+	 * This optional parameter allows to specify the minimum pattern length
+	 * (the minimum number of items that a pattern must contain).
+	 *
+	 * @param minPatternLength the minimum pattern length
+	 */
+	public void setMinimumPatternLength(int minPatternLength) {
+		this.minPatternLength = minPatternLength;
+	}
+
+	/**
+	 * This optional parameter allows to specify the maximum pattern length
+	 * (the maximum number of items that a pattern is allowed to contain).
+	 *
+	 * @param maxPatternLength the maximum pattern length
+	 */
+	public void setMaximumPatternLength(int maxPatternLength) {
+		this.maxPatternLength = maxPatternLength;
 	}
 
 	/**
@@ -109,34 +145,73 @@ public class AlgoLAPIN_LCI {
 	 * @throws IOException if an error occurs while writing to the file
 	 */
 	public void runAlgorithm(String input, String outputFilePath, double minsupRel) throws IOException {
-		// Set input file path
 		this.input = input;
-
-		// Initialize the file writer for output
 		writer = new BufferedWriter(new FileWriter(outputFilePath));
-
-		// Reset pattern count
+		writer.write("@FILETYPE=\"Frequent sequential patterns\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
 		patternCount = 0;
-
-		// Reset memory usage logger
 		MemoryLogger.getInstance().reset();
-
-		// Record the start time
 		long startTime = System.currentTimeMillis();
-
-		// Run the core algorithm
 		lapin(input, minsupRel);
-
-		// Record the total execution time
 		totalTime = System.currentTimeMillis() - startTime;
-
-		// Close the output writer
 		writer.close();
 	}
 
 	/**
-	 * Run the LAPIN algorithm
-	 * 
+	 * Grows the given int array by doubling its capacity when it is already full.
+	 *
+	 * @param array the current array
+	 * @param size  the current number of used slots
+	 * @return the same array if there was room, or a new larger copy
+	 */
+	private static int[] growIfNeeded(int[] array, int size) {
+		if (size == array.length) {
+			return Arrays.copyOf(array, array.length * 2);
+		}
+		return array;
+	}
+
+	/**
+	 * Parses a line into an int array without using String.split, avoiding regex overhead.
+	 *
+	 * @param line the input line
+	 * @return an int array of all token values in the line
+	 */
+	private static int[] parseLine(String line) {
+		int spaces = 0;
+		int len = line.length();
+		for (int i = 0; i < len; i++) {
+			if (line.charAt(i) == ' ') spaces++;
+		}
+		int[] result = new int[spaces + 1];
+		int idx = 0;
+		int start = 0;
+		for (int i = 0; i <= len; i++) {
+			if (i == len || line.charAt(i) == ' ') {
+				boolean negative = false;
+				int j = start;
+				if (line.charAt(j) == '-') {
+					negative = true;
+					j++;
+				}
+				int val = 0;
+				while (j < i) {
+					val = val * 10 + (line.charAt(j) - '0');
+					j++;
+				}
+				result[idx++] = negative ? -val : val;
+				start = i + 1;
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Run the LAPIN algorithm.
+	 *
 	 * @param input     the input file path
 	 * @param minsupRel the minsup threshold as a percentage
 	 */
@@ -147,63 +222,61 @@ public class AlgoLAPIN_LCI {
 		}
 
 		// FIRST DATABASE SCAN:
-		// This scan is to count the number of sequences, support of each item, and the
-		// largest item ID.
-
-		// Number of sequences
+		// Read all sequences into memory as int arrays, count sequences,
+		// find the largest item ID, and compute per-item first-occurrence borders.
 		int sequenceCount = 0;
-
-		// Largest item ID
 		int largestItemID = 0;
 
-		// This map will store for each item (key) the first position where the item
-		// appears in each sequence containing the item (value)
-		Map<Integer, List<Position>> mapItemFirstOccurrences = new HashMap<Integer, List<Position>>();
+		Map<Integer, int[]> mapItemBorderSids = new HashMap<>();
+		Map<Integer, short[]> mapItemBorderPos = new HashMap<>();
+		Map<Integer, Integer> mapItemBorderSize = new HashMap<>();
+
+		List<int[]> allSequenceTokensList = new ArrayList<>();
+
+		// reusable seen-item tracker: indexed by item id, stores sequenceCount+1 when seen
+		int[] seenInSeq = new int[1024];
+
 		try {
-			// Read the input file
 			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(input))));
 			String thisLine;
-			// for each sequence of the input fiel
 			while ((thisLine = reader.readLine()) != null) {
-
-				if (thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%' || thisLine.charAt(0) == '@') {
+				if (thisLine.isEmpty() || thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%' || thisLine.charAt(0) == '@') {
 					continue;
 				}
+				int[] tokens = parseLine(thisLine);
+				allSequenceTokensList.add(tokens);
 
-				// we use a set to remember which item have been seen already
-				Set<Integer> itemsAlreadySeen = new HashSet<Integer>();
-				// to know the itemset number
 				short itemsetID = 0;
-				// for each token in this line
-				for (String integer : thisLine.split(" ")) {
-					// if it is the end of an itemset
-					if ("-1".equals(integer)) {
+				for (int tok : tokens) {
+					if (tok == -1) {
 						itemsetID++;
-					} else if ("-2".equals(integer)) {
-						// Increase the count of sequences from the input file
+					} else if (tok == -2) {
 						sequenceCount++;
 					} else {
-						// otherwise, it is an item
-						Integer item = Integer.valueOf(integer);
-						// if this item was not seen already in that sequence
-						if (itemsAlreadySeen.contains(item) == false) {
-							// Get the list of positions of that item
-							List<Position> list = mapItemFirstOccurrences.get(item);
-							// if that list is null, create a new list
-							if (list == null) {
-								list = new ArrayList<Position>();
-								mapItemFirstOccurrences.put(item, list);
+						if (tok >= seenInSeq.length) {
+							seenInSeq = Arrays.copyOf(seenInSeq, Math.max(tok + 1, seenInSeq.length * 2));
+						}
+						if (seenInSeq[tok] != sequenceCount + 1) {
+							seenInSeq[tok] = sequenceCount + 1;
+							Integer item = tok;
+							int sz = mapItemBorderSize.getOrDefault(item, 0);
+							int[] sids = mapItemBorderSids.get(item);
+							short[] poss = mapItemBorderPos.get(item);
+							if (sids == null) {
+								sids = new int[4];
+								poss = new short[4];
+								mapItemBorderSids.put(item, sids);
+								mapItemBorderPos.put(item, poss);
+							} else if (sz == sids.length) {
+								sids = Arrays.copyOf(sids, sz * 2);
+								poss = Arrays.copyOf(poss, sz * 2);
+								mapItemBorderSids.put(item, sids);
+								mapItemBorderPos.put(item, poss);
 							}
-							// Add the position of the item in that sequence to the list of first positions
-							// of that item
-							Position position = new Position(sequenceCount, itemsetID);
-							list.add(position);
-							// Remember that we have seen this item
-							itemsAlreadySeen.add(item);
-							// Check if the item is the largest item until now
-							if (item > largestItemID) {
-								largestItemID = item;
-							}
+							sids[sz] = sequenceCount;
+							poss[sz] = itemsetID;
+							mapItemBorderSize.put(item, sz + 1);
+							if (tok > largestItemID) largestItemID = tok;
 						}
 					}
 				}
@@ -213,504 +286,426 @@ public class AlgoLAPIN_LCI {
 			e.printStackTrace();
 		}
 
-		// Initialize the list of tables
+		// Store all parsed sequences for reuse in the following scans
+		sequenceTokens = allSequenceTokensList.toArray(new int[0][]);
+
 		tables = new Table[sequenceCount];
 
-		// Calculate absolute minimum support as a number of sequences
-		minsup = (int) Math.ceil(minsupRel * sequenceCount);
+		minsup = (int) Math.ceil(minsupRel * sequenceCount - 0.0000001);
 		if (minsup == 0) {
 			minsup = 1;
 		}
 
 		if (DEBUG) {
-			System.out.println("Number of items: " + mapItemFirstOccurrences.size());
 			System.out.println("Sequence count:  " + sequenceCount);
-			System.out.println("Abs. minsup: " + minsup + " sequences");
-			System.out.println("Rel. minsup: " + minsupRel + " %");
-			System.out.println("=== Determining the frequent items ===");
+			System.out.println("Abs. minsup: " + minsup);
 		}
 
-//		// For each frequent item,  save it and add it to the list of frequent items
-		List<Integer> frequentItems = new ArrayList<Integer>();
-		for (Entry<Integer, List<Position>> entry : mapItemFirstOccurrences.entrySet()) {
-			// Get the support of this item
-			List<Position> itemSupport = entry.getValue();
-			// if the item is frequent
-			if (itemSupport.size() >= minsup) {
-				// Output the item and add it to the list of frequent items
-				Integer item = entry.getKey();
-				savePattern(item, itemSupport.size());
-				frequentItems.add(item);
+		// Collect frequent items (as a primitive array, no boxing) and their flat borders
+		int[] frequentItemsArr = new int[16];
+		int frequentItemsCount = 0;
+
+		int[][] borderSids = new int[largestItemID + 1][];
+		short[][] borderPos = new short[largestItemID + 1][];
+		int[] borderSizes = new int[largestItemID + 1];
+
+		for (Entry<Integer, Integer> entry : mapItemBorderSize.entrySet()) {
+			int item = entry.getKey();
+			int sz = entry.getValue();
+			if (sz >= minsup) {
+				// A single item forms a pattern of length 1 -- only output it
+				// if 1 satisfies the min/max pattern length constraints.
+				if (isValidLength(1)) {
+					savePattern(item, sz);
+				}
+				if (frequentItemsCount == frequentItemsArr.length) {
+					frequentItemsArr = Arrays.copyOf(frequentItemsArr, frequentItemsArr.length * 2);
+				}
+				frequentItemsArr[frequentItemsCount++] = item;
+				borderSids[item] = Arrays.copyOf(mapItemBorderSids.get(item), sz);
+				borderPos[item] = Arrays.copyOf(mapItemBorderPos.get(item), sz);
+				borderSizes[item] = sz;
 				if (DEBUG) {
-					System.out.println(" Item " + item + " is frequent with support = " + itemSupport.size());
-					System.out.println(" It appears at positions:");
-					for (Position pos : itemSupport) {
-						System.out.println("   " + pos);
-					}
+					System.out.println(" Item " + item + " frequent, support=" + sz);
 				}
 			}
 		}
+		mapItemBorderSids.clear();
+		mapItemBorderPos.clear();
+		mapItemBorderSize.clear();
 
-		if (DEBUG) {
-			System.out.println("=== Sort the list of frequent items===");
-			System.out.println(frequentItems);
+		frequentItemsArr = Arrays.copyOf(frequentItemsArr, frequentItemsCount);
+		Arrays.sort(frequentItemsArr);
+
+		// Build a lookup array so that checking if an item is frequent is an O(1) array access
+		boolean[] isFrequentItem = new boolean[largestItemID + 1];
+		for (int item : frequentItemsArr) {
+			isFrequentItem[item] = true;
 		}
-
-		// sort the frequent items (useful when generating 2-IE-sequences, later on).
-		Collections.sort(frequentItems);
 
 		if (DEBUG) {
 			System.out.println("=== Second database scan to construct item-is-exist tables ===");
 		}
 
-		// SECOND DATABASE SCAN:
-		// Now we will read the database again to create the Item-is-exist-table
-		// and SE-position-lists and count support of 2-IE-sequences
+		// SECOND DATABASE SCAN (in-memory):
+		// Create Item-is-exist tables and count support of 2-IE-sequences.
 		matrixPairCount = new SparseTriangularMatrix(largestItemID + 1);
-
-		// Initialise the IE position lists and SE position lists
 		sePositionList = new SEPositionList[sequenceCount];
 		iePositionList = new IEPositionList[sequenceCount];
 
-		try {
-			// Prepare to read the file
-			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(input))));
-			String thisLine;
-			// For each sequence in the file
-			int currentSequenceID = 0;
-			while ((thisLine = reader.readLine()) != null) {
-				if (thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%' || thisLine.charAt(0) == '@') {
-					continue;
-				}
+		// Allocated once and reused across sequences; the sequence-id trick avoids clearing.
+		AbstractTriangularMatrix matrixPairLastSeenInSID = new SparseTriangularMatrix(largestItemID + 1);
 
-				// (1) ------- PARSE THE SEQUENCE BACKWARD TO CREATE THE ITEM-IS-EXIST TABLE FOR
-				// THATS SEQUENCE
-				// AND COUNT THE SUPPORT OF 2-IE-Sequences
+		boolean[] itemSeenBool = new boolean[largestItemID + 1];
+		int[] itemSeenList = new int[largestItemID + 1];
+		int itemSeenCount = 0;
+		BitSet currentBitset = new BitSet(largestItemID + 1);
+		int[] currentItemset = new int[64];
+		int currentItemsetSize = 0;
 
-				// We will also use a structure to remember in which sequence we have seen each
-				// pair of items
-				// Note that in this structure, we will add +1 to the sid because by default the
-				// matrix is filled with 0
-				// and we don't want to think that the first sequence was already seen for all
-				// pairs.
-				AbstractTriangularMatrix matrixPairLastSeenInSID = new SparseTriangularMatrix(largestItemID + 1);
+		for (int currentSequenceID = 0; currentSequenceID < sequenceCount; currentSequenceID++) {
+			int[] tokens = sequenceTokens[currentSequenceID];
 
-				// We count the number of positions (number of itemsets).
-				// To do that we count the number of "-" symbols in the file.
-				// We need to subtract 1 because the end of line "-2" contains "-".
-				int positionCount = -1;
-				for (char caracter : thisLine.toCharArray()) {
-					if (caracter == '-') {
-						positionCount++;
+			for (int ci = 0; ci < itemSeenCount; ci++) itemSeenBool[itemSeenList[ci]] = false;
+			itemSeenCount = 0;
+			currentBitset.clear();
+			currentItemsetSize = 0;
+
+			int positionCount = -1;
+			for (int tok : tokens) {
+				if (tok < 0) positionCount++;
+			}
+
+			Table table = new Table();
+			boolean seenNewItem = false;
+
+			int currentPosition = positionCount;
+			for (int i = tokens.length - 1; i >= 0; i--) {
+				int tok = tokens[i];
+				if (tok == -1) {
+					for (int k = 0; k < currentItemsetSize; k++) {
+						int item1 = currentItemset[k];
+						for (int m = k + 1; m < currentItemsetSize; m++) {
+							int item2 = currentItemset[m];
+							int smaller = item1 < item2 ? item1 : item2;
+							int larger = item1 < item2 ? item2 : item1;
+							int sid = matrixPairLastSeenInSID.getSupportForItems(smaller, larger);
+							if (sid != currentSequenceID + 1) {
+								matrixPairCount.incrementCount(smaller, larger);
+								matrixPairLastSeenInSID.setSupport(smaller, larger, currentSequenceID + 1);
+							}
+						}
+					}
+					currentItemsetSize = 0;
+					currentPosition--;
+					if (seenNewItem) {
+						table.add(currentPosition, (BitSet) currentBitset.clone());
+						seenNewItem = false;
+					}
+				} else if (tok == -2) {
+					// end of sequence marker, nothing to do
+				} else {
+					int item = tok;
+					if (item <= largestItemID && isFrequentItem[item]) {
+						if (!itemSeenBool[item]) {
+							itemSeenBool[item] = true;
+							itemSeenList[itemSeenCount++] = item;
+							seenNewItem = true;
+							currentBitset.set(item);
+						}
+						currentItemset = growIfNeeded(currentItemset, currentItemsetSize);
+						currentItemset[currentItemsetSize++] = item;
 					}
 				}
+			}
 
-				// Now we will scan the sequence again.
-				// This time we will remember which item were seen already
-				Set<Integer> itemsAlreadySeen = new HashSet<Integer>();
+			for (int k = 0; k < currentItemsetSize; k++) {
+				int item1 = currentItemset[k];
+				for (int m = k + 1; m < currentItemsetSize; m++) {
+					int item2 = currentItemset[m];
+					int smaller = item1 < item2 ? item1 : item2;
+					int larger = item1 < item2 ? item2 : item1;
+					int sid = matrixPairLastSeenInSID.getSupportForItems(smaller, larger);
+					if (sid != currentSequenceID + 1) {
+						matrixPairCount.incrementCount(smaller, larger);
+						matrixPairLastSeenInSID.setSupport(smaller, larger, currentSequenceID + 1);
+					}
+				}
+			}
 
-				// During this scan, we will create the table for this sequence
-				Table table = new Table();
+			if (itemSeenCount > 0) {
+				table.add(-1, (BitSet) currentBitset.clone());
+			}
 
-				// To do that, we first create an initial position vector for that table
-				BitSet currentBitset = new BitSet(mapItemFirstOccurrences.size()); // OK ?
+			sePositionList[currentSequenceID] = new SEPositionList(itemSeenList, itemSeenCount);
+			iePositionList[currentSequenceID] = new IEPositionList();
+			tables[currentSequenceID] = table;
+		}
 
-				// This variable will be used to remember if a new item appeared in the current
-				// itemset
-				boolean seenNewItem = false;
+		// THIRD SCAN (in-memory):
+		// Build SE-position lists and IE-position lists for frequent 2-IE-sequences.
+		currentItemsetSize = 0;
+		for (int currentSequenceID = 0; currentSequenceID < sequenceCount; currentSequenceID++) {
+			int[] tokens = sequenceTokens[currentSequenceID];
+			short itemsetID = 0;
+			currentItemsetSize = 0;
 
-				// We will scan the sequence backward, starting from the end because
-				// we should not create a bit vector for all positions but for only
-				// the positions that are different from the previous one.
-				String[] tokens = thisLine.split(" ");
-				// This is the number of itemsets
-				int currentPosition = positionCount;
-				// to keep the current itemset in memory
-				List<Integer> currentItemset = new ArrayList<Integer>();
-				// For each token in that sequence
-				for (int i = tokens.length - 1; i >= 0; i--) {
-					// get the token
-					String token = tokens[i];
-
-					// if we reached the end of an itemset
-					if ("-1".equals(token)) {
-						// update the triangular matrix for counting 2-IE-sequences
-						// by comparing each pairs of items in the current itemset
-						for (int k = 0; k < currentItemset.size(); k++) {
-							Integer item1 = currentItemset.get(k);
-							for (int m = k + 1; m < currentItemset.size(); m++) {
-								Integer item2 = currentItemset.get(m);
-
-								// if that pair is frequent
-								int sid = matrixPairLastSeenInSID.getSupportForItems(item1, item2);
-								// and if we have not seen this sequence yet
-								if (sid != currentSequenceID + 1) {
-									// increment support count of this pair
-									matrixPairCount.incrementCount(item1, item2);
-									// remember that we have seen this pair so that we don't count it again
-									matrixPairLastSeenInSID.setSupport(item1, item2, currentSequenceID + 1);
+			for (int tok : tokens) {
+				if (tok == -1) {
+					if (currentItemsetSize > 1) {
+						for (int k = 0; k < currentItemsetSize; k++) {
+							int item1 = currentItemset[k];
+							for (int m = k + 1; m < currentItemsetSize; m++) {
+								int item2 = currentItemset[m];
+								int support = matrixPairCount.getSupportForItems(item1, item2);
+								if (support >= minsup) {
+									int smaller = item1 < item2 ? item1 : item2;
+									int larger = item1 < item2 ? item2 : item1;
+									iePositionList[currentSequenceID].register(smaller, larger, itemsetID);
 								}
 							}
 						}
-						currentItemset.clear();
-						// Decrease the current index of the position (itemset) in the sequence
-						currentPosition--;
-						// if the bit vector has changed since previous position, then
-						// we need to add a new bit vector to the table
-						if (seenNewItem) {
-							// create the position vector and add it to the item-is-exist table
-							PositionVector vector = new PositionVector(currentPosition, (BitSet) currentBitset.clone());
-							table.add(vector);
-						}
-
-					} else if ("-2".equals(token)) { // if end of sequence, nothing to do
-
-					} else {
-						// otherwise, it is an item
-						Integer item = Integer.valueOf(token);
-						if (mapItemFirstOccurrences.get(item).size() >= minsup) { // only for frequent items
-							// if first time that we see this item
-							if (itemsAlreadySeen.contains(item) == false) {
-								// remember that we have seen a new item
-								seenNewItem = true;
-								// remember that we have seen this item
-								itemsAlreadySeen.add(item);
-								// add this item to the current bit vector
-								currentBitset.set(item);
-							}
-							// add this item to the current itemset
-							currentItemset.add(item);
-						}
+					}
+					itemsetID++;
+					currentItemsetSize = 0;
+				} else if (tok == -2) {
+					// end of sequence, nothing to do
+				} else {
+					int item = tok;
+					if (item <= largestItemID && isFrequentItem[item]) {
+						sePositionList[currentSequenceID].register(item, itemsetID);
+						currentItemset = growIfNeeded(currentItemset, currentItemsetSize);
+						currentItemset[currentItemsetSize++] = item;
 					}
 				}
-
-				// Lastly,
-				// update the triangular matrix for counting 2-IE-sequences one more time
-				// for the case where the pair is in first position of the sequence
-				// by considering each pair of items in the last itemset.
-				// This is done like it was done above, so I will not comment this part of the
-				// code again.
-				for (int k = 0; k < currentItemset.size(); k++) {
-					Integer item1 = currentItemset.get(k);
-					for (int m = k + 1; m < currentItemset.size(); m++) {
-						Integer item2 = currentItemset.get(m);
-						// if th
-						int sid = matrixPairLastSeenInSID.getSupportForItems(item1, item2);
-						if (sid != currentSequenceID + 1) {
-							matrixPairCount.incrementCount(item1, item2);
-							matrixPairLastSeenInSID.setSupport(item1, item2, currentSequenceID + 1);
-						}
-					}
-				}
-
-				// If a new item was seen
-				// Add an extra row to the item-is-exist table that will be called -1 with all
-				// items in this sequence
-				if (seenNewItem) {
-					PositionVector vector = new PositionVector(-1, (BitSet) currentBitset.clone());
-					table.add(vector);
-				}
-//				
-//				
-//				// Initialize the IE lists and SE lists for that sequence
-				// which will be filled with the next database scan.
-				sePositionList[currentSequenceID] = new SEPositionList(itemsAlreadySeen);
-				iePositionList[currentSequenceID] = new IEPositionList();
-
-				if (DEBUG) {
-					System.out.println("Table for sequence " + currentSequenceID + " : " + thisLine);
-					System.out.println(table.toString());
-				}
-				// put the current table in the array of item-is-exist-tables
-				tables[currentSequenceID] = table;
-				// we will process the next sequence id
-				currentSequenceID++;
 			}
-			reader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
+
+			iePositionList[currentSequenceID].sort();
+
+			if (DEBUG) {
+				System.out.println("SE Position list for sequence " + currentSequenceID);
+				System.out.println(sePositionList[currentSequenceID]);
+				System.out.println("IE Position list for sequence " + currentSequenceID);
+				System.out.println(iePositionList[currentSequenceID]);
+			}
 		}
 
-		// THIRD SCAN TO
-		// PARSE THE SEQUENCE FORWARD TO CREATE THE SE-POSITION LIST OF THAT SEQUENCE
-		// AND IEPositionList for frequent 2-IE-SEQUENCES
-		try {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(input))));
-			String thisLine;
-			// For each sequence
-			int currentSequenceID = 0;
-			while ((thisLine = reader.readLine()) != null) {
-				if (thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%' || thisLine.charAt(0) == '@') {
-					continue;
-				}
-
-				// We will scan the sequence backward, starting from the end.
-				String[] tokens = thisLine.split(" ");
-				// to keep the current itemset in memory
-				List<Integer> currentItemset = new ArrayList<Integer>();
-
-				// this variable will be used to remember which itemset we are visiting
-				short itemsetID = 0;
-				// empty the object to track the current itemset (if it was used for the
-				// previous sequence)
-				currentItemset.clear();
-
-				// for each token of the current sequence
-				for (int i = 0; i < tokens.length; i++) {
-					String token = tokens[i];
-
-					// if we reached the end of an itemset
-					if ("-1".equals(token)) {
-						// if the current itemset contains more than one item
-						if (currentItemset.size() > 1) {
-							// update the position list for 2-IE-sequences
-							for (int k = 0; k < currentItemset.size(); k++) {
-								Integer item1 = currentItemset.get(k);
-								for (int m = k + 1; m < currentItemset.size(); m++) {
-									Integer item2 = currentItemset.get(m);
-									// if the pair is frequent
-									int support = matrixPairCount.getSupportForItems(item1, item2);
-									if (support >= minsup) {
-										iePositionList[currentSequenceID].register(item1, item2, itemsetID);
-									}
-								}
-							}
-						}
-						// increase itemsetID
-						itemsetID++;
-						// clear itemset
-						currentItemset.clear();
-					} else if ("-2".equals(token)) {
-						// if the end of a sequence, nothing special to do
-
-					} else {
-						// otherwise, the current token is an item
-						Integer item = Integer.valueOf(token);
-						// if the item is frequent
-						if (mapItemFirstOccurrences.get(item).size() >= minsup) {
-							// we add the current position to the item SE-position list
-							sePositionList[currentSequenceID].register(item, itemsetID);
-							// we add the item to the current itemset
-							currentItemset.add(item);
-						}
-					}
-				}
-
-				iePositionList[currentSequenceID].sort(); // sort the IE-position list
-
-				if (DEBUG) {
-					System.out.println("SE Position list for sequence " + currentSequenceID);
-					System.out.println(sePositionList[currentSequenceID]);
-					System.out.println("IE Position list for sequence " + currentSequenceID);
-					System.out.println(iePositionList[currentSequenceID]);
-				}
-
-				// update the sequence id for the next sequence
-				currentSequenceID++;
-			}
-			reader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		// free the in-memory sequence copy — no longer needed
+		sequenceTokens = null;
 
 		if (DEBUG) {
 			System.out.println("=== Starting sequential pattern generation ===");
 		}
 
-		patternGeneration(mapItemFirstOccurrences, frequentItems);
+		patternGeneration(frequentItemsArr, borderSids, borderPos, borderSizes);
 
-		// Record the maximum memory usage
 		MemoryLogger.getInstance().checkMemory();
 		writer.close();
+	}
+
+	/**
+	 * Checks whether a given pattern length (total number of items) satisfies
+	 * the minimum/maximum pattern length constraints.
+	 *
+	 * @param length the pattern length (total item count)
+	 * @return true if the length is within [minPatternLength, maxPatternLength]
+	 */
+	private boolean isValidLength(int length) {
+		return length >= minPatternLength && length <= maxPatternLength;
 	}
 
 	/**
 	 * Generates sequential patterns using a prefix-based approach from the list of
 	 * frequent items and their respective first occurrence positions (borders) in
 	 * the sequence database.
-	 * <p>
-	 * This method performs pattern generation in two main steps:
-	 * <ul>
-	 * <li>For each frequent item, it starts with a prefix containing only that item
-	 * and recursively explores longer patterns using sequence (S-) extensions.</li>
-	 * <li>For each pair of frequent items where the second is lexicographically
-	 * greater than the first, it explores patterns where both items appear in the
-	 * same itemset (I-extension), and continues recursively from those 2-IE
-	 * patterns.</li>
-	 * </ul>
-	 * 
-	 * @param mapItemFirstOccurrences A map where each key is a frequent item and
-	 *                                the corresponding value is a list of
-	 *                                {@link Position} objects representing the
-	 *                                positions of the first occurrence of the item
-	 *                                in each sequence where it appears.
-	 * @param frequentItems           A list of all frequent items (meeting the
-	 *                                minimum support threshold), sorted in
-	 *                                ascending order.
-	 * @throws IOException If an error occurs while saving the patterns.
+	 *
+	 * @param frequentItems a sorted primitive array of all frequent items
+	 * @param borderSids    flat int arrays of sequence ids for each item's border, indexed by item id
+	 * @param borderPos     flat short arrays of itemset positions for each item's border, indexed by item id
+	 * @param borderSizes   number of valid entries in each border array, indexed by item id
+	 * @throws IOException if an error occurs while saving the patterns
 	 */
-	private void patternGeneration(Map<Integer, List<Position>> mapItemFirstOccurrences, List<Integer> frequentItems)
-			throws IOException {
-		// For each frequent item, call the recursive method to explore larger patterns
-		for (int i = 0; i < frequentItems.size(); i++) {
+	private void patternGeneration(int[] frequentItems,
+			int[][] borderSids, short[][] borderPos, int[] borderSizes) throws IOException {
 
-			// Get the item
-			int item1 = frequentItems.get(i);
+		// Reuse a single Prefix object for the whole search; genPatterns backtracks in place.
+		Prefix prefix = new Prefix();
 
-			// Get the border for that item
-			List<Position> item1Border = mapItemFirstOccurrences.get(item1);
+		for (int i = 0; i < frequentItems.length; i++) {
+			int item1 = frequentItems[i];
+			int sz1 = borderSizes[item1];
+
 			if (DEBUG) {
-				System.out.println("=== Considering item " + item1 + "\n  Border:");
-				for (Position pos : item1Border) {
-					System.out.println("    seq: " + pos.sid + "    itemset: " + pos.position);
-				}
-			}
-			// if the border contains at least minsup sequence (if the item is frequent)
-			if (item1Border.size() >= minsup) {
-				
-			    // Create prefix with the item
-			    Prefix prefix = new Prefix(item1);
-			    
-			    // Recursively find s-extensions (TRUE so that I-extensions are disabled since 2-IE are handled separately)
-			    genPatterns(prefix, item1Border, frequentItems, frequentItems, item1, true);
+				System.out.println("=== Considering item " + item1);
 			}
 
-			// For each frequent 2-IE sequences stating with item1, we will explore 2-IE
-			// sequences by considering each frequent item larger than item1
-			for (int k = i + 1; k < frequentItems.size(); k++) {
-				// We consider item2
-				int item2 = frequentItems.get(k);
-				// Get the support of item1, item2
+			if (sz1 >= minsup) {
+				List<Integer> firstItemset = new ArrayList<>(1);
+				firstItemset.add(item1);
+				prefix.itemsets.add(firstItemset);
+
+				// Recursively find s-extensions (I-extensions disabled; 2-IE handled separately)
+				// The single item itself has length 1; genPatterns will prune internally
+				// if the maximum pattern length does not allow any further extension.
+				genPatterns(prefix, borderSids[item1], borderPos[item1], sz1,
+						frequentItems, frequentItems.length, frequentItems, frequentItems.length, item1, true, 1);
+
+				prefix.itemsets.remove(prefix.itemsets.size() - 1);
+			}
+
+			// For each frequent 2-IE sequence starting with item1
+			for (int k = i + 1; k < frequentItems.length; k++) {
+				int item2 = frequentItems[k];
 				int support = matrixPairCount.getSupportForItems(item1, item2);
 
-				// if the pair {item1, item2} is frequent
 				if (support >= minsup) {
-					
-					// get the list of position of item2
-					List<Position> item2Border = mapItemFirstOccurrences.get(item2);
-					
-					// Create the border by using the 2-IE position list
-					List<Position> ie12Border = new ArrayList<Position>();
+					int sz2 = borderSizes[item2];
 
-					// We will loop over the border of item1 or item2 (the smallest one)
-					List<Position> borderToUse = (item2Border.size() < item1Border.size()) ? item2Border : item1Border;
-					
-					// For each sequence of the border that we consider
-					for (Position sequenceToUse : borderToUse) {
-						
-						// Get the sequence id
-						int sid = sequenceToUse.sid;
-						
-						// For this sequence, we will get the position list of each item
-						List<Short> listPosition1 = sePositionList[sid].getListForItem(item1);
-						List<Short> listPosition2 = sePositionList[sid].getListForItem(item2);
-						
-						// if one of them is null, that means that both item1 and item2 do not appear in
-						// that sequence
-						// so we continue to the next sequence
-						if (listPosition1 == null || listPosition2 == null) {
-							continue;
-						}
-						// otherwise
-						// find the first common position of item1 and item2 in the sequence
-						int index1 = 0;
-						int index2 = 0;
+					int[] ie12Sids = new int[Math.min(sz1, sz2)];
+					short[] ie12Pos = new short[Math.min(sz1, sz2)];
+					int ie12Size = 0;
 
-						// we do that by the following while loop
-						while (index1 < listPosition1.size() && index2 < listPosition2.size()) {
-							short position1 = listPosition1.get(index1);
-							short position2 = listPosition2.get(index2);
-							if (position1 < position2) {
-								index1++;
-							} else if (position1 > position2) {
-								index2++;
-							} else {
-								// we have found the position, so we add it to the new border and
-								// then stop because we do not want to add more than one position for
-								// the same sequence in the new border
-								ie12Border.add(new Position(sid, position1));
+					int[] iterSids = sz2 < sz1 ? borderSids[item2] : borderSids[item1];
+					int iterSz = sz2 < sz1 ? sz2 : sz1;
+
+					for (int bi = 0; bi < iterSz; bi++) {
+						int sid = iterSids[bi];
+						short[] lp1 = sePositionList[sid].getPrimitiveListForItem(item1);
+						short[] lp2 = sePositionList[sid].getPrimitiveListForItem(item2);
+						int lp1sz = sePositionList[sid].getSizeForItem(item1);
+						int lp2sz = sePositionList[sid].getSizeForItem(item2);
+						if (lp1 == null || lp2 == null || lp1sz == 0 || lp2sz == 0) continue;
+
+						int idx1 = 0, idx2 = 0;
+						while (idx1 < lp1sz && idx2 < lp2sz) {
+							short p1 = lp1[idx1];
+							short p2 = lp2[idx2];
+							if (p1 < p2) { idx1++; }
+							else if (p1 > p2) { idx2++; }
+							else {
+								if (ie12Size == ie12Sids.length) {
+									ie12Sids = Arrays.copyOf(ie12Sids, ie12Size * 2);
+									ie12Pos = Arrays.copyOf(ie12Pos, ie12Size * 2);
+								}
+								ie12Sids[ie12Size] = sid;
+								ie12Pos[ie12Size] = p1;
+								ie12Size++;
 								break;
 							}
 						}
 					}
+
 					if (DEBUG) {
-						System.out.println("=== Considering the 2-IE sequence {" + item1 + "," + item2
-								+ "}  with support " + support);
-						System.out.println("  Border of {" + item1 + "," + item2 + "}");
-						for (Position pos : ie12Border) {
-							System.out.println("    seq: " + pos.sid + "    itemset: " + pos.position);
-						}
+						System.out.println("=== 2-IE {" + item1 + "," + item2 + "} support=" + support);
 					}
 
-					// finally, we create the prefix for the pattern {item1, item2}
-					Prefix prefix = new Prefix(item1, item2);
-					// save the pattern
-					savePattern(prefix, support);
-					// perform recursive call to extend that pattern
-					genPatterns(prefix, ie12Border, frequentItems, frequentItems, item2, false); // false, to allow
-																									// I-extension
+					List<Integer> itemset = new ArrayList<>(2);
+					itemset.add(item1);
+					itemset.add(item2);
+					prefix.itemsets.add(itemset);
+
+					// This 2-IE pattern has length 2 (two items in one itemset)
+					if (isValidLength(2)) {
+						savePattern(prefix, support);
+					}
+
+					genPatterns(prefix, ie12Sids, ie12Pos, ie12Size,
+							frequentItems, frequentItems.length, frequentItems, frequentItems.length, item2, false, 2);
+
+					prefix.itemsets.remove(prefix.itemsets.size() - 1);
 				}
 			}
 		}
 	}
 
 	/**
-	 * The main recursive method of LAPIN
-	 * 
-	 * @param prefix                     the current prefix
-	 * @param prefix                     the prefix
-	 * @param prefixBorder               a list of position that is the prefix
-	 *                                   border
-	 * @param in                         items that could be appended by i-extension
+	 * The main recursive method of LAPIN; uses flat primitive arrays for item lists and
+	 * borders throughout to avoid boxing on the hottest path of the algorithm.
+	 *
+	 * @param prefix                     the current prefix (mutated in place; callers backtrack)
+	 * @param prefixBorderSids           sequence ids of the prefix border
+	 * @param prefixBorderPos            itemset positions of the prefix border
+	 * @param prefixBorderSize           number of valid entries in the border arrays
 	 * @param sn                         items that could be appended by s-extension
-	 * @param hasToBeGreaterThanForIStep
+	 * @param snSize                     number of valid entries in sn
+	 * @param in                         items that could be appended by i-extension
+	 * @param inSize                     number of valid entries in in
+	 * @param hasToBeGreaterThanForIStep the lower bound for i-extension item ids
+	 * @param doNotPerformIExtensions    if true, skip the I-step entirely
+	 * @param currentLength              the total number of items in the current prefix
 	 * @throws IOException if error while writing to file
 	 */
+	private void genPatterns(Prefix prefix,
+			int[] prefixBorderSids, short[] prefixBorderPos, int prefixBorderSize,
+			int[] sn, int snSize, int[] in, int inSize,
+			int hasToBeGreaterThanForIStep, boolean doNotPerformIExtensions, int currentLength) throws IOException {
 
-	private void genPatterns(Prefix prefix, List<Position> prefixBorder, List<Integer> sn, List<Integer> in,
-			int hasToBeGreaterThanForIStep, boolean doNotPerformIExtensions) throws IOException {
-		
-////		%%%%%%%%%%%
-//		System.out.println("##### PREFIX "  + prefix);
-//		if(prefix.size() == 2 && prefix.getItemsets().get(0).size() == 1 && prefix.getItemsets().get(0).get(0) == 2) {
-//			System.out.println("Test");
-//		}
-//		System.out.println();
-////		%%%%%%%%%%%
+		// If the current prefix has already reached the maximum allowed pattern
+		// length, any extension (S-step or I-step) would exceed it, so there is
+		// no point in doing any further work here.
+		if (currentLength >= maxPatternLength) {
+			return;
+		}
 
 		// ====== S-STEPS ======
-//			// Temporary variables (as described in the paper)
-		List<Integer> sTemp = new ArrayList<Integer>();
-		List<Integer> sTempSupport = new ArrayList<Integer>();
-//			
-//			// for each item in sn
-		for (Integer item : sn) {
-			// perform the S-STEP
-			int support = calculateSupportSStep(item, prefixBorder);
-			// if the support is higher than minsup
-			if (support >= minsup) {
-//					// record that item and pattern in temporary variables
-				sTemp.add(item);
-				sTempSupport.add(support);
+		int[] sTempItems = new int[snSize];
+		int sTempCount = 0;
+		int[][] sTempBorderSids = new int[snSize][];
+		short[][] sTempBorderPos = new short[snSize][];
+		int[] sTempBorderSizes = new int[snSize];
+
+		// Scratch buffers reused across every candidate item below, instead of allocating
+		// a fresh pair of arrays for each candidate (which was pure garbage for rejected items).
+		int[] scratchSids = new int[prefixBorderSize];
+		short[] scratchPos = new short[prefixBorderSize];
+
+		for (int si = 0; si < snSize; si++) {
+			int item = sn[si];
+			int newBorderSize = 0;
+
+			for (int bi = 0; bi < prefixBorderSize; bi++) {
+				int sid = prefixBorderSids[bi];
+				int prevPos = prefixBorderPos[bi];
+				short[] listPositions = sePositionList[sid].getPrimitiveListForItem(item);
+				if (listPositions == null) continue;
+				int listSz = sePositionList[sid].getSizeForItem(item);
+				for (int pi = 0; pi < listSz; pi++) {
+					short pos = listPositions[pi];
+					if (pos > prevPos) {
+						scratchSids[newBorderSize] = sid;
+						scratchPos[newBorderSize] = pos;
+						newBorderSize++;
+						break;
+					}
+				}
+			}
+
+			if (newBorderSize >= minsup) {
+				sTempBorderSids[sTempCount] = Arrays.copyOf(scratchSids, newBorderSize);
+				sTempBorderPos[sTempCount] = Arrays.copyOf(scratchPos, newBorderSize);
+				sTempBorderSizes[sTempCount] = newBorderSize;
+				sTempItems[sTempCount] = item;
+				sTempCount++;
 			}
 		}
+
 		// for each pattern recorded for the s-step
-		for (int k = 0; k < sTemp.size(); k++) {
-			int item = sTemp.get(k);
-			// create the new prefix
-			Prefix prefixSStep = prefix.cloneSequence();
-			List<Integer> itemset = new ArrayList<Integer>(1);
+		for (int k = 0; k < sTempCount; k++) {
+			int item = sTempItems[k];
+			List<Integer> itemset = new ArrayList<>(1);
 			itemset.add(item);
-			prefixSStep.itemsets.add(itemset);
+			prefix.itemsets.add(itemset);
 
-			// save the pattern to the file
-			savePattern(prefixSStep, sTempSupport.get(k));
+			int newLength = currentLength + 1;
 
-			// recursively try to extend that pattern
-			List<Position> newBorder = recalculateBorderForSExtension(prefixBorder, item);
+			if (isValidLength(newLength)) {
+				savePattern(prefix, sTempBorderSizes[k]);
+			}
 
-			// Recursive call
-			genPatterns(prefixSStep, newBorder, sTemp, sTemp, item, false);
+			genPatterns(prefix, sTempBorderSids[k], sTempBorderPos[k], sTempBorderSizes[k],
+					sTempItems, sTempCount, sTempItems, sTempCount, item, false, newLength);
+
+			prefix.itemsets.remove(prefix.itemsets.size() - 1);
 		}
 
 		if (doNotPerformIExtensions) {
@@ -718,339 +713,196 @@ public class AlgoLAPIN_LCI {
 		}
 
 		// ======== I STEPS =======
-		// Temporary variables
-		List<Integer> iTemp = new ArrayList<Integer>();
-		List<List<Position>> iTempBorder = new ArrayList<List<Position>>();
-//			
-//			// for each item in in
-		// the item has to be greater than the largest item
-		// already in the last itemset of prefix.
-		int index = Collections.binarySearch(in, hasToBeGreaterThanForIStep);
-		for (int i = index; i < in.size(); i++) {
-			Integer item = in.get(i);
+		int[] iTempItems = new int[inSize];
+		int iTempCount = 0;
+		int[][] iTempBorderSids = new int[inSize][];
+		short[][] iTempBorderPos = new short[inSize][];
+		int[] iTempBorderSizes = new int[inSize];
 
-			List<Integer> lastItemset = prefix.itemsets.get(prefix.itemsets.size() - 1);
-//				Integer lastItem = lastItemset.get(lastItemset.size()-1);
-			boolean willAddSecondItem = lastItemset.size() == 1;
+		// the item has to be greater than hasToBeGreaterThanForIStep
+		int index = Arrays.binarySearch(in, 0, inSize, hasToBeGreaterThanForIStep);
 
-			// AN OPTIMIZATION
+		List<Integer> lastItemset = prefix.itemsets.get(prefix.itemsets.size() - 1);
+		boolean willAddSecondItem = lastItemset.size() == 1;
 
-			// perform the I-STEP
-			int support = estimateSupportIStep(item, prefixBorder);
+		// Precompute, once per border entry, the bitset that applies at that position.
+		// This lookup is identical for every candidate item (only the final bit check
+		// differs), so computing it once here instead of once per candidate item turns
+		// the per-item cost from O(log V) table lookups into a single O(1) bit test.
+		BitSet[] activeBitsets = new BitSet[prefixBorderSize];
+		for (int bi = 0; bi < prefixBorderSize; bi++) {
+			Table table = tables[prefixBorderSids[bi]];
+			activeBitsets[bi] = table.findBitsetBefore(prefixBorderPos[bi]);
+		}
 
-			// if the estimated support is higher than minsup
-			if (support >= minsup) {
+		// Scratch buffers reused across every candidate item below
+		int[] iScratchSids = new int[prefixBorderSize];
+		short[] iScratchPos = new short[prefixBorderSize];
 
-				// recalculate the border
-				// in this case, the method takes the prefix border as input
-				List<Position> newBorder = recalculateBorderForIExtension(lastItemset, prefixBorder,
-						hasToBeGreaterThanForIStep, item, willAddSecondItem);
+		for (int ii = index; ii < inSize; ii++) {
+			int item = in[ii];
 
-				// record that item and pattern in temporary variables
-				if (newBorder.size() >= minsup) {
-					iTemp.add(item);
-					iTempBorder.add(newBorder);
+			// perform the I-STEP (estimated support, an upper bound)
+			int support = 0;
+			for (int bi = 0; bi < prefixBorderSize; bi++) {
+				BitSet bs = activeBitsets[bi];
+				if (bs != null && bs.get(item)) {
+					support++;
 				}
+			}
+			if (support < minsup) {
+				continue;
+			}
+
+			int newBorderSize = recalculateBorderForIExtensionPrimitive(
+					lastItemset, prefixBorderSids, prefixBorderPos, prefixBorderSize,
+					hasToBeGreaterThanForIStep, item, willAddSecondItem,
+					iScratchSids, iScratchPos);
+
+			if (newBorderSize >= minsup) {
+				iTempBorderSids[iTempCount] = Arrays.copyOf(iScratchSids, newBorderSize);
+				iTempBorderPos[iTempCount] = Arrays.copyOf(iScratchPos, newBorderSize);
+				iTempBorderSizes[iTempCount] = newBorderSize;
+				iTempItems[iTempCount] = item;
+				iTempCount++;
 			}
 		}
 
 		// for each pattern recorded for the i-step
-		for (int k = 0; k < iTemp.size(); k++) {
-			int item = iTemp.get(k);
-			// create the new prefix
-			Prefix prefixIStep = prefix.cloneSequence();
-			prefixIStep.itemsets.get(prefixIStep.size() - 1).add(item);
+		for (int k = 0; k < iTempCount; k++) {
+			int item = iTempItems[k];
+			lastItemset.add(item);
 
-			// save the pattern
-			List<Position> newBorder = iTempBorder.get(k);
-			savePattern(prefixIStep, newBorder.size());
-			// recursively try to extend that pattern
-			genPatterns(prefixIStep, newBorder, sTemp, iTemp, item, false);
+			int newLength = currentLength + 1;
+
+			if (isValidLength(newLength)) {
+				savePattern(prefix, iTempBorderSizes[k]);
+			}
+
+			genPatterns(prefix, iTempBorderSids[k], iTempBorderPos[k], iTempBorderSizes[k],
+					sTempItems, sTempCount, iTempItems, iTempCount, item, false, newLength);
+
+			lastItemset.remove(lastItemset.size() - 1);
 		}
 
-		// check the memory usage
 		MemoryLogger.getInstance().checkMemory();
 	}
 
 	/**
-	 * Recalculate the prefix border following an i-extension
-	 * 
-	 * @param prefixLastItemset last itemset of the previous prefix
-	 * @param prefixBorder      the previous prefix border
-	 * @param item1             the last item
-	 * @param item2             the item that will be appended
-	 * @param willAddSecondItem if the item will be added to an itemset containing a
-	 *                          single item
-	 * @return the updated border
+	 * Recalculate the prefix border following an i-extension using primitive arrays.
+	 *
+	 * @param prefixLastItemset last itemset of the current prefix
+	 * @param borderSids        sequence ids of the current border
+	 * @param borderPos         itemset positions of the current border
+	 * @param borderSize        number of valid border entries
+	 * @param item1             the anchor item (last item of the pair)
+	 * @param item2             the item being appended
+	 * @param willAddSecondItem true if the last itemset currently has only one item
+	 * @param outSids           output array for new border sequence ids (caller-allocated, reused)
+	 * @param outPos            output array for new border positions (caller-allocated, reused)
+	 * @return the number of valid entries written into outSids/outPos
 	 */
-	private List<Position> recalculateBorderForIExtension(List<Integer> prefixLastItemset, List<Position> prefixBorder,
-			int item1, int item2, boolean willAddSecondItem) {
+	private int recalculateBorderForIExtensionPrimitive(
+			List<Integer> prefixLastItemset,
+			int[] borderSids, short[] borderPos, int borderSize,
+			int item1, int item2, boolean willAddSecondItem,
+			int[] outSids, short[] outPos) {
 
-		// Create the new border (a list of position)
-		List<Position> newBorder = new ArrayList<Position>();
+		int newBorderSize = 0;
 
-		// for each sequence where the prefix appeared
-		for (Position previousPosition : prefixBorder) {
-			int sid = previousPosition.sid;
-			// get where the last two items of the prefix appeared
-			int previousItemsetID = previousPosition.position;
+		for (int bi = 0; bi < borderSize; bi++) {
+			int sid = borderSids[bi];
+			short previousItemsetID = borderPos[bi];
 			IEPositionList positionLists = iePositionList[sid];
 
-			// find the position that is immediately larger or equal than the current one
-			// by checking each position in the list of positions for the pair
-			List<Short> listPositions = positionLists.getListForPair(item1, item2);
-			if (listPositions != null) {
-				// for each position
-				loop: for (short pos : listPositions) {
-					// if the position is larger or equal to the current one
-					if (pos >= previousItemsetID) {
-						// IMPORTANT:
-						// if the prefix has two items in its last itemset,
-						// then we also need to check that the full last itemset of prefix is at the
-						// current position
-						// This will not be done very optimally but it is it difficult to do a better
-						// solution.
-						if (willAddSecondItem == false) {
-							// We take the SE position list of the current sequence
-							SEPositionList plists = sePositionList[sid];
-							// For each item of the last itemset of the prefix
-							for (int i = 0; i < prefixLastItemset.size() - 1; i++) {
-								// We check if that item appears at that position
-								Integer itemX = prefixLastItemset.get(i);
-								List<Short> plistX = plists.getListForItem(itemX);
-								int index = Collections.binarySearch(plistX, pos);
-								// if not, then we stop considering this position
-								if (index < 0) {
-									continue loop;
-								}
+			short[] listPositions = positionLists.getPrimitiveListForPair(item1, item2);
+			int listSz = positionLists.getSizeForPair(item1, item2);
+			if (listPositions == null) continue;
+
+			loop: for (int pi = 0; pi < listSz; pi++) {
+				short pos = listPositions[pi];
+				if (pos >= previousItemsetID) {
+					if (!willAddSecondItem) {
+						SEPositionList plists = sePositionList[sid];
+						for (int li = 0; li < prefixLastItemset.size() - 1; li++) {
+							int itemX = prefixLastItemset.get(li);
+							short[] plistX = plists.getPrimitiveListForItem(itemX);
+							int plistXSz = plists.getSizeForItem(itemX);
+							int lo = 0, hi = plistXSz - 1, found = -1;
+							while (lo <= hi) {
+								int mid = (lo + hi) >>> 1;
+								if (plistX[mid] == pos) { found = mid; break; }
+								else if (plistX[mid] < pos) lo = mid + 1;
+								else hi = mid - 1;
 							}
-							// If the loop has finished, that means that all items from the last itemset of
-							// the prefix have appeared at the position pos
+							if (found < 0) continue loop;
 						}
-						// Then we add the position to the new border
-						Position newPosition = new Position(sid, pos);
-						newBorder.add(newPosition);
-						// After that we will continue to the next sequence to continue creating the new
-						// border
-						break;
 					}
-				}
-			}
-		}
-
-		return newBorder;
-
-	}
-
-	/**
-	 * Estimate support of appending an item to the current prefix by I-extension
-	 * 
-	 * @param item       the item
-	 * @param itemBorder the prefix border
-	 * @return the estimated support (an upper bound)
-	 */
-	private int estimateSupportIStep(Integer item, List<Position> itemBorder) {
-		// First we need to take the two last items
-		int support = 0;
-
-		// Iterate through each position in the item border
-		for (Position pos : itemBorder) {
-			Table table = tables[pos.sid];
-
-			// Get the number of position vectors in the table for the sequence
-			int numberOfVectors = table.positionVectors.size();
-
-			// Scan the position vectors from the last to the first (they are ordered
-			// backward in the table)
-			for (int j = 0; j < numberOfVectors; j++) {
-				PositionVector vector = table.positionVectors.get(j);
-
-				// If the position is less than the current position in the border
-				if (vector.position < pos.position) {
-
-					// Check if the item is present in the current position vector's bitset
-					if (vector.bitset.get(item)) {
-						support++; // Increment support if item is found
-					}
-
-					break; // Stop after the first matching position
-				}
-			}
-		}
-		return support;
-	}
-
-	/**
-	 * Calculate the support of the new prefix resulting from appending an item to
-	 * the prefix by S-extension
-	 * 
-	 * @param item       the item
-	 * @param itemBorder the prefix border
-	 * @return the support
-	 */
-	private int calculateSupportSStep(Integer item, List<Position> itemBorder) {
-		// Initialize a variable to count the support
-		int support = 0;
-		// For each sequence where there is a position in the border
-		for (Position pos : itemBorder) {
-			// get the Item-is-exist table corresponding to the sequence
-			Table table = tables[pos.sid];
-
-			// Get the number of vectors in that table
-			int numberOfVectors = table.positionVectors.size();
-
-			// We will scan the vectors to determine if the item appears after the
-			// corresponding
-			// position. If yes, we will increase the support by 1.
-			// IMPORTANT: We scan the table starting from the last vectors because
-			// vectors have been inserted in reverse order in the table.
-			// Also note that we will skip the first vector that has the position -1 because
-			// this vector was added for i-extension only and should not be considered for
-			// s-extension
-
-			// Thus, for each vector starting from the second-last one
-			for (int j = numberOfVectors - 2; j >= 0; j--) {
-				// Get the vector
-				PositionVector vector = table.positionVectors.get(j);
-
-				// if the position of this vector is larger or equal to the position that
-				// we are searching for
-				if (vector.position >= pos.position) {
-					// check if the bit corresponding to the item is set to 1
-					if (vector.bitset.get(item)) {
-						// if yes, we increase the support by 1
-						support += 1;
-					}
-					// and we don't need to continue looking at the vectors for that sequence
+					outSids[newBorderSize] = sid;
+					outPos[newBorderSize] = pos;
+					newBorderSize++;
 					break;
 				}
 			}
 		}
-		// return the calculated support
-		return support;
+
+		return newBorderSize;
 	}
 
 	/**
-	 * Method to recalculate the border of a prefix after an S-extension with an
-	 * item
-	 * 
-	 * @param prefixBorder the border of the prefix
-	 * @param item         the item used to extend the prefix
-	 * @return the updated list of positions representing the new border
-	 */
-	private List<Position> recalculateBorderForSExtension(List<Position> prefixBorder, int item) {
-
-		// Initialize the list to store the new border positions
-		List<Position> newBorder = new ArrayList<Position>();
-
-		// Iterate over each position in the current prefix border
-		for (Position previousPosition : prefixBorder) {
-			// get the sequence id
-			int sid = previousPosition.sid;
-
-			// get the index of the itemset where the last item of the prefix appeared
-			int previousItemsetID = previousPosition.position;
-
-			// Get the SE position list for the sequence
-			SEPositionList positionLists = sePositionList[sid];
-
-			// Get the list of positions for the item in the sequence
-			List<Short> listPositions = positionLists.getListForItem(item);
-
-			// If the item appears in the sequence
-			if (listPositions != null) {
-				// Check if there's any position greater than the last itemset in the prefix
-				for (short pos : listPositions) {
-					if (pos > previousItemsetID) {
-						// add the position to the new border
-						newBorder.add(new Position(sid, pos));
-						// and stop because we don't want to add more than one position for the same
-						// sequence.
-						break;
-					}
-				}
-			}
-		}
-
-		// Return the newly calculated border
-		return newBorder;
-	}
-
-	/**
-	 * Save a pattern that has been found
-	 * 
+	 * Save a single-item pattern that has been found.
+	 *
 	 * @param item    the item
 	 * @param support the support of the item
 	 * @throws IOException if error while writing to file
 	 */
-	private void savePattern(Integer item, int support) throws IOException {
-		// Increment the number of patterns found
+	private void savePattern(int item, int support) throws IOException {
 		patternCount++;
-
-		// Build the pattern string
 		StringBuilder patternBuilder = new StringBuilder();
 		patternBuilder.append(item).append(" -1 #SUP: ").append(support);
-
-		// Write the pattern to the output file
 		writer.write(patternBuilder.toString());
 		writer.newLine();
-
-		// Optionally print for debugging
 		if (DEBUG) {
 			System.out.println(patternBuilder);
 		}
 	}
 
 	/**
-	 * Save a prefix (pattern) to file
-	 * 
+	 * Save a prefix (pattern) to file.
+	 *
 	 * @param prefix  the prefix
 	 * @param support the prefix support
-	 * @throws IOException if error ocurrs when writing to file
+	 * @throws IOException if error occurs when writing to file
 	 */
 	private void savePattern(Prefix prefix, int support) throws IOException {
-		// increase the number of patterns found
 		patternCount++;
-
-		// Create a string buffer to store the pattern and its support as a string
-		StringBuilder patternBuilder = new StringBuilder("");
-
-		// for each itemset
+		StringBuilder patternBuilder = new StringBuilder();
 		for (List<Integer> itemset : prefix.itemsets) {
-			// for each item
 			for (Integer item : itemset) {
 				patternBuilder.append(item).append(' ');
 			}
-			// at the end of an itemset we put a -1
 			patternBuilder.append("-1 ");
 		}
-
-		// then, append the support of the pattern:
 		patternBuilder.append("#SUP: ").append(support);
-
-		// write the buffer to the output file
 		writer.write(patternBuilder.toString());
 		writer.newLine();
-
 		if (DEBUG) {
-			System.out.println("OUTPUT PATTERN: " + patternBuilder.toString());
+			System.out.println("OUTPUT PATTERN: " + patternBuilder);
 		}
 	}
 
 	/**
-	 * Print statistics about the algorithm execution time
+	 * Print statistics about the algorithm execution time.
 	 */
 	public void printStatistics() {
 		String lineSep = System.lineSeparator();
 		StringBuilder stats = new StringBuilder(200);
-		stats.append("=============  LAPIN - STATISTICS  =============").append(lineSep)
+		stats.append("=============  LAPIN v.2.67 - STATISTICS  =============").append(lineSep)
 				.append("Total time (ms)             : ").append(totalTime).append(lineSep)
 				.append("Frequent sequences count    : ").append(patternCount).append(lineSep)
 				.append("Max memory usage (MB)       : ").append(MemoryLogger.getInstance().getMaxMemory())
 				.append(lineSep).append("Minimum support (absolute)  : ").append(minsup).append(lineSep)
 				.append("=================================================").append(lineSep);
-
 		System.out.print(stats);
 	}
-
 }

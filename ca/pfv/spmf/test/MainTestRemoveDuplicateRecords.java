@@ -35,7 +35,7 @@ public class MainTestRemoveDuplicateRecords {
     public static void main(String[] args) throws IOException {
         
         // Input file path
-        String inputFile = fileToPath("contextPasquier99.txt");
+        String inputFile = fileToPath("contextResize.txt");
         
         // Output file path
         String outputFile = "output.txt";

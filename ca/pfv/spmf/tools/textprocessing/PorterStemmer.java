@@ -18,7 +18,6 @@ package ca.pfv.spmf.tools.textprocessing;
 * Do not remove the copyright and license information
 */
 /*
-
    Porter stemmer in Java. The original paper is in
 
        Porter, 1980, An algorithm for suffix stripping, Program, Vol. 14,
@@ -31,9 +30,7 @@ package ca.pfv.spmf.tools.textprocessing;
 
    [ This version is derived from Release 3, modified by Brian Goetz to
      optimize for fewer object creations.  ]
-     
 */
-
 
 /**
  *

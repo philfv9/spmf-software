@@ -1,0 +1,4 @@
+@FILETYPE="Locally trending high-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+2 #PERIOD-UTIL-SLOPE: [1,9] (82,14.0) 
+2 3 #PERIOD-UTIL-SLOPE: [1,9] (95,14.0) 

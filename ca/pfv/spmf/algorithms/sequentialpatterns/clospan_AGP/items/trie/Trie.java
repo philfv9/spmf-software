@@ -10,9 +10,9 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.abstractions.ItemAbstractionPair;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Pattern;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.PatternCreator;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.ItemAbstractionPair;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Pattern;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.PatternCreator;
 
 /**
  * Class that implement a trie structure. A trie is composed of a list of 
@@ -46,6 +46,8 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Patt
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  *
  * @author agomariz
  */

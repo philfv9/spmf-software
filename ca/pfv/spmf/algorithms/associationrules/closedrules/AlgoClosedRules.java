@@ -125,6 +125,10 @@ public class AlgoClosedRules extends AlgoAgrawalFaster94{
 	    	// if the user wants to save the result to a file
 	    	rules = null;
 			writer = new BufferedWriter(new FileWriter(output)); 
+			writer.write("@FILETYPE=\"Closed association rules\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 		}
 
 		this.databaseSize = databaseSize;

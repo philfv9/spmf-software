@@ -24,6 +24,8 @@ import ca.pfv.spmf.algorithms.sequenceprediction.ipredict.predictor.profile.Prof
  * IPredict is distributed under The MIT License (MIT).
  * You may obtain a copy of the License at
  * https://opensource.org/licenses/MIT 
+ * 
+ * Do not remove license and copyright information.
  */
 public class SequenceDatabase {
 
@@ -447,6 +449,13 @@ public class SequenceDatabase {
 			myInput = new BufferedReader(new InputStreamReader(fin));
 //			Set<Integer> alreadySeen = new HashSet<Integer>();
 			while ((thisLine = myInput.readLine()) != null && count < maxCount) {
+				// if the line is a comment, is empty or is a
+				// kind of metadata, skip it
+				if (thisLine.isEmpty() == true || thisLine.charAt(0) == '#' 
+						|| thisLine.charAt(0) == '%' || thisLine.charAt(0) == '@') {
+					continue;
+				}
+				
 				Sequence sequence = new Sequence(sequences.size());
 				for (String entier : thisLine.split(" ")) {
 					if (entier.equals("-1")) { // separateur d'itemsets

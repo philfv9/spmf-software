@@ -101,6 +101,10 @@ public class AlgoMFFIMiner {
 		startTimestamp = System.currentTimeMillis();
 		
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Multiple Frequent fuzzy itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		//  We create three  map to store the low, middle, high summation of each item
 		mapItemLowSUM = new HashMap<Integer, Float>();

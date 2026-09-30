@@ -253,7 +253,7 @@ public class AlgoGENMAX {
 
 	    if (fhutSup >= minsupRelative) {
 	        // Head Union Tail is frequent - compute its closure
-	        int[] closure = computeClosureForTail(unionTail, fhutSup, hutTidset, tail);
+	    	int[] closure = computeClosureForTail(unionTail, fhutSup, hutTidset);
 	        bitSetPool.release(hutTidset);
 
 	        // If closure equals or extends unionTail, we found a maximal
@@ -421,7 +421,7 @@ public class AlgoGENMAX {
 		int fhutSup = hutTidset.cardinality();
 
 		if (fhutSup >= minsupRelative) {
-			int[] closure = computeClosureForTail(unionTail, fhutSup, hutTidset, tail);
+			int[] closure = computeClosureForTail(unionTail, fhutSup, hutTidset);
 			bitSetPool.release(hutTidset);
 
 			if (arraysEqual(closure, unionTail) || closure.length > unionTail.length) {
@@ -520,31 +520,40 @@ public class AlgoGENMAX {
 	// ========================================================================
 
 	/**
-	 * Computes closure by checking items beyond the current tail's max item.
-	 * 
+	 * Computes closure by checking items beyond the highest canonical item
+	 * already present in {@code unionTail} (i.e. in the prefix OR the tail).
 	 * <p>
-	 * Only checks items with higher canonical order than those already in unionTail
-	 * to avoid redundant work. Uses the actual tidset for accurate intersection.
-	 * </p>
-	 * 
-	 * @param unionTail current prefix ∪ tail itemset
+	 * <b>Correctness note:</b> This method previously used {@code max(tail)}
+	 * as the scanning boundary, assuming every prefix item has a smaller
+	 * canonical id than every tail item. That assumption does not always
+	 * hold: closure absorption during expansion can place an item with a
+	 * larger canonical id into the prefix while a smaller-id item remains in
+	 * the tail. When that happens, scanning from {@code max(tail) + 1}
+	 * re-examines a prefix item whose id lies between {@code max(tail)} and
+	 * {@code max(unionTail)}. Since that item's tidset trivially still
+	 * matches {@code support} (it's already part of {@code tidset}), it gets
+	 * appended a SECOND time to the closure, producing itemsets with
+	 * duplicate items in the output (e.g. "1 4 4 6 10 10 11").
+	 * <p>
+	 * The fix is to use {@code max(unionTail)} as the scanning boundary
+	 * instead. Since {@code unionTail} is produced by {@link #mergePresorted}
+	 * from two arrays that are each individually maintained in sorted order
+	 * throughout the recursion, {@code unionTail} is itself sorted ascending,
+	 * so its maximum is simply its last element — an O(1) lookup that is also
+	 * strictly cheaper than the O(|tail|) scan it replaces.
+	 *
+	 * @param unionTail current prefix ∪ tail itemset (sorted ascending)
 	 * @param support   support of unionTail
 	 * @param tidset    tidset of unionTail
-	 * @param tail      current tail items (to find max item)
 	 * @return closed itemset
 	 */
-	private int[] computeClosureForTail(int[] unionTail, int support, BitSet tidset, int[] tail) {
-		// Find maximum item in tail (not prefix, since we only extend with tail items)
-		int maxTailItem = -1;
-		int tailLen = tail.length;
-		for (int i = 0; i < tailLen; i++) {
-			if (tail[i] > maxTailItem) {
-				maxTailItem = tail[i];
-			}
-		}
+	private int[] computeClosureForTail(int[] unionTail, int support, BitSet tidset) {
+		// unionTail is sorted ascending, so its last element is its maximum.
+		int maxUnionItem = unionTail.length > 0 ? unionTail[unionTail.length - 1] : -1;
 
-		// Maximum closure size = unionTail + items from maxTailItem+1 to numFrequentItems-1
-		int maxAdditionalItems = numFrequentItems - maxTailItem - 1;
+		// Maximum closure size = unionTail + items with id strictly greater
+		// than every item already present in unionTail.
+		int maxAdditionalItems = numFrequentItems - maxUnionItem - 1;
 		int[] closureItems = new int[unionTail.length + maxAdditionalItems];
 		int closureCount = 0;
 
@@ -554,9 +563,12 @@ public class AlgoGENMAX {
 			closureItems[closureCount++] = unionTail[i];
 		}
 
-		// Check items with HIGHER canonical order than max tail item
+		// Only scan items with a canonical id STRICTLY GREATER than the
+		// maximum item already present in unionTail (prefix or tail). This
+		// guarantees we never re-examine (and thus never re-add) an item
+		// that unionTail already contains.
 		BitSet tempIntersect = bitSetPool.acquire();
-		for (int i = maxTailItem + 1; i < numFrequentItems; i++) {
+		for (int i = maxUnionItem + 1; i < numFrequentItems; i++) {
 			tempIntersect.clear();
 			tempIntersect.or(tidset);
 			tempIntersect.and(itemTidsets[i]);
@@ -652,7 +664,11 @@ public class AlgoGENMAX {
 	 * Writes maximal itemsets to output file.
 	 */
 	private void writeOutput(String output) throws IOException {
-		try (BufferedWriter w = new BufferedWriter(new FileWriter(output))) {
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(output))) {
+			writer.write("@FILETYPE=\"Frequent maximal itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 			List<int[]> itemsets = globalMFI.getItemsets();
 			List<Integer> supports = globalMFI.getSupports();
 			int size = itemsets.size();
@@ -670,8 +686,8 @@ public class AlgoGENMAX {
 				}
 				sb.append(" #SUP: ").append(supports.get(i));
 
-				w.write(sb.toString());
-				w.newLine();
+				writer.write(sb.toString());
+				writer.newLine();
 			}
 		}
 	}

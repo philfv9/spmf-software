@@ -103,6 +103,10 @@ public class AlgoUHMine {
         MemoryLogger.getInstance().reset();
         startTimestamp = System.currentTimeMillis();
         writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Uncertain frequent itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
         // store the absolute minimum expected support directly
         this.minSupport = minSupport;

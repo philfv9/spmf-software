@@ -1,7 +1,7 @@
 package ca.pfv.spmf.gui;
 
 /*
- * Copyright (c) 2008-2021 Philippe Fournier-Viger
+ * Copyright (c) 2008-2026 Philippe Fournier-Viger
  *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
@@ -17,10 +17,10 @@ package ca.pfv.spmf.gui;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license
  */
 import java.lang.reflect.Method;
-
-import javax.swing.JFrame;
 
 import ca.pfv.spmf.algorithmmanager.AlgorithmManager;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
@@ -35,7 +35,7 @@ import ca.pfv.spmf.tools.MemoryLogger;
 public class Main {
 
 	// variable for the current version of SPMF
-	public final static String SPMF_VERSION = "2.66";
+	public final static String SPMF_VERSION = "2.67a";
 
 	/**
 	 * Method to launch the software. If there are command line arguments, it means
@@ -64,10 +64,11 @@ public class Main {
 			processCommandLineArguments(args);
 		} else {
 			// Make sure we have nice window decorations.
-			JFrame.setDefaultLookAndFeelDecorated(false);
-			// Else, we launch the graphical user interface.
-			MainWindow mainWindow = new MainWindow(true, true, true, true, true);
-			mainWindow.setVisible(true);
+//			JFrame.setDefaultLookAndFeelDecorated(false);
+//			// Else, we launch the graphical user interface.
+//			MainWindow mainWindow = new MainWindow(true, true, true, true, true, true);
+//			mainWindow.setVisible(true);
+			new LauncherWindow();
 		}
 	}
 

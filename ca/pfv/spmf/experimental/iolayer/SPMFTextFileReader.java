@@ -7,12 +7,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class SPMFTextFileReader extends AbstractSPMFReader {
-	// We scan the database a first time to calculate the support of each item.
 	BufferedReader myInput = null;
-	
-	SPMFTextFileReader(IOContext context, String input) throws IOException{
+
+	SPMFTextFileReader(IOContext context, String input) throws IOException {
 		super(context);
-		myInput = new BufferedReader(new InputStreamReader( new FileInputStream(new File(input))));
+		myInput = new BufferedReader(new InputStreamReader(new FileInputStream(new File(input))));
 	}
 
 	public String readLine() throws IOException {

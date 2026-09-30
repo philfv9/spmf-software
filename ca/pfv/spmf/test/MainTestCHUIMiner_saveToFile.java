@@ -18,10 +18,10 @@ public class MainTestCHUIMiner_saveToFile {
 		// input file path
 		String input = fileToPath("DB_Utility.txt");
 		// the minutility threshold
-		int min_utility = 25;   
+		int min_utility = 30;   
 		
 		// output file path
-		String output = ".//CHUIs.txt";
+		String output = ".//output.txt";
 		
 		// (1) Applying the CHUI-Miner algorithm to find 
 		// closed high utility itemsets (CHUIs)

@@ -11,735 +11,1104 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
-import ca.pfv.spmf.patterns.itemset_list_integers_without_support.Itemset;
+import ca.pfv.spmf.datastructures.collections.list.ArrayListInt;
 import ca.pfv.spmf.tools.MemoryLogger;
-
-/**
- * * This is the original implementation of the CM-SPAM algorithm described in
- * the paper by Fournier-Viger et al. at PAKDD 2014. <br/>
- * <br/>
- *
- * Copyright (c) 2013 Philippe Fournier-Viger, Antonio Gomariz <br/>
- * <br/>
- *
+/*
  * This file is part of the SPMF DATA MINING SOFTWARE
- * (http://www.philippe-fournier-viger.com/spmf). <br/>
- * <br/>
+ * (http://www.philippe-fournier-viger.com/spmf).
  *
  * SPMF is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
- * version. <br/>
- * <br/>
+ * version.
  *
  * SPMF is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * <br/>
- * <br/>
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright (c) Philipe Fournier-Viger et al.
+ *
+ * Do not remove copyright and license information.
+ */
+/**
+ * Optimized implementation of the CM-SPAM (Co-occurrence MAP based SPAM) algorithm.
+ * <p>
+ * Extends the bitmap-based vertical representation used by SPAM2 with CMAP
+ * cooccurrence pruning: for each frequent item, two maps record which items
+ * can possibly follow it later in a sequence, and which items can possibly
+ * appear together with it in the same itemset, along with their support.
+ * These maps are used to prune candidate extensions in the depth-first search
+ * before any costly bitmap intersection is performed.
  * 
- * @see Bitmap
- * @see Prefix
- * @author Philippe Fournier-Viger & Antonio Gomariz
+ *  @author Philippe Fournier-Viger, Antonio Gomariz
  */
 public class AlgoCMSPAM {
 
-	// for statistics
-	/** start time of last algorithm execution */
-	private long startTime;
-	/** end time of last algorithm execution */
-	private long endTime;
+    /** Time at which the algorithm execution started (milliseconds). */
+    private long startTime;
+    /** Time at which the algorithm execution ended (milliseconds). */
+    private long endTime;
+    /** Number of frequent patterns found. */
+    private int  patternCount;
 
-	/** number of patterns */
-	public int patternCount;
+    /** Minimum support threshold, as an absolute sequence count. */
+    private int minsup              = 0;
+    /** Minimum length (number of itemsets) a pattern must have to be output. */
+    private int minimumPatternLength = 0;
+    /** Maximum length (number of itemsets) a pattern may have. */
+    private int maximumPatternLength = 1000;
+    /** Maximum allowed gap (in itemsets) between consecutive elements of a pattern. */
+    private int maxGap               = Integer.MAX_VALUE;
+    /** Whether to include sequence identifiers (SIDs) in the output. */
+    private boolean outputSequenceIdentifiers;
 
-	/** minsup */
-	private int minsup = 0;
+    /**
+     * Items that need to appear in patterns found by the algorithm (original item ids), or null
+     * if any item is allowed.
+     */
+    private int[] mustAppearItems;
 
-	/** object to write to a file */
-	BufferedWriter writer = null;
+    /**
+     * Bitmask indexed by internal (dense) item id marking which items are required by the
+     * "must appear" constraint. Using a plain boolean array (rather than a sorted {@code int[]}
+     * searched with binary search, or a {@code Set<Integer>}) lets membership be tested with a
+     * single, allocation-free, unboxed array access during the hot depth-first search loop, and
+     * naturally collapses duplicate requested items instead of inflating the required count.
+     * Rebuilt at the start of each run once the item remap is known. Null if mustAppearItems is
+     * null.
+     */
+    private boolean[] mustAppearMask;
 
-	/** Vertical database */
-	Map<Integer, Bitmap> verticalDB = new HashMap<Integer, Bitmap>();
+    /**
+     * Number of distinct required items that were successfully resolved to a valid internal id
+     * (i.e. the number of distinct {@code true} entries in {@link #mustAppearMask}); only
+     * meaningful when {@link #mustAppearMask} is non-null.
+     */
+    private int mustAppearRequiredCount;
 
-	/** List indicating the number of bits per sequence */
-	List<Integer> sequencesSize = null;
+    /**
+     * True if every item requested via {@link #mustAppearItems} is frequent and could therefore
+     * appear in some pattern; false if at least one required item is infrequent (or unknown),
+     * meaning no pattern can ever satisfy the constraint. When false, {@link #spam} returns
+     * immediately after resolving the mask, without building the vertical database, the CMAP
+     * maps, or running the depth-first search, since all of that work would be wasted.
+     * <p>
+     * Because {@link #spam} always returns before any pattern is produced whenever this flag is
+     * false, {@link #savePattern(int, BitmapSPAM)} and {@link #savePattern(BitmapSPAM)} never
+     * run while it is false, so they do not need to re-check it.
+     */
+    private boolean mustAppearPossible = true;
 
-	/** the last bit position that is used in bitmaps */
-	int lastBitIndex = 0;
+    /**
+     * Running count, during the depth-first search, of how many distinct required "must appear"
+     * items are currently present in the pattern being built. Maintained incrementally in
+     * lockstep with pushes/pops of {@link #patternBuffer} so that checking the constraint costs
+     * O(1) instead of rescanning the whole pattern buffer at every node. This is only updated on
+     * the 0-&gt;1 / 1-&gt;0 transitions of {@link #mustAppearOccurrenceCount} for a given item, so
+     * that a required item that is reused more than once in the same pattern (e.g. via an S-step
+     * that re-selects an item already used earlier) is only ever counted once.
+     */
+    private int mustAppearMatchedCount;
 
-	/** maximum pattern length in terms of item count */
-	private int minimumPatternLength = 0;
-	/** maximum pattern length in terms of item count */
-	private int maximumPatternLength = 1000;
+    /**
+     * Running per-(dense internal) item-id occurrence count of how many times each required
+     * "must appear" item currently appears in the pattern being built ({@link #patternBuffer}).
+     * A pattern may legally reuse the same item more than once, so {@link #mustAppearMatchedCount}
+     * must reflect the number of <em>distinct</em> required items present, not the number of
+     * occurrences; this array lets a push/pop correctly increment/decrement
+     * {@link #mustAppearMatchedCount} only on the 0-&gt;1 and 1-&gt;0 transitions. Indexed by
+     * internal item id; null if {@link #mustAppearMask} is null.
+     */
+    private int[] mustAppearOccurrenceCount;
 
-	/**
-	 * items that need to appear in patterns found by the algorithm (or any items if
-	 * the array is empty)
-	 */
-	int[] mustAppearItems;
+    /** Writer used to write discovered patterns to the output file. */
+    private BufferedWriter writer = null;
+    /** In-memory buffer accumulating output text before it is flushed to disk (~512 KB). */
+    private final StringBuilder outputBuffer = new StringBuilder(1 << 19);
+    /** Output buffer size threshold that triggers a flush to disk (~256 KB). */
+    private static final int OUTPUT_BUFFER_FLUSH_THRESHOLD = 1 << 18;
 
-	/**
-	 * Map: key: item value: another item that followed the first item + support
-	 * (could be replaced with a triangular matrix...)
-	 */
-	Map<Integer, Map<Integer, Integer>> coocMapAfter = null;
-	Map<Integer, Map<Integer, Integer>> coocMapEquals = null;
+    /** Buffer size used when reading the input file (64 KB). */
+    private static final int INPUT_BUFFER_SIZE = 1 << 16;
 
-	/**
-	 * Map indicating for each item, the smallest tid containing this item in a
-	 * sequence.
-	 */
-	Map<Integer, Short> lastItemPositionMap;
-	boolean useCMAPPruning = true;
-	boolean useLastPositionPruning = false;
+    /** Vertical database, indexed by contiguous internal item ids. */
+    private BitmapSPAM[] vdbArray = null;
 
-	/**
-	 * the max gap between two itemsets of a pattern. It is an optional parameter
-	 * that the user can set.
-	 */
-	private int maxGap = Integer.MAX_VALUE;
+    /** Highest original item id seen in the input file. */
+    private int maxItemId = 0;
 
-	/**
-	 * if true, sequence ids of each pattern will be shown when they will be output
-	 */
-	boolean outputSequenceIdentifiers;
+    /** Maps contiguous internal item ids back to their original ids from the input file. */
+    private int[] newIdToOriginal = null;
 
-	/**
-	 * Default constructor
-	 */
-	public AlgoCMSPAM() {
-	}
+    /** Starting bit index of each sequence in the bitmap representation. */
+    private int[] sequencesSize  = null;
+    /** Ending bit index of each sequence in the bitmap representation. */
+    private int[] sequenceEndBit = null;
 
-	/**
-	 * Method to run the algorithm
-	 *
-	 * @param input                     path to an input file
-	 * @param outputFilePath            path for writing the output file
-	 * @param minsupRel                 the minimum support as a relative value
-	 * @param outputSequenceIdentifiers if true, sequence ids will be shown with
-	 *                                  each output pattern
-	 * @throws IOException exception if error while writing the file or reading
-	 */
-	public void runAlgorithm(String input, String outputFilePath, double minsupRel, boolean outputSequenceIdentifiers)
-			throws IOException {
-		this.outputSequenceIdentifiers = outputSequenceIdentifiers;
+    /** Resolves a bit position to its owning sequence id (SID). */
+    private BitmapSPAM.SidResolver sidResolver = null;
 
-		Bitmap.INTERSECTION_COUNT = 0;
-		// create an object to write the file
-		writer = new BufferedWriter(new FileWriter(outputFilePath));
-		// initialize the number of patterns found
-		patternCount = 0;
-		// to log the memory used
-		MemoryLogger.getInstance().reset();
+    /** Shared scratch buffer holding the sequence ids occupied by the current prefix bitmap. */
+    private int[] sidScratchBuffer = null;
 
-		// record start time
-		startTime = System.currentTimeMillis();
-		// RUN THE ALGORITHM
-		spam(input, minsupRel);
-		// record end time
-		endTime = System.currentTimeMillis();
-		// close the file
-		writer.close();
-	}
+    /** Shared scratch buffer holding, for each entry in sidScratchBuffer, the first set bit of the prefix bitmap in that sequence. */
+    private int[] firstBitScratchBuffer = null;
 
-	/**
-	 * This is the main method for the SPAM algorithm
-	 *
-	 * @param an        input file
-	 * @param minsupRel the minimum support as a relative value
-	 * @throws IOException
-	 */
-	private void spam(String input, double minsupRel) throws IOException {
-		// the structure to store the vertical database
-		// key: an item value : bitmap
-		verticalDB = new HashMap<Integer, Bitmap>();
+    /** True if every itemset in the input file contains at most one item, allowing I-steps to be skipped entirely. */
+    private boolean onlySingletonItemsets = true;
 
-		// structure to store the horizontal database
-		List<int[]> inMemoryDB = new ArrayList<int[]>();
+    /** For each internal item id, the items and their support that can appear in a later itemset (CMAP). */
+    private Map<Integer, Integer>[] coocMapAfter;
 
-		// STEP 0: SCAN THE DATABASE TO STORE THE FIRST BIT POSITION OF EACH SEQUENCE
-		// AND CALCULATE THE TOTAL NUMBER OF BIT FOR EACH BITMAP
-		sequencesSize = new ArrayList<Integer>();
-		lastBitIndex = 0; // variable to record the last bit position that we will use in bitmaps
-		try {
-			// read the file
-			FileInputStream fin = new FileInputStream(new File(input));
-			BufferedReader reader = new BufferedReader(new InputStreamReader(fin));
-			String thisLine;
-			int bitIndex = 0;
-			// for each line (sequence) in the file until the end
-			while ((thisLine = reader.readLine()) != null) {
-				// if the line is a comment, is empty or is a
-				// kind of metadata
-				if (thisLine.isEmpty() == true || thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%'
-						|| thisLine.charAt(0) == '@') {
-					continue;
-				}
+    /** For each internal item id, the items and their support that can appear in the same itemset (CMAP). */
+    private Map<Integer, Integer>[] coocMapEquals;
 
-				// record the length of the current sequence (for optimizations)
-				sequencesSize.add(bitIndex);
-				// split the sequence according to spaces into tokens
+    /** Counter used to throttle how often memory usage is checked. */
+    private int memCheckCounter = 0;
+    /** Number of DFS nodes visited between memory usage checks. */
+    private static final int MEM_CHECK_INTERVAL = 1000;
 
-				String tokens[] = thisLine.split(" ");
-				int[] transactionArray = new int[tokens.length];
+    /** Reusable buffer used to store integers parsed from a line of the input file while tokenizing. */
+    private int[] tokenBuffer = new int[64];
 
-				boolean containsAMustAppearItem = false;
+    /** Reusable buffer used to build the textual representation of a pattern before output. */
+    private final StringBuilder patternBuilder = new StringBuilder(64);
 
-				for (int i = 0; i < tokens.length; i++) {
-					int item = Integer.parseInt(tokens[i]);
-					transactionArray[i] = item;
-					// if it is not an itemset separator
-					if (item == -1) { // indicate the end of an itemset
-						// increase the number of bits that we will need for each bitmap
-						bitIndex++;
-					}
+    /** Flat buffer holding the sequence currently being built by the DFS (items with -1 as itemset separators). */
+    private int[] patternBuffer = new int[64];
+    /** Number of valid tokens currently stored in patternBuffer. */
+    private int patternLength = 0;
 
-					// check if this item must appear in patterns (optional)
-					if (itemMustAppearInPatterns(item)) {
-						containsAMustAppearItem = true;
-					}
-				}
+    /** Pool of reusable buffers for S-step candidates, indexed by DFS depth. */
+    private final List<DfsBuffer> sBufferPool = new ArrayList<>();
+    /** Pool of reusable buffers for I-step candidates, indexed by DFS depth. */
+    private final List<DfsBuffer> iBufferPool = new ArrayList<>();
+    /** Number of frequent items (size of the dense internal item-id space). */
+    private int frequentItemCount = 0;
 
-				// if this transaction contains at least an item that must appear
-				// in the pattern (this feature is optional), we keep the sequence
-				// otherwise we don't add it
-				if (containsAMustAppearItem) {
-					inMemoryDB.add(transactionArray);
-				}
-			}
-			// record the last bit position for the bitmaps
-			lastBitIndex = bitIndex - 1;
-			reader.close(); // close the input file
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		// Calculate the absolute minimum support
-		// by multipling the percentage with the number of
-		// sequences in this database
-		minsup = (int) Math.ceil((minsupRel * sequencesSize.size()));
-		if (minsup == 0) {
-			minsup = 1;
-		}
+    /**
+     * Reusable set tracking, within a single call to {@link #processTransactionForCMAP}, which
+     * items have already been fully processed as a "before" item; hoisted to an instance field
+     * and {@code clear()}-ed per transaction instead of being reallocated on every call.
+     */
+    private final Set<Integer> cmapAlreadyProcessed = new HashSet<>();
+    /**
+     * Reusable map tracking, within a single call to {@link #processTransactionForCMAP}, which
+     * "same itemset" pairs have already been recorded for each item; hoisted to an instance
+     * field and {@code clear()}-ed per transaction instead of being reallocated on every call.
+     */
+    private final Map<Integer, Set<Integer>> cmapEqualProcessed = new HashMap<>();
+    /**
+     * Reusable set tracking, within the inner loop of {@link #processTransactionForCMAP}, which
+     * "later itemset" items have already been recorded for the item currently being processed;
+     * hoisted to an instance field and {@code clear()}-ed per outer-loop iteration instead of
+     * being reallocated.
+     */
+    private final Set<Integer> cmapAlreadyProcessedB = new HashSet<>();
 
-		// STEP1: SCAN THE DATABASE TO CREATE THE BITMAP VERTICAL DATABASE
-		// REPRESENTATION
-		try {
-			FileInputStream fin = new FileInputStream(new File(input));
-			BufferedReader reader = new BufferedReader(new InputStreamReader(fin));
-			String thisLine;
-			int sid = 0; // to know which sequence we are scanning
-			int tid = 0; // to know which itemset we are scanning
+    /** Reusable per-depth scratch storage for candidate items and their bitmaps during the DFS. */
+    private static class DfsBuffer {
+        /** Candidate item ids held in this buffer. */
+        int[] items;
+        /** Bitmaps corresponding to each candidate item, reused across DFS visits to this depth. */
+        BitmapSPAM[] bitmaps;
 
-			// for each line (sequence) from the input file
-			while ((thisLine = reader.readLine()) != null) {
-				// if the line is a comment, is empty or is a
-				// kind of metadata
-				if (thisLine.isEmpty() == true || thisLine.charAt(0) == '#' || thisLine.charAt(0) == '%'
-						|| thisLine.charAt(0) == '@') {
-					continue;
-				}
+        /**
+         * Creates a buffer able to hold the given number of candidates.
+         *
+         * @param capacity the maximum number of candidates this buffer can hold
+         */
+        DfsBuffer(int capacity) {
+            items   = new int[capacity];
+            bitmaps = new BitmapSPAM[capacity];
+        }
 
-				// split the sequence according to spaces into tokens
-				for (String token : thisLine.split(" ")) {
-					if (token.equals("-1")) { // indicate the end of an itemset
-						tid++;
-					} else if (token.equals("-2")) { // indicate the end of a sequence
-//						determineSection(bitindex - previousBitIndex);  // register the sequence length for the bitmap
-						sid++;
-						tid = 0;
-					} else { // indicate an item
-						// Get the bitmap for this item. If none, create one.
-						Integer item = Integer.parseInt(token);
-						Bitmap bitmapItem = verticalDB.get(item);
-						if (bitmapItem == null) {
-							bitmapItem = new Bitmap(lastBitIndex);
-							verticalDB.put(item, bitmapItem);
-						}
-						// Register the bit in the bitmap for this item
-						bitmapItem.registerBit(sid, tid, sequencesSize);
-					}
-				}
-			}
-			reader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+        /**
+         * Grows this buffer in place to at least the given capacity, preserving the already
+         * pooled bitmap objects so they do not need to be reallocated.
+         *
+         * @param capacity the new minimum capacity
+         */
+        void growTo(int capacity) {
+            items   = new int[capacity];                 // contents are fully rewritten before being read
+            bitmaps = Arrays.copyOf(bitmaps, capacity);   // preserve already-pooled bitmap objects
+        }
+    }
 
-		// STEP2: REMOVE INFREQUENT ITEMS FROM THE DATABASE BECAUSE THEY WILL NOT APPEAR
-		// IN ANY FREQUENT SEQUENTIAL PATTERNS
-		List<Integer> frequentItems = new ArrayList<Integer>();
-		Iterator<Entry<Integer, Bitmap>> iter = verticalDB.entrySet().iterator();
-		// we iterate over items from the vertical database that we have in memory
-		while (iter.hasNext()) {
-			// we get the bitmap for this item
-			Map.Entry<Integer, Bitmap> entry = (Map.Entry<Integer, Bitmap>) iter.next();
-			// if the cardinality of this bitmap is lower than minsup
-			if (entry.getValue().getSupport() < minsup) {
-				// we remove this item from the database.
-				iter.remove();
-			} else {
-				// otherwise, we save this item as a frequent
-				// sequential pattern of size 1
-				if (minimumPatternLength <= 1 && maximumPatternLength >= 1) {
-					savePattern(entry.getKey(), entry.getValue());
-				}
-				// and we add this item to a list of frequent items
-				// that we will use later.
-				frequentItems.add(entry.getKey());
-			}
-		}
+    /** Creates a new instance of the CM-SPAM2 algorithm. */
+    public AlgoCMSPAM() { }
 
-		if (maximumPatternLength <= 1) {
-			return;
-		}
+    /**
+     * Runs the CM-SPAM algorithm on an input sequence database and writes the frequent sequential patterns to a file.
+     *
+     * @param input the path of the input file
+     * @param outputFilePath the path of the output file
+     * @param minsupRel the minimum support threshold, as a relative value between 0 and 1
+     * @throws IOException if an error occurs while reading the input or writing the output
+     */
+    public void runAlgorithm(String input, String outputFilePath, double minsupRel)
+            throws IOException
+    {
+        if (input == null || outputFilePath == null) {
+            throw new IllegalArgumentException("The input and output file paths must not be null.");
+        }
+        if (minsupRel < 0d || minsupRel > 1d) {
+            throw new IllegalArgumentException("The relative minimum support must be between 0 and 1.");
+        }
 
-		// STEP 3.1 CREATE CMAP
-		coocMapEquals = new HashMap<Integer, Map<Integer, Integer>>(frequentItems.size());
-		coocMapAfter = new HashMap<Integer, Map<Integer, Integer>>(frequentItems.size());
-
-		if (useLastPositionPruning) {
-			lastItemPositionMap = new HashMap<Integer, Short>(frequentItems.size());
-		}
-		for (int[] transaction : inMemoryDB) {
-			short itemsetCount = 0;
-
-			Set<Integer> alreadyProcessed = new HashSet<Integer>();
-			Map<Integer, Set<Integer>> equalProcessed = new HashMap<>();
-			loopI: for (int i = 0; i < transaction.length; i++) {
-				Integer itemI = transaction[i];
-
-				Set equalSet = equalProcessed.get(itemI);
-				if (equalSet == null) {
-					equalSet = new HashSet();
-					equalProcessed.put(itemI, equalSet);
-				}
-
-				if (itemI < 0) {
-					itemsetCount++;
-					continue;
-				}
-//				System.out.println(itemsetCount);
-
-				// update lastItemMap
-				if (useLastPositionPruning) {
-					Short last = lastItemPositionMap.get(itemI);
-					if (last == null || last < itemsetCount) {
-						lastItemPositionMap.put(itemI, itemsetCount);
-					}
-				}
-
-				Bitmap bitmapOfItem = verticalDB.get(itemI);
-				if (bitmapOfItem == null || bitmapOfItem.getSupport() < minsup) {
-					continue;
-				}
-
-				Set<Integer> alreadyProcessedB = new HashSet<Integer>(); // NEW
-
-				boolean sameItemset = true;
-				for (int j = i + 1; j < transaction.length; j++) {
-					Integer itemJ = transaction[j];
-
-					if (itemJ < 0) {
-						sameItemset = false;
-						continue;
-					}
-
-					Bitmap bitmapOfitemJ = verticalDB.get(itemJ);
-					if (bitmapOfitemJ == null || bitmapOfitemJ.getSupport() < minsup) {
-						continue;
-					}
-//									if (itemI != itemJ){
-					Map<Integer, Integer> map = null;
-					if (sameItemset) {
-						if (!equalSet.contains(itemJ)) {
-							map = coocMapEquals.get(itemI);
-							if (map == null) {
-								map = new HashMap<Integer, Integer>();
-								coocMapEquals.put(itemI, map);
-							}
-							Integer support = map.get(itemJ);
-							if (support == null) {
-								map.put(itemJ, 1);
-							} else {
-								map.put(itemJ, ++support);
-							}
-							equalSet.add(itemJ);
-						}
-					} else if (!alreadyProcessedB.contains(itemJ)) {
-						if (alreadyProcessed.contains(itemI)) {
-							continue loopI;
-						}
-						map = coocMapAfter.get(itemI);
-						if (map == null) {
-							map = new HashMap<Integer, Integer>();
-							coocMapAfter.put(itemI, map);
-						}
-						Integer support = map.get(itemJ);
-						if (support == null) {
-							map.put(itemJ, 1);
-						} else {
-							map.put(itemJ, ++support);
-						}
-						alreadyProcessedB.add(itemJ); // NEW
-					}
-				}
-				alreadyProcessed.add(itemI);
-			}
-		}
-
-		// STEP3: WE PERFORM THE RECURSIVE DEPTH FIRST SEARCH
-		// to find longer sequential patterns recursively
-
-		// for each frequent item
-		for (Entry<Integer, Bitmap> entry : verticalDB.entrySet()) {
-			// We create a prefix with that item
-			Prefix prefix = new Prefix();
-			prefix.addItemset(new Itemset(entry.getKey()));
-			// We call the depth first search method with that prefix
-			// and the list of frequent items to try to find
-			// larger sequential patterns by appending some of these
-			// items.
-			dfsPruning(prefix, entry.getValue(), frequentItems, frequentItems, entry.getKey(), 2, entry.getKey());
-		}
-	}
-
-	/**
-	 * This is the dfsPruning method as described in the SPAM paper.
-	 *
-	 * @param prefix                     the current prefix
-	 * @param prefixBitmap               the bitmap corresponding to the current
-	 *                                   prefix
-	 * @param sn                         a list of items to be considered for
-	 *                                   i-steps
-	 * @param in                         a list of items to be considered for
-	 *                                   s-steps
-	 * @param hasToBeGreaterThanForIStep
-	 * @param m                          size of the current prefix in terms of
-	 *                                   items
-	 * @param lastAppendedItem           the last appended item to the prefix
-	 * @throws IOException if there is an error writing a pattern to the output file
-	 */
-	private void dfsPruning(Prefix prefix, Bitmap prefixBitmap, List<Integer> sn, List<Integer> in,
-			int hasToBeGreaterThanForIStep, int m, Integer lastAppendedItem) throws IOException {
-//		System.out.println(prefix.toString());
-
-		// ====== S-STEPS ======
-		// Temporary variables (as described in the paper)
-		List<Integer> sTemp = new ArrayList<Integer>();
-		List<Bitmap> sTempBitmaps = new ArrayList<Bitmap>();
-
-		// for CMAP pruning, we will only check against the last appended item
-		Map<Integer, Integer> mapSupportItemsAfter = coocMapAfter.get(lastAppendedItem);
-
-		// for each item in sn
-		loopi: for (Integer i : sn) {
-
-			// LAST POSITION PRUNING
-			/*
-			 * if (useLastPositionPruning && lastItemPositionMap.get(i) <
-			 * prefixBitmap.firstItemsetID) { // System.out.println("TEST"); continue loopi;
-			 * }
-			 */
-
-			// CMAP PRUNING
-			// we only check with the last appended item
-			if (useCMAPPruning) {
-				if (mapSupportItemsAfter == null) {
-					continue loopi;
-				}
-				Integer support = mapSupportItemsAfter.get(i);
-				if (support == null || support < minsup) {
-//							System.out.println("PRUNE");
-					continue loopi;
-				}
-			}
-
-			// perform the S-STEP with that item to get a new bitmap
-			Bitmap.INTERSECTION_COUNT++;
-
-//            System.out.println(prefix +  " bitmap : " + prefixBitmap.bitmap);
-//            if(prefix.size() == 1 && prefix.get(0).get(0) == 5) {
-//            	System.out.println("TEST1" + prefixB);
-//            }
-
-			Bitmap newBitmap = prefixBitmap.createNewBitmapSStep(verticalDB.get(i), sequencesSize, lastBitIndex,
-					maxGap);
-			// if the support is higher than minsup
-			if (newBitmap.getSupportWithoutGapTotal() >= minsup) {
-				// record that item and pattern in temporary variables
-				sTemp.add(i);
-				sTempBitmaps.add(newBitmap);
-			}
-		}
-		// for each pattern recorded for the s-step
-		for (int k = 0; k < sTemp.size(); k++) {
-			int item = sTemp.get(k);
-			// create the new prefix
-			Prefix prefixSStep = prefix.cloneSequence();
-			prefixSStep.addItemset(new Itemset(item));
-			// create the new bitmap
-			Bitmap newBitmap = sTempBitmaps.get(k);
-
-			// save the pattern to the file
-			if (newBitmap.getSupport() >= minsup) {
-				if (m >= minimumPatternLength) {
-					savePattern(prefixSStep, newBitmap);
-				}
-				// recursively try to extend that pattern
-				if (maximumPatternLength > m) {
-					dfsPruning(prefixSStep, newBitmap, sTemp, sTemp, item, m + 1, item);
-				}
-			}
-		}
-
-		Map<Integer, Integer> mapSupportItemsEquals = coocMapEquals.get(lastAppendedItem);
-		// ======== I STEPS =======
-		// Temporary variables
-		List<Integer> iTemp = new ArrayList<Integer>();
-		List<Bitmap> iTempBitmaps = new ArrayList<Bitmap>();
-
-		// for each item in in
-		loop2: for (Integer i : in) {
-
-			// the item has to be greater than the largest item
-			// already in the last itemset of prefix.
-			if (i > hasToBeGreaterThanForIStep) {
-
-				// LAST POSITION PRUNING
-				/*
-				 * if (useLastPositionPruning && lastItemPositionMap.get(i) <
-				 * prefixBitmap.firstItemsetID) { continue loop2; }
-				 */
-
-				// CMAP PRUNING
-				if (useCMAPPruning) {
-					if (mapSupportItemsEquals == null) {
-						continue loop2;
-					}
-					Integer support = mapSupportItemsEquals.get(i);
-					if (support == null || support < minsup) {
-						continue loop2;
-					}
-				}
-
-				// Perform an i-step with this item and the current prefix.
-				// This creates a new bitmap
-				Bitmap.INTERSECTION_COUNT++;
-				Bitmap newBitmap = prefixBitmap.createNewBitmapIStep(verticalDB.get(i), sequencesSize, lastBitIndex);
-				// If the support is no less than minsup
-				if (newBitmap.getSupport() >= minsup) {
-					// record that item and pattern in temporary variables
-					iTemp.add(i);
-					iTempBitmaps.add(newBitmap);
-				}
-			}
-		}
-		// for each pattern recorded for the i-step
-		for (int k = 0; k < iTemp.size(); k++) {
-			int item = iTemp.get(k);
-			// create the new prefix
-			Prefix prefixIStep = prefix.cloneSequence();
-			prefixIStep.getItemsets().get(prefixIStep.size() - 1).addItem(item);
-			// create the new bitmap
-			Bitmap newBitmap = iTempBitmaps.get(k);
-
-			// save the pattern
-			if (m >= minimumPatternLength) {
-				savePattern(prefixIStep, newBitmap);
-			}
-			// recursively try to extend that pattern
-			if (maximumPatternLength > m) {
-				dfsPruning(prefixIStep, newBitmap, sTemp, iTemp, item, m + 1, item);
-			}
-		}
-		// check the memory usage
-		MemoryLogger.getInstance().checkMemory();
-	}
-
-	/**
-	 * Save a pattern of size 1 to the output file
-	 *
-	 * @param item   the item
-	 * @param bitmap its bitmap
-	 * @throws IOException exception if error while writing to the file
-	 */
-	private void savePattern(Integer item, Bitmap bitmap) throws IOException {
-		// First, we check if the pattern contains the desired items (optional)
-		// We only do that if the user has specified some items that must appear in
-		// patterns.
-		if (mustAppearItems != null) {
-
-			// if the pattern does not contains all required items, then return
-			if (mustAppearItems.length > 1) {
-				return;
-			}
-			if (item.equals(mustAppearItems[0]) == false) {
-				return;
-			}
-		}
-
-		patternCount++; // increase the pattern count
-		StringBuilder r = new StringBuilder("");
-		r.append(item);
-		r.append(" -1 ");
-		r.append("#SUP: ");
-		r.append(bitmap.getSupport());
-		// if the user wants the sequence IDs, we will show them
-		if (outputSequenceIdentifiers) {
-			r.append(" #SID: ");
-			r.append(bitmap.getSIDs(sequencesSize));
-		}
-		writer.write(r.toString());
+        writer = new BufferedWriter(new FileWriter(outputFilePath), 1 << 16);
+		writer.write("@FILETYPE=\"Frequent sequential patterns\"");
 		writer.newLine();
-	}
-
-	/**
-	 * Save a pattern of size > 1 to the output file.
-	 *
-	 * @param prefix the prefix
-	 * @param bitmap its bitmap
-	 * @throws IOException exception if error while writing to the file
-	 */
-	private void savePattern(Prefix prefix, Bitmap bitmap) throws IOException {
-		// First, we check if the pattern contains the desired items (optional)
-		// We only do that if the user has specified some items that must appear in
-		// patterns.
-		if (mustAppearItems != null) {
-			Set<Integer> itemsFound = new HashSet<Integer>();
-			// for each item in the pattern
-			loop: for (Itemset itemset : prefix.getItemsets()) {
-				for (Integer item : itemset.getItems()) {
-					// if the user required that this item must appear in all patterns
-					if (itemMustAppearInPatterns(item)) {
-						// we note it
-						itemsFound.add(item);
-						if (itemsFound.size() == mustAppearItems.length) {
-							break loop;
-						}
-					}
-				}
-			}
-			// if the pattern does not contains all required items, then return
-			if (itemsFound.size() != mustAppearItems.length) {
-				return;
-			}
-		}
-		patternCount++;
-
-		StringBuilder r = new StringBuilder("");
-		for (Itemset itemset : prefix.getItemsets()) {
-//			r.append('(');
-			for (Integer item : itemset.getItems()) {
-				String string = item.toString();
-				r.append(string);
-				r.append(' ');
-			}
-			r.append("-1 ");
-		}
-
-		r.append("#SUP: ");
-		r.append(bitmap.getSupport());
-		// if the user wants the sequence IDs, we will show them
-		if (outputSequenceIdentifiers) {
-			r.append(" #SID: ");
-			r.append(bitmap.getSIDs(sequencesSize));
-		}
-		writer.write(r.toString());
-//		System.out.println(r.toString());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
 		writer.newLine();
-	}
+		
+        patternCount    = 0;
+        memCheckCounter = 0;
+        outputBuffer.setLength(0);
+        MemoryLogger.getInstance().reset();
 
-	/**
-	 * Print the statistics of the algorithm execution to System.out.
-	 */
-	public void printStatistics() {
-		StringBuilder r = new StringBuilder(200);
-		r.append("=============  CM-SPAM v0.97 - STATISTICS =============\n Total time ~ ");
-		r.append(endTime - startTime);
-		r.append(" ms\n");
-		r.append(" Frequent sequences count : " + patternCount);
-		r.append('\n');
-		r.append(" Max memory (mb) : ");
-		r.append(MemoryLogger.getInstance().getMaxMemory());
-		r.append(patternCount);
-		r.append('\n');
-		r.append("minsup " + minsup);
-		r.append('\n');
-		r.append("Intersection count " + Bitmap.INTERSECTION_COUNT + " \n");
-		r.append("===================================================\n");
-		System.out.println(r.toString());
-	}
+        startTime = System.currentTimeMillis();
+        try {
+            spam(input, minsupRel);
+        } finally {
+            // flush any remaining buffered output before closing
+            if (outputBuffer.length() > 0) {
+                writer.write(outputBuffer.toString());
+                outputBuffer.setLength(0);
+            }
+            writer.close();
+            clearBufferPools();
+        }
+        endTime = System.currentTimeMillis();
+    }
 
-	/**
-	 * Get the maximum length of patterns to be found (in terms of itemset count)
-	 *
-	 * @return the maximumPatternLength
-	 */
-	public int getMaximumPatternLength() {
-		return maximumPatternLength;
-	}
+    /** Clears all pooled DFS buffers so they can be garbage collected. */
+    private void clearBufferPools() {
+        sBufferPool.clear();
+        iBufferPool.clear();
+    }
 
-	/**
-	 * Set the maximum length of patterns to be found (in terms of itemset count)
-	 *
-	 * @param maximumPatternLength the maximumPatternLength to set
-	 */
-	public void setMaximumPatternLength(int maximumPatternLength) {
-		this.maximumPatternLength = maximumPatternLength;
-	}
+    /**
+     * Checks whether a line of the input file should be ignored (empty line or metadata/comment line).
+     *
+     * @param line the line to check
+     * @return true if the line should be skipped
+     */
+    private static boolean isSkippableLine(String line) {
+        return line.isEmpty()
+                || line.charAt(0) == '#'
+                || line.charAt(0) == '%'
+                || line.charAt(0) == '@';
+    }
 
-	/**
-	 * Set the minimum length of patterns to be found (in terms of itemset count)
-	 * 
-	 * @param minimumPatternLength the minimum pattern length to set
-	 */
-	public void setMinimumPatternLength(int minimumPatternLength) {
-		this.minimumPatternLength = minimumPatternLength;
-	}
+    /**
+     * Reads the input file once and tokenizes every non-skippable line exactly once, returning
+     * the parsed integers for each line as its own {@code int[]} row (trimmed to the exact
+     * number of tokens found). This in-memory, pre-tokenized representation is then reused for
+     * all three logical passes needed by CM-SPAM (support counting, vertical database
+     * construction, and CMAP construction), so that the file is only read from disk once
+     * <em>and</em> each line is only parsed from text into integers once, instead of being
+     * re-tokenized on every pass. The caller releases the returned array (sets it to null) as
+     * soon as it is no longer needed, before the depth-first search starts.
+     *
+     * @param input the path of the input file
+     * @return one {@code int[]} of parsed tokens per non-skippable line, in file order
+     * @throws IOException if an error occurs while reading the input file
+     */
+    private int[][] loadTokenizedLines(String input) throws IOException {
+        List<int[]> result = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(new File(input))),
+                INPUT_BUFFER_SIZE)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (isSkippableLine(line)) {
+                    continue;
+                }
+                int tokenCount = tokenizeLine(line, tokenBuffer);
+                // tokenizeLine may have grown and reassigned the tokenBuffer field; read the
+                // current field value and trim it to the exact token count for permanent storage
+                result.add(Arrays.copyOf(tokenBuffer, tokenCount));
+            }
+        }
+        return result.toArray(new int[0][]);
+    }
 
-	/**
-	 * Optional method to specify the items that must appears in patterns found by
-	 * TKS
-	 * 
-	 * @param mustAppearItems an array of items
-	 */
-	public void setMustAppearItems(int[] mustAppearItems) {
-		if (mustAppearItems.length > 0) {
-			this.mustAppearItems = mustAppearItems;
-		} else {
-			this.mustAppearItems = null;
-		}
-	}
+    /**
+     * Splits a line of the input file into integer tokens, growing the buffer if needed. Any
+     * whitespace character (not just the plain ASCII space) is treated as a token separator.
+     *
+     * @param line the line to tokenize
+     * @param buffer the buffer to store the parsed integers into (may be replaced if too small)
+     * @return the number of tokens parsed
+     */
+    private int tokenizeLine(String line, int[] buffer) {
+        int length = line.length();
+        int count  = 0;
+        int i      = 0;
+        while (i < length) {
+            // skip whitespace between tokens
+            while (i < length && Character.isWhitespace(line.charAt(i))) i++;
+            if (i >= length) break;
 
-	/**
-	 * Check if an item must appear in the pattern
-	 * 
-	 * @param item the item
-	 * @return true if the user has specified that this item must appear in the
-	 *         pattern
-	 */
-	public boolean itemMustAppearInPatterns(int item) {
-		return (mustAppearItems == null) || Arrays.binarySearch(mustAppearItems, item) >= 0;
-	}
+            // parse an optional negative sign
+            boolean neg = false;
+            if (line.charAt(i) == '-') { neg = true; i++; }
 
-	/**
-	 * This method allows to specify the maximum gap between itemsets of patterns
-	 * found by the algorithm. If set to 1, only patterns of contiguous itemsets
-	 * will be found (no gap).
-	 * 
-	 * @param maxGap the maximum gap (an integer)
-	 */
-	public void setMaxGap(int maxGap) {
-		this.maxGap = maxGap;
-	}
+            // parse the digits into an integer value
+            int val = 0;
+            while (i < length && !Character.isWhitespace(line.charAt(i))) {
+                val = val * 10 + (line.charAt(i) - '0');
+                i++;
+            }
+            // grow the buffer if needed, then store the parsed token
+            if (count == buffer.length) {
+                buffer = Arrays.copyOf(buffer, buffer.length * 2);
+            }
+            buffer[count++] = neg ? -val : val;
+        }
+        tokenBuffer = buffer;
+        return count;
+    }
+
+    /**
+     * Ensures the pattern buffer can hold at least the given number of tokens, growing it if necessary.
+     *
+     * @param minCapacity the minimum number of tokens the buffer must be able to hold
+     */
+    private void ensurePatternCapacity(int minCapacity) {
+        if (minCapacity > patternBuffer.length) {
+            patternBuffer = Arrays.copyOf(patternBuffer, Math.max(minCapacity, patternBuffer.length * 2));
+        }
+    }
+
+    /**
+     * Runs the main phases of CM-SPAM: counting item supports, building the vertical database,
+     * building the CMAP cooccurrence maps, and performing the depth-first search for frequent
+     * sequential patterns. The input file is read and tokenized into memory exactly once (see
+     * {@link #loadTokenizedLines}), and that pre-parsed representation is reused for the
+     * support-counting pass, the vertical-database-construction pass, and the CMAP-construction
+     * pass, before being released just prior to the depth-first search.
+     *
+     * @param input the path of the input file
+     * @param minsupRel the relative minimum support threshold
+     * @throws IOException if an error occurs while reading the input file
+     */
+    private void spam(String input, double minsupRel) throws IOException {
+
+        int[][] tokenizedLines = loadTokenizedLines(input);
+
+        // Step 0: count item frequencies and detect singleton-itemset mode
+        ArrayListInt sequencesSizeList = new ArrayListInt();
+
+        int initialCapacity = 1024;
+        int[] itemSupport = new int[initialCapacity];
+        int[] itemLastSid = new int[initialCapacity];
+        Arrays.fill(itemLastSid, -1);
+        maxItemId = 0;
+
+        int lastBitIndex = 0;
+        boolean sawMultiItemItemset = false;
+
+        {
+            int bitIndex = 0;
+            int sid      = 0;
+
+            for (int[] tokens : tokenizedLines) {
+                sequencesSizeList.add(bitIndex);
+
+                int tokenCount = tokens.length;
+                int itemsInCurrentItemset = 0; // reset per line (each line = one full sequence)
+
+                for (int t = 0; t < tokenCount; t++) {
+                    int token = tokens[t];
+                    if (token == -1) {
+                        bitIndex++;
+                        itemsInCurrentItemset = 0; // reset at itemset boundary
+                    } else if (token == -2) {
+                        sid++;
+                        bitIndex++; // FIX: end of sequence must also advance bit index to prevent overlap
+                    } else {
+                        if (!sawMultiItemItemset) {
+                            itemsInCurrentItemset++;
+                            if (itemsInCurrentItemset > 1) {
+                                sawMultiItemItemset = true;
+                            }
+                        }
+
+                        // grow support-tracking arrays if the item id exceeds current capacity
+                        if (token >= itemSupport.length) {
+                            int oldLen = itemSupport.length;
+                            int newCap = Math.max(token + 1, oldLen * 2);
+                            itemSupport = Arrays.copyOf(itemSupport, newCap);
+                            itemLastSid = Arrays.copyOf(itemLastSid, newCap);
+                            Arrays.fill(itemLastSid, oldLen, newCap, -1);
+                        }
+                        if (token > maxItemId) maxItemId = token;
+
+                        // count support once per sequence, not per occurrence
+                        if (itemLastSid[token] != sid) {
+                            itemSupport[token]++;
+                            itemLastSid[token] = sid;
+                        }
+                    }
+                }
+            }
+            lastBitIndex = bitIndex - 1;
+        }
+
+        onlySingletonItemsets = !sawMultiItemItemset;
+
+        sequencesSize = new int[sequencesSizeList.size()];
+        for (int idx = 0; idx < sequencesSize.length; idx++) {
+            sequencesSize[idx] = sequencesSizeList.get(idx);
+        }
+        sequencesSizeList = null;
+
+        int numSequences = sequencesSize.length;
+
+        minsup = (int) Math.ceil(minsupRel * numSequences);
+        if (minsup == 0) minsup = 1;
+
+        // precompute sequenceEndBit[] and build the SID resolver
+        sequenceEndBit = BitmapSPAM.buildSequenceEndBit(sequencesSize, lastBitIndex, numSequences);
+
+        sidResolver = new BitmapSPAM.SidResolver(sequencesSize, sequenceEndBit);
+        sidScratchBuffer = new int[Math.max(numSequences, 1)];
+        firstBitScratchBuffer = new int[Math.max(numSequences, 1)];
+
+        // build contiguous item-id remap
+        ArrayListInt frequentOriginalIdsList = new ArrayListInt();
+        for (int origId = 0; origId <= maxItemId; origId++) {
+            int cnt = itemSupport[origId];
+            if (cnt >= minsup) {
+                // frequent item: assign it the next dense internal id
+                int newId = frequentOriginalIdsList.size();
+                frequentOriginalIdsList.add(origId);
+                itemSupport[origId] = newId;
+            } else {
+                itemSupport[origId] = -1;
+            }
+        }
+        int[] remap = itemSupport;
+        itemSupport = null;
+        itemLastSid  = null;
+
+        frequentItemCount = frequentOriginalIdsList.size();
+        newIdToOriginal = new int[frequentItemCount];
+        for (int i = 0; i < frequentItemCount; i++) {
+            newIdToOriginal[i] = frequentOriginalIdsList.get(i);
+        }
+        frequentOriginalIdsList = null;
+
+        // resolve the "must appear" items (if specified) into a boolean bitmask indexed by
+        // internal dense item ids, together with a running "required count" of distinct valid
+        // items and a "possible" flag; this mirrors the incremental mask + counter technique used
+        // elsewhere for such constraints, allowing membership to be tested with a plain array
+        // lookup and the constraint itself to be checked with an O(1) comparison rather than
+        // rescanning the whole pattern buffer with a HashSet on every save
+        mustAppearMask            = null;
+        mustAppearPossible        = true;
+        mustAppearRequiredCount   = 0;
+        mustAppearOccurrenceCount = null;
+        if (mustAppearItems != null) {
+            mustAppearMask = new boolean[frequentItemCount];
+            for (int orig : mustAppearItems) {
+                int newId = (orig >= 0 && orig <= maxItemId) ? remap[orig] : -1;
+                if (newId < 0) {
+                    // a required item is infrequent (or unknown): the constraint can never be satisfied
+                    mustAppearPossible = false;
+                } else if (!mustAppearMask[newId]) {
+                    // count each distinct required item only once, so duplicate entries in
+                    // mustAppearItems do not inflate the required count
+                    mustAppearMask[newId] = true;
+                    mustAppearRequiredCount++;
+                }
+            }
+
+            if (!mustAppearPossible) {
+                // at least one required item is infrequent (or unknown): no pattern can ever
+                // satisfy the constraint, so building the vertical database, the CMAP maps, and
+                // running the depth-first search would all be wasted work
+                return;
+            }
+
+            mustAppearOccurrenceCount = new int[frequentItemCount];
+        }
+
+        // Step 1: build the vertical database (reusing the pre-tokenized lines)
+        vdbArray = new BitmapSPAM[frequentItemCount];
+
+        {
+            int sid2 = 0;
+
+            for (int[] tokens : tokenizedLines) {
+                int tid2 = 0;
+                int tokenCount = tokens.length;
+                for (int t = 0; t < tokenCount; t++) {
+                    int token = tokens[t];
+                    if (token == -1) {
+                        tid2++;
+                    } else if (token == -2) {
+                        sid2++;
+                        tid2 = 0;
+                    } else {
+                        int newId = remap[token];
+                        if (newId >= 0) {
+                            // register occurrence in the item's bitmap, creating it lazily
+                            BitmapSPAM bm = vdbArray[newId];
+                            if (bm == null) {
+                                bm = new BitmapSPAM();
+                                vdbArray[newId] = bm;
+                            }
+                            bm.registerBit(sid2, tid2, sequencesSize);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Step 2: save frequent 1-patterns
+        if (minimumPatternLength <= 1 && maximumPatternLength >= 1) {
+            for (int newId = 0; newId < frequentItemCount; newId++) {
+                savePattern(newId, vdbArray[newId]);
+            }
+        }
+
+        if (maximumPatternLength == 1) return;
+
+        // Step 3.1: build the CMAP cooccurrence maps used to prune candidates before extension
+        // (reusing the same pre-tokenized lines)
+        buildCoocMaps(tokenizedLines, remap);
+        remap = null;
+
+        // the pre-tokenized lines are no longer needed once both the vertical database and the
+        // CMAP maps have been built; release the reference so the (potentially large) in-memory
+        // copy of the file can be garbage-collected before the depth-first search starts
+        tokenizedLines = null;
+
+        int[] frequentItemsArr = new int[frequentItemCount];
+        for (int i = 0; i < frequentItemCount; i++) {
+            frequentItemsArr[i] = i;
+        }
+
+        // Step 3: depth-first search for longer patterns
+        // (sBufferPool/iBufferPool are guaranteed empty at this point: clearBufferPools() is
+        // invoked from the finally block of runAlgorithm after every previous call to spam(),
+        // and spam() is only ever called from there, so no explicit clear is needed here.)
+        for (int idx = 0; idx < frequentItemCount; idx++) {
+            BitmapSPAM bm = vdbArray[idx];
+
+            // start a new pattern buffer containing a single itemset with this item
+            patternLength = 0;
+            ensurePatternCapacity(1);
+            patternBuffer[patternLength++] = idx;
+
+            // initialize the running "must appear" match count for this new pattern prefix
+            boolean idxRequired = mustAppearMask != null && mustAppearMask[idx];
+            if (idxRequired) {
+                mustAppearOccurrenceCount[idx] = 1;
+                mustAppearMatchedCount = 1;
+            } else {
+                mustAppearMatchedCount = 0;
+            }
+
+            dfsPruning(bm,
+                    frequentItemsArr, frequentItemCount,
+                    frequentItemsArr, frequentItemCount,
+                    idx, 2, 0);
+
+            if (idxRequired) {
+                mustAppearOccurrenceCount[idx] = 0;
+            }
+        }
+    }
+
+    /**
+     * Builds the CMAP cooccurrence maps by scanning every pre-tokenized transaction, keeping
+     * only frequent items remapped to their internal ids, and recording for each item which
+     * items can appear later in the sequence and which items can appear in the same itemset.
+     * Every transaction is scanned unconditionally, exactly like the vertical database built in
+     * {@link #spam}, so that the recorded co-occurrence supports are always sound upper bounds
+     * for the pruning performed in {@link #dfsPruning}; skipping transactions that do not
+     * contain a "must appear" item would under-count co-occurrences relative to the (unfiltered)
+     * vertical database and could cause valid patterns to be wrongly pruned.
+     *
+     * @param tokenizedLines the pre-tokenized, non-skippable lines of the input file
+     * @param remap maps original item ids to internal ids, or -1 if the item is infrequent
+     */
+    @SuppressWarnings("unchecked")
+    private void buildCoocMaps(int[][] tokenizedLines, int[] remap) {
+        coocMapAfter  = new HashMap[frequentItemCount];
+        coocMapEquals = new HashMap[frequentItemCount];
+
+        int[] compact = new int[64];
+
+        for (int[] tokens : tokenizedLines) {
+            int tokenCount = tokens.length;
+            int compactLen = 0;
+
+            for (int t = 0; t < tokenCount; t++) {
+                int token = tokens[t];
+                if (token == -2) {
+                    // end of a sequence: process the transaction accumulated so far
+                    if (compactLen > 0) {
+                        processTransactionForCMAP(compact, compactLen);
+                    }
+                    compactLen = 0;
+                } else if (token == -1) {
+                    // keep the itemset boundary in the compact representation
+                    if (compactLen == compact.length) {
+                        compact = Arrays.copyOf(compact, compact.length * 2);
+                    }
+                    compact[compactLen++] = -1;
+                } else {
+                    // keep only frequent items, remapped to their internal id
+                    int newId = remap[token];
+                    if (newId >= 0) {
+                        if (compactLen == compact.length) {
+                            compact = Arrays.copyOf(compact, compact.length * 2);
+                        }
+                        compact[compactLen++] = newId;
+                    }
+                }
+            }
+            if (compactLen > 0) {
+                processTransactionForCMAP(compact, compactLen);
+            }
+        }
+    }
+
+    /**
+     * Updates the CMAP cooccurrence maps with the pairs of items found in a single transaction,
+     * counting each pair at most once per transaction. Uses reusable instance-level scratch
+     * collections ({@link #cmapAlreadyProcessed}, {@link #cmapEqualProcessed},
+     * {@link #cmapAlreadyProcessedB}), cleared at the start of the relevant loop, instead of
+     * allocating fresh collections on every call.
+     *
+     * @param transaction the compact transaction (internal item ids, -1 marks itemset boundaries)
+     * @param length the number of valid entries in transaction
+     */
+    private void processTransactionForCMAP(int[] transaction, int length) {
+        cmapAlreadyProcessed.clear();
+        cmapEqualProcessed.clear();
+
+        loopI:
+        for (int i = 0; i < length; i++) {
+            int itemI = transaction[i];
+            if (itemI == -1) {
+                continue; // itemset boundary, nothing to record
+            }
+
+            Set<Integer> equalSet = cmapEqualProcessed.get(itemI);
+            if (equalSet == null) {
+                equalSet = new HashSet<>();
+                cmapEqualProcessed.put(itemI, equalSet);
+            }
+
+            cmapAlreadyProcessedB.clear();
+            boolean sameItemset = true;
+
+            for (int j = i + 1; j < length; j++) {
+                int itemJ = transaction[j];
+                if (itemJ == -1) {
+                    sameItemset = false;
+                    continue;
+                }
+
+                if (sameItemset) {
+                    // itemJ appears in the same itemset as itemI
+                    if (!equalSet.contains(itemJ)) {
+                        addCooccurrence(coocMapEquals, itemI, itemJ);
+                        equalSet.add(itemJ);
+                    }
+                } else if (!cmapAlreadyProcessedB.contains(itemJ)) {
+                    // itemJ appears in a later itemset than itemI
+                    if (cmapAlreadyProcessed.contains(itemI)) {
+                        continue loopI;
+                    }
+                    addCooccurrence(coocMapAfter, itemI, itemJ);
+                    cmapAlreadyProcessedB.add(itemJ);
+                }
+            }
+            cmapAlreadyProcessed.add(itemI);
+        }
+    }
+
+    /**
+     * Increments by one the support count recorded for the pair (itemI, itemJ) in the given map.
+     *
+     * @param map the cooccurrence map to update (indexed by internal item id)
+     * @param itemI the source item
+     * @param itemJ the cooccurring item
+     */
+    private void addCooccurrence(Map<Integer, Integer>[] map, int itemI, int itemJ) {
+        Map<Integer, Integer> m = map[itemI];
+        if (m == null) {
+            m = new HashMap<>();
+            map[itemI] = m;
+        }
+        m.merge(itemJ, 1, Integer::sum);
+    }
+
+    /**
+     * Retrieves the pooled DFS buffer for the given recursion depth, growing it on demand if the
+     * requested capacity exceeds what is currently allocated.
+     *
+     * @param pool the buffer pool to use (S-step or I-step pool)
+     * @param depth the current DFS recursion depth
+     * @param capacity the minimum capacity required for this node
+     * @return a buffer with at least the requested capacity
+     */
+    private DfsBuffer getBuffer(List<DfsBuffer> pool, int depth, int capacity) {
+        if (capacity < 1) capacity = 1;
+        while (pool.size() <= depth) {
+            pool.add(new DfsBuffer(capacity));
+        }
+        DfsBuffer buf = pool.get(depth);
+        if (buf.items.length < capacity) {
+            // grow in place so already-pooled bitmap objects are preserved
+            buf.growTo(capacity);
+        }
+        return buf;
+    }
+
+    /**
+     * Finds the index of the first entry in {@code arr[0..count)} that is strictly greater than
+     * {@code value}, using binary search since the array is always kept sorted in ascending order.
+     *
+     * @param arr the sorted array to search
+     * @param count the number of valid entries in arr
+     * @param value the value to compare against
+     * @return the index of the first entry strictly greater than value, or count if none is found
+     */
+    private static int upperBound(int[] arr, int count, int value) {
+        int lo = 0, hi = count;
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (arr[mid] <= value) lo = mid + 1;
+            else hi = mid;
+        }
+        return lo;
+    }
+
+    /**
+     * Recursively extends the pattern currently held in {@code patternBuffer} with S-steps (new
+     * itemset) and I-steps (item added to the last itemset), using the CMAP cooccurrence maps to
+     * prune candidates before any bitmap intersection is computed, saving each frequent pattern
+     * found.
+     *
+     * @param prefixBitmap the bitmap representation of the current pattern
+     * @param sn candidate items usable for S-steps
+     * @param snCount number of valid entries in sn
+     * @param in candidate items usable for I-steps
+     * @param inCount number of valid entries in in
+     * @param hasToBeGreaterThanForIStep the last item appended to the pattern, used for the I-step ordering constraint and as the CMAP lookup key
+     * @param m the length of the pattern that would result from the extension
+     * @param depth the current DFS recursion depth, used to select the pooled buffers
+     * @throws IOException if an error occurs while writing a pattern to the output
+     */
+    private void dfsPruning(BitmapSPAM prefixBitmap,
+                             int[]  sn, int snCount,
+                             int[]  in, int inCount,
+                             int    hasToBeGreaterThanForIStep,
+                             int    m,
+                             int    depth)
+            throws IOException
+    {
+        // CMAP for the S-step: items that can possibly follow the last appended item
+        Map<Integer, Integer> mapAfter = coocMapAfter[hasToBeGreaterThanForIStep];
+
+        DfsBuffer sBuf   = getBuffer(sBufferPool, depth, snCount);
+        int       sCount = 0;
+
+        // precompute occupied SIDs/first-bit once per node when there is no gap constraint
+        int occCount = (maxGap == Integer.MAX_VALUE && snCount > 0 && mapAfter != null)
+                ? prefixBitmap.collectOccupiedSidsAndFirstBit(
+                        sidScratchBuffer, firstBitScratchBuffer, sidResolver)
+                : 0;
+
+        if (mapAfter != null) {
+            for (int idx = 0; idx < snCount; idx++) {
+                int item = sn[idx];
+
+                // CMAP pruning: skip items that cannot reach minsup as a follower of the last item
+                Integer support = mapAfter.get(item);
+                if (support == null || support < minsup) {
+                    continue;
+                }
+
+                BitmapSPAM itemBitmap = vdbArray[item];
+
+                BitmapSPAM out = sBuf.bitmaps[sCount];
+                if (out == null) {
+                    out = new BitmapSPAM();
+                    sBuf.bitmaps[sCount] = out;
+                }
+                out.resetForReuse(itemBitmap.wordCount);
+
+                prefixBitmap.createNewBitmapSStep(
+                        out, itemBitmap,
+                        maxGap, sidResolver, sequenceEndBit,
+                        sidScratchBuffer, firstBitScratchBuffer, occCount);
+
+                // keep the candidate only if it meets minimum support
+                if (out.getSupportWithoutGapTotal() >= minsup) {
+                    sBuf.items[sCount] = item;
+                    sCount++;
+                }
+            }
+        }
+
+        for (int k = 0; k < sCount; k++) {
+            int    item      = sBuf.items[k];
+            BitmapSPAM newBitmap = sBuf.bitmaps[k];
+
+            if (newBitmap.getSupport() >= minsup) {
+                // append a new itemset (separator + item) to the pattern buffer
+                int savedLen = patternLength;
+                ensurePatternCapacity(patternLength + 2);
+                if (patternLength > 0) {
+                    patternBuffer[patternLength++] = -1;
+                }
+                patternBuffer[patternLength++] = item;
+
+                // update the running "must appear" match count for this push; only the 0->1
+                // transition of this item's occurrence count affects the distinct-item count,
+                // so reusing the same required item later in the pattern does not inflate it
+                boolean isRequired = mustAppearMask != null && mustAppearMask[item];
+                if (isRequired && ++mustAppearOccurrenceCount[item] == 1) {
+                    mustAppearMatchedCount++;
+                }
+
+                if (m >= minimumPatternLength) {
+                    savePattern(newBitmap);
+                }
+                if (maximumPatternLength > m) {
+                    dfsPruning(newBitmap,
+                            sBuf.items, sCount,
+                            sBuf.items, sCount,
+                            item, m + 1, depth + 1);
+                }
+
+                // pop: undo the occurrence-count update, then restore the buffer, for the next sibling
+                if (isRequired && --mustAppearOccurrenceCount[item] == 0) {
+                    mustAppearMatchedCount--;
+                }
+                patternLength = savedLen;
+            }
+        }
+
+        // I-steps: extend the pattern by adding an item to the last itemset
+        if (!onlySingletonItemsets) {
+            // CMAP for the I-step: items that can possibly appear in the same itemset as the last appended item
+            Map<Integer, Integer> mapEquals = coocMapEquals[hasToBeGreaterThanForIStep];
+
+            if (mapEquals != null) {
+                DfsBuffer iBuf   = getBuffer(iBufferPool, depth, inCount);
+                int       iCount = 0;
+
+                // only consider items greater than the last one added, to avoid duplicate itemsets
+                int startIdx = upperBound(in, inCount, hasToBeGreaterThanForIStep);
+
+                for (int idx = startIdx; idx < inCount; idx++) {
+                    int item = in[idx];
+
+                    // CMAP pruning: skip items that cannot reach minsup alongside the last item
+                    Integer support = mapEquals.get(item);
+                    if (support == null || support < minsup) {
+                        continue;
+                    }
+
+                    BitmapSPAM itemBitmap = vdbArray[item];
+
+                    BitmapSPAM out = iBuf.bitmaps[iCount];
+                    if (out == null) {
+                        out = new BitmapSPAM();
+                        iBuf.bitmaps[iCount] = out;
+                    }
+                    out.resetForReuse(Math.min(prefixBitmap.wordCount, itemBitmap.wordCount));
+
+                    prefixBitmap.createNewBitmapIStep(out, itemBitmap, sidResolver);
+
+                    if (out.getSupport() >= minsup) {
+                        iBuf.items[iCount] = item;
+                        iCount++;
+                    }
+                }
+
+                for (int k = 0; k < iCount; k++) {
+                    int    item      = iBuf.items[k];
+                    BitmapSPAM newBitmap = iBuf.bitmaps[k];
+
+                    // append the item directly to the last itemset in the pattern buffer
+                    int savedLen = patternLength;
+                    ensurePatternCapacity(patternLength + 1);
+                    patternBuffer[patternLength++] = item;
+
+                    boolean isRequired = mustAppearMask != null && mustAppearMask[item];
+                    if (isRequired && ++mustAppearOccurrenceCount[item] == 1) {
+                        mustAppearMatchedCount++;
+                    }
+
+                    if (m >= minimumPatternLength) {
+                        savePattern(newBitmap);
+                    }
+                    if (maximumPatternLength > m) {
+                        dfsPruning(newBitmap,
+                                sBuf.items, sCount,
+                                iBuf.items, iCount,
+                                item, m + 1, depth + 1);
+                    }
+
+                    if (isRequired && --mustAppearOccurrenceCount[item] == 0) {
+                        mustAppearMatchedCount--;
+                    }
+                    patternLength = savedLen;
+                }
+            }
+        }
+
+        // periodically check memory usage without doing it on every single node
+        if (++memCheckCounter >= MEM_CHECK_INTERVAL) {
+            memCheckCounter = 0;
+            MemoryLogger.getInstance().checkMemory();
+        }
+    }
+
+    /**
+     * Flushes the in-memory output buffer to the writer once it exceeds the flush threshold.
+     *
+     * @throws IOException if an error occurs while writing to the output file
+     */
+    private void maybeFlushOutputBuffer() throws IOException {
+        if (outputBuffer.length() >= OUTPUT_BUFFER_FLUSH_THRESHOLD) {
+            writer.write(outputBuffer.toString());
+            outputBuffer.setLength(0);
+        }
+    }
+
+    /**
+     * Saves a frequent single-item pattern to the output buffer.
+     *
+     * @param item the internal id of the frequent item
+     * @param bitmap the bitmap holding the pattern's support information
+     * @throws IOException if an error occurs while writing to the output
+     */
+    private void savePattern(int item, BitmapSPAM bitmap) throws IOException {
+        // First, we check if the pattern contains the desired items (optional).
+        // We only do that if the user has specified some items that must appear in patterns.
+        // A single-item pattern can only satisfy the constraint if exactly one distinct item is
+        // required and it is this very item; this is an O(1) check against the precomputed mask.
+        // (mustAppearPossible is guaranteed true here: spam() returns before producing any
+        // pattern whenever it is false, so it does not need to be re-checked.)
+        if (mustAppearMask != null
+                && (mustAppearRequiredCount != 1 || !mustAppearMask[item])) {
+            return;
+        }
+
+        patternCount++;
+        patternBuilder.setLength(0);
+        patternBuilder.append(newIdToOriginal[item])
+                      .append(" -1 #SUP: ")
+                      .append(bitmap.getSupport());
+
+        if (outputSequenceIdentifiers) {
+            patternBuilder.append(" #SID: ")
+                          .append(bitmap.getSIDs(sidResolver));
+        }
+
+        outputBuffer.append(patternBuilder).append('\n');
+        maybeFlushOutputBuffer();
+    }
+
+    /**
+     * Saves the pattern currently held in {@code patternBuffer} (a multi-itemset pattern) to the output buffer.
+     *
+     * @param bitmap the bitmap holding the pattern's support information
+     * @throws IOException if an error occurs while writing to the output
+     */
+    private void savePattern(BitmapSPAM bitmap) throws IOException {
+        // First, we check if the pattern contains the desired items (optional).
+        // We only do that if the user has specified some items that must appear in patterns.
+        // mustAppearMatchedCount is maintained incrementally as items are pushed onto / popped
+        // off patternBuffer during the DFS, so this check is an O(1) comparison rather than a
+        // rescan of the whole pattern buffer.
+        // (mustAppearPossible is guaranteed true here: spam() returns before producing any
+        // pattern whenever it is false, so it does not need to be re-checked.)
+        if (mustAppearMask != null
+                && mustAppearMatchedCount != mustAppearRequiredCount) {
+            return;
+        }
+
+        patternCount++;
+        patternBuilder.setLength(0);
+
+        // walk the flat buffer, translating items and turning -1 separators into itemset closers
+        for (int i = 0; i < patternLength; i++) {
+            int token = patternBuffer[i];
+            if (token == -1) {
+                patternBuilder.append("-1 ");
+            } else {
+                patternBuilder.append(newIdToOriginal[token]).append(' ');
+            }
+        }
+        patternBuilder.append("-1 #SUP: ").append(bitmap.getSupport());
+
+        if (outputSequenceIdentifiers) {
+            patternBuilder.append(" #SID: ")
+                          .append(bitmap.getSIDs(sidResolver));
+        }
+
+        outputBuffer.append(patternBuilder).append('\n');
+        maybeFlushOutputBuffer();
+    }
+
+    /** Prints statistics about the last execution of the algorithm to standard output. */
+    public void printStatistics() {
+        System.out.println(
+            "=============  CM-SPAM2 v2.67 - STATISTICS =============\n"
+          + " Total time ~ " + (endTime - startTime) + " ms\n"
+          + " Frequent sequences count : " + patternCount + "\n"
+          + " Max memory (mb) : " + MemoryLogger.getInstance().getMaxMemory() + "\n"
+          + " minsup " + minsup + "\n"
+          + " maxItemId (original ID space) " + maxItemId
+                          + " | frequentItemCount (dense vdbArray size) " + frequentItemCount
+                          + " | numSequences " + sequencesSize.length + "\n"
+          + " onlySingletonItemsets (I-step skipped entirely) : " + onlySingletonItemsets + "\n"
+          + "===================================================");
+    }
+
+    /** @return the maximum allowed pattern length */
+    public int  getMaximumPatternLength()                        { return maximumPatternLength; }
+    /** @param maximumPatternLength the maximum allowed pattern length */
+    public void setMaximumPatternLength(int maximumPatternLength){ this.maximumPatternLength = maximumPatternLength; }
+    /** @param minimumPatternLength the minimum required pattern length */
+    public void setMinimumPatternLength(int minimumPatternLength){ this.minimumPatternLength = minimumPatternLength; }
+    /** @param maxGap the maximum allowed gap between consecutive elements of a pattern */
+    public void setMaxGap(int maxGap)                            { this.maxGap = maxGap; }
+    /** @param show whether to include sequence identifiers (SIDs) in the output */
+    public void showSequenceIdentifiersInOutput(boolean show)    { this.outputSequenceIdentifiers = show; }
+
+    /**
+     * Optional method to specify the items that must appear in patterns found by the algorithm.
+     * The given array is defensively copied so that later mutation or reuse of the caller's
+     * array by the caller cannot affect this algorithm's behavior.
+     *
+     * @param mustAppearItems an array of items (original item ids)
+     */
+    public void setMustAppearItems(int[] mustAppearItems) {
+        if (mustAppearItems == null || mustAppearItems.length == 0) {
+            this.mustAppearItems = null;
+        } else {
+            this.mustAppearItems = Arrays.copyOf(mustAppearItems, mustAppearItems.length);
+        }
+    }
 }

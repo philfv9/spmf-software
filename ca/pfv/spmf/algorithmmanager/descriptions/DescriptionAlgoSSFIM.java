@@ -58,7 +58,7 @@ public class DescriptionAlgoSSFIM extends DescriptionOfAlgorithm {
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
 		double minsup = getParamAsDouble(parameters[0]);
 
-		// Applying the Apriori algorithm, optimized version
+		// Applying the algorithm
 		AlgoSSFIM algo = new AlgoSSFIM();
 		algo.runAlgorithm(inputFile, outputFile, minsup);
 		algo.printStats();

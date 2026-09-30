@@ -1,0 +1,6 @@
+@FILETYPE="Top-k sequential patterns with quantile-based cohesion"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+2 -1 3 -1 #SUP: 4 #QCOH: 1.000
+1 -1 3 -1 #SUP: 4 #QCOH: 1.000
+1 -1 2 -1 3 -1 #SUP: 6 #QCOH: 0.500
+1 -1 2 -1 #SUP: 4 #QCOH: 0.500

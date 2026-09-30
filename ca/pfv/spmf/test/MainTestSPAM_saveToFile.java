@@ -23,6 +23,11 @@ public class MainTestSPAM_saveToFile {
 //		algo.setMinimumPatternLength(3);
 //		algo.setMaximumPatternLength(3);
 		
+		// This optional parameter allows to specify constraints that some
+		// items MUST appear in the patterns found by TKS
+		// E.g.: This requires that items 1 and 3 appears in every patterns found
+//		algo.setMustItems(new int[] {1, 3});
+		
         // if you set the following parameter to true, the sequence ids of the sequences where
         // each pattern appears will be shown in the result
 //		algo.showSequenceIdentifiersInOutput(true);

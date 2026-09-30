@@ -1,0 +1,8 @@
+@FILETYPE="High-utility probability sequential patterns"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+1 -1 1 -1 #UITL: 25 #SP: 2.3000002
+2 -1 1 -1 #UITL: 22 #SP: 2.3000002
+3 -1 1 2 -1 #UITL: 21 #SP: 1.7
+3 -1 1 -1 1 -1 #UITL: 22 #SP: 1.7
+3 -1 1 -1 1 2 -1 #UITL: 25 #SP: 1.7
+2 -1 1 -1 1 2 -1 #UITL: 21 #SP: 1.7

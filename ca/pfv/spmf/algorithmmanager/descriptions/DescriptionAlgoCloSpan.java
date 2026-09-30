@@ -54,7 +54,7 @@ public class DescriptionAlgoCloSpan extends DescriptionOfAlgorithm {
 
 	@Override
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
-		ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.creators.AbstractionCreator abstractionCreator = ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.creators.AbstractionCreator_Qualitative
+		ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.AbstractionCreator_Qualitative abstractionCreator = ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.AbstractionCreator_Qualitative
 				.getInstance();
 
 		double minSupport = getParamAsDouble(parameters[0]);

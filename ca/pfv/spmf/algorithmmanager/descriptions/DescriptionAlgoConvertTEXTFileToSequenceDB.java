@@ -54,20 +54,18 @@ public class DescriptionAlgoConvertTEXTFileToSequenceDB extends DescriptionOfAlg
 
 	@Override
 	public String getURLOfDocumentation() {
-		return "http://www.philippe-fournier-viger.com/spmf/Using_a_TEXT_file_as_input.php";
+		return "http://www.philippe-fournier-viger.com/spmf/TextFileToSDB.php";
 	}
 
 	@Override
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
 		int sequenceCount = getParamAsInteger(parameters[0]);
-		// Get the text encoding
-		Charset charset = PreferencesManager.getInstance().getPreferedCharset();
 
 		long startTime = System.currentTimeMillis();
 		// Create a converter
 		SequenceDatabaseConverter converter = new SequenceDatabaseConverter();
 		// Call the method to convert the input file from TEXT to the SPMF format
-		converter.convert(inputFile, outputFile, Formats.TEXT, sequenceCount, charset);
+		converter.convert(inputFile, outputFile, Formats.TEXT, sequenceCount, Charset.defaultCharset());
 		long endTIme = System.currentTimeMillis();
 		System.out
 				.println("Sequence database converted.  Time spent for conversion = " + (endTIme - startTime) + " ms.");
@@ -77,7 +75,7 @@ public class DescriptionAlgoConvertTEXTFileToSequenceDB extends DescriptionOfAlg
 	public DescriptionOfParameter[] getParametersDescription() {
 
 		DescriptionOfParameter[] parameters = new DescriptionOfParameter[1];
-		parameters[0] = new DescriptionOfParameter("Sequence count count", "(e.g. 5)", Integer.class, false);
+		parameters[0] = new DescriptionOfParameter("Sequence count count", "(e.g. 500)", Integer.class, false);
 		return parameters;
 	}
 

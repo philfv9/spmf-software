@@ -20,7 +20,7 @@ public class MainTestOpusMiner {
 		String input = fileToPath("contextOpusMiner.txt");  // the database
 		String output = ".//output.txt";  // the path for saving the frequent itemsets found
 
-
+// 3 true true true false
 		// Set k to the integer value <i>.  By default it is 100.
 		int k = 3;
 		

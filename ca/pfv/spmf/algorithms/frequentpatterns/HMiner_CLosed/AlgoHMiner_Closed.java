@@ -149,6 +149,10 @@ public class AlgoHMiner_Closed {
     public void writeCHUIsToFile(String output) throws IOException {
         // writer to write the output file
         BufferedWriter writer = new BufferedWriter(new FileWriter(output));
+        writer.write("@FILETYPE=\"Closed high-utility itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
         //for(int i = 0; i < closedTable.table.length; i++){
         for (List<Itemset> entryHash : CHUIs.getLevels()) {
             if (entryHash == null) {

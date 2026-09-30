@@ -130,6 +130,10 @@ public class AlgoNPFPM {
         } else { // if the user want to save the result to a file
             patterns = null;
             writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Non-redundant Periodic frequent itemsets\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
             itemsetOutputBuffer = new int[BUFFERS_SIZE];
         }
 

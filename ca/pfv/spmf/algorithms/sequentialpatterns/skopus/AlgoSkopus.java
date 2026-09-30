@@ -11,6 +11,8 @@ import ca.pfv.spmf.tools.MemoryLogger;
  *   The original Java mplementation was written by Tao Li et al. in the Skopus software.
  *   The modification of the code to integrate it in the SPMF software was done by Philippe Fournier-Viger (2017)
  *
+ * Do not remove copyright and license information.
+ *
  * @author Tao Li et al. 
  */
 public class AlgoSkopus {

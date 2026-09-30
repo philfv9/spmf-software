@@ -269,10 +269,15 @@ public class AlgoAprioriFAST_TopK {
 		// Otherwise, initialize the in-memory itemsets storage (SPMF style)
 		if (output != null) {
 			writer = new BufferedWriter(new FileWriter(output));
+			writer.write("@FILETYPE=\"Frequent itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 			itemsetsInMemory = null;
 		} else {
 			writer = null;
 			itemsetsInMemory = new Itemsets("TOP-K FREQUENT ITEMSETS");
+			
 		}
 
 		// reset statistics

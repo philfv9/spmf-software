@@ -78,7 +78,7 @@ public class DescriptionAlgoHGB_All extends DescriptionOfAlgorithm {
 
 	@Override
 	public String[] getOutputFileTypes() {
-		return new String[]{"Patterns",  "High-utility patterns","High-utility itemsets"};
+		return new String[]{"Patterns",  "High-utility patterns","High-utility association rules"};
 	}
 	@Override
 	public AlgorithmType getAlgorithmType() {

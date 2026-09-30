@@ -2,20 +2,20 @@ package ca.pfv.spmf.gui.visual_pattern_viewer.itemsets;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.swing.BorderFactory;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
+
+import ca.pfv.spmf.gui.visual_pattern_viewer.ViewerStyle;
 
 /*
  * Copyright (c) 2008-2025 Philippe Fournier-Viger
@@ -37,219 +37,346 @@ import javax.swing.UIManager;
  * along with SPMF. If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * A Swing panel that visualizes a single itemset. The panel displays the
- * itemset as a rounded rectangle and shows measure values below.
- * 
+ * A Swing panel that visualizes a single itemset as a compact "card": the items
+ * are drawn as colored chips that wrap on several lines if needed, and the
+ * measures are listed below in aligned columns (name, value, bar).
+ *
  * @author Philippe Fournier-Viger
  */
 public class ItemsetPanel extends JPanel {
 	private static final long serialVersionUID = 5263914307631939188L;
 
-	/** List of color for the measure rectangles */
-	private static final List<Color> MEASURE_COLORS = List.of(Color.BLUE, Color.RED, Color.GREEN, Color.MAGENTA,
-			Color.ORANGE, Color.CYAN, Color.PINK, Color.YELLOW, new Color(128, 0, 128), // Purple
-			new Color(0, 128, 128) // Teal
-	);
+	/** Padding between the card border and its content */
+	private static final int PAD = 10;
+	/** Horizontal padding inside a chip */
+	private static final int CHIP_H_PAD = 9;
+	/** Vertical padding inside a chip */
+	private static final int CHIP_V_PAD = 3;
+	/** Gap between two chips on the same line */
+	private static final int CHIP_GAP = 5;
+	/** Gap between two lines of chips */
+	private static final int ROW_GAP = 4;
+	/** Gap around the separator between items and measures */
+	private static final int SECTION_GAP = 7;
+	/** Gap between two measure rows */
+	private static final int MEASURE_ROW_GAP = 3;
+	/** Gap between the columns of the measure table */
+	private static final int COL_GAP = 8;
+	/** Height of a measure bar */
+	private static final int BAR_HEIGHT = 7;
+	/** Preferred width of a measure bar */
+	private static final int BAR_PREF_WIDTH = 90;
+	/** A bar narrower than this is not drawn */
+	private static final int BAR_MIN_WIDTH = 30;
+	/** Chips wrap when a line would be wider than this */
+	private static final int MAX_CHIP_AREA_WIDTH = 340;
+	/** Minimum width of the content area */
+	private static final int MIN_CONTENT_WIDTH = 150;
 
 	/** The itemset to display. */
 	private final Itemset itemset;
-
-	/** Margin around the panel content. */
-	private static final int CONTENT_MARGIN = 10;
-	/** Vertical space between stacked nodes (now used as horizontal gap). */
-	private static final int VERTICAL_GAP = 5;
-	/** Horizontal padding inside each node box. */
-	private static final int NODE_HORIZONTAL_PADDING = 10;
-	/** Vertical padding inside each node box. */
-	private static final int NODE_VERTICAL_PADDING = 5;
-
-	/** Bounds for each antecedent node. */
-	private final List<Rectangle> itemsetNodeBounds = new ArrayList<>();
-	/** A map indicating the min value for each measure */
+	/** Min value of each measure (null if not numeric) */
 	private final Map<String, Double> minValues;
-	/** A map indicating the max value for each measure */
+	/** Max value of each measure (null if not numeric) */
 	private final Map<String, Double> maxValues;
-	/** bar width for measures */
-	private static final int BAR_WIDTH = 100;
 
-	/** bar height for measures */
-	private static final int BAR_HEIGHT = 10;
-
-	/** Consistent font across panel */
-	private static final Font DEFAULT_FONT = UIManager.getFont("Label.font").deriveFont(Font.PLAIN);
+	/** True while the mouse is over the card */
+	private boolean hover;
+	/** Cached preferred size (does not depend on the component width) */
+	private Dimension cachedPreferredSize;
 
 	/**
-	 * Constructs a panel for visualizing the given rule.
-	 *
-	 * @param rule      the association rule to display (must not be null)
-	 * @param maxValues map indicating the max value for each measure if numeric,
-	 *                  otherwise null
-	 * @param minValues map indicating the min value for each measure if numeric,
-	 *                  otherwise null
-	 * @throws NullPointerException if rule is null
+	 * Result of laying out the chips of an itemset.
 	 */
-	public ItemsetPanel(Itemset rule, Map<String, Double> minValues, Map<String, Double> maxValues) {
-		this.itemset = Objects.requireNonNull(rule, "rule must not be null");
-		this.minValues = minValues;
-		this.maxValues = maxValues;
-		setBackground(Color.WHITE);
-		setBorder(BorderFactory.createLineBorder(Color.GRAY));
-		setFont(DEFAULT_FONT);
+	private static final class ChipLayout {
+		final List<Rectangle> rects = new ArrayList<>();
+		final List<Integer> rowOfChip = new ArrayList<>();
+		final List<Integer> rowWidths = new ArrayList<>();
+		int height;
+		int maxRowWidth;
 	}
 
 	/**
-	 * Calculates the preferred size based on node and measure text dimensions.
-	 *
-	 * @return preferred panel dimensions
+	 * Column widths of the measure table.
 	 */
-	@Override
-	public Dimension getPreferredSize() {
-		FontMetrics metrics = getFontMetrics(getFont());
-		int totalNodeWidth = VERTICAL_GAP;
-		for (String label : itemset.getItems()) {
-			int w = metrics.stringWidth(label) + NODE_HORIZONTAL_PADDING;
-			totalNodeWidth += w + VERTICAL_GAP;
+	private static final class MeasureLayout {
+		int nameColWidth;
+		int valueColWidth;
+		int rowHeight;
+		boolean anyBar;
+		int count;
+
+		int totalHeight() {
+			return count == 0 ? 0 : count * rowHeight + (count - 1) * MEASURE_ROW_GAP;
 		}
 
-		int nodeHeight = metrics.getHeight() + NODE_VERTICAL_PADDING;
-		int measureHeight = itemset.getMeasures().size() * (metrics.getHeight() + VERTICAL_GAP);
-
-		int totalHeight = Math.max(nodeHeight + 2 * CONTENT_MARGIN, 50) + measureHeight + CONTENT_MARGIN;
-		int totalWidth = Math.max(totalNodeWidth, 300) + 2 * CONTENT_MARGIN;
-		return new Dimension(totalWidth, totalHeight);
+		int minWidth() {
+			return nameColWidth + COL_GAP + valueColWidth + (anyBar ? COL_GAP + BAR_PREF_WIDTH : 0);
+		}
 	}
 
 	/**
-	 * Paints nodes, a centered arrow, and measure values.
+	 * Constructs a panel for visualizing the given itemset.
 	 *
-	 * @param g the Graphics context
+	 * @param itemset   the itemset to display (must not be null)
+	 * @param minValues map indicating the min value of each numeric measure
+	 * @param maxValues map indicating the max value of each numeric measure
 	 */
+	public ItemsetPanel(Itemset itemset, Map<String, Double> minValues, Map<String, Double> maxValues) {
+		this.itemset = Objects.requireNonNull(itemset, "itemset must not be null");
+		this.minValues = minValues == null ? Map.of() : minValues;
+		this.maxValues = maxValues == null ? Map.of() : maxValues;
+		setOpaque(false);
+		setFont(ViewerStyle.itemFont());
+		setToolTipText(buildToolTip());
+		addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				hover = true;
+				repaint();
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				hover = false;
+				repaint();
+			}
+		});
+	}
+
+	// ------------------------------------------------------------------
+	// Layout computations
+	// ------------------------------------------------------------------
+
+	private ChipLayout layoutChips(FontMetrics fm, int availableWidth) {
+		ChipLayout cl = new ChipLayout();
+		int chipH = fm.getHeight() + 2 * CHIP_V_PAD;
+		int x = 0;
+		int y = 0;
+		int row = 0;
+		int rowW = 0;
+		for (String label : itemset.getItems()) {
+			int chipW = fm.stringWidth(label) + 2 * CHIP_H_PAD;
+			if (x > 0 && x + chipW > availableWidth) {
+				cl.rowWidths.add(rowW);
+				row++;
+				x = 0;
+				y += chipH + ROW_GAP;
+			}
+			cl.rects.add(new Rectangle(x, y, chipW, chipH));
+			cl.rowOfChip.add(row);
+			x += chipW + CHIP_GAP;
+			rowW = x - CHIP_GAP;
+		}
+		if (!cl.rects.isEmpty()) {
+			cl.rowWidths.add(rowW);
+			cl.height = y + chipH;
+		}
+		for (int w : cl.rowWidths) {
+			cl.maxRowWidth = Math.max(cl.maxRowWidth, w);
+		}
+		return cl;
+	}
+
+	private MeasureLayout layoutMeasures(FontMetrics nameFm, FontMetrics valueFm) {
+		MeasureLayout ml = new MeasureLayout();
+		ml.rowHeight = Math.max(nameFm.getHeight(), valueFm.getHeight());
+		for (Map.Entry<String, String> e : itemset.getMeasures().entrySet()) {
+			ml.count++;
+			ml.nameColWidth = Math.max(ml.nameColWidth, nameFm.stringWidth(e.getKey()));
+			ml.valueColWidth = Math.max(ml.valueColWidth, valueFm.stringWidth(ViewerStyle.formatValue(e.getValue())));
+			if (barRatio(e.getKey(), e.getValue()) != null) {
+				ml.anyBar = true;
+			}
+		}
+		return ml;
+	}
+
+	/**
+	 * @return the fill ratio of the bar for a measure, or null if no bar should
+	 *         be drawn (non numeric value or unknown range)
+	 */
+	private Double barRatio(String name, String rawValue) {
+		Double v = ViewerStyle.parseDouble(rawValue);
+		Double min = minValues.get(name);
+		Double max = maxValues.get(name);
+		if (v == null || min == null || max == null) {
+			return null;
+		}
+		if (max <= min) {
+			return 1d;
+		}
+		return (v - min) / (max - min);
+	}
+
+	@Override
+	public Dimension getPreferredSize() {
+		if (cachedPreferredSize == null) {
+			FontMetrics itemFm = getFontMetrics(ViewerStyle.itemFont());
+			FontMetrics nameFm = getFontMetrics(ViewerStyle.measureNameFont());
+			FontMetrics valueFm = getFontMetrics(ViewerStyle.measureValueFont());
+
+			ChipLayout cl = layoutChips(itemFm, MAX_CHIP_AREA_WIDTH);
+			MeasureLayout ml = layoutMeasures(nameFm, valueFm);
+
+			int contentW = Math.max(MIN_CONTENT_WIDTH, Math.max(cl.maxRowWidth, ml.minWidth()));
+			int contentH = cl.height;
+			if (ml.count > 0) {
+				contentH += SECTION_GAP + 1 + SECTION_GAP + ml.totalHeight();
+			}
+			cachedPreferredSize = new Dimension(contentW + 2 * PAD + ViewerStyle.SHADOW_DX,
+					contentH + 2 * PAD + ViewerStyle.SHADOW_DY);
+		}
+		return new Dimension(cachedPreferredSize);
+	}
+
+	@Override
+	public Dimension getMinimumSize() {
+		return getPreferredSize();
+	}
+
+	// ------------------------------------------------------------------
+	// Painting
+	// ------------------------------------------------------------------
+
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
-		Graphics2D graphics = (Graphics2D) g.create();
-		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		FontMetrics metrics = graphics.getFontMetrics();
+		Graphics2D g2 = (Graphics2D) g.create();
+		try {
+			ViewerStyle.applyRenderingHints(g2);
 
-		layoutNodeBounds(metrics);
-		drawNodes(graphics);
-		drawMeasureValues(graphics, metrics);
-		graphics.dispose();
-	}
+			int w = getWidth();
+			int h = getHeight();
+			ViewerStyle.paintCard(g2, 0, 0, w, h, hover);
 
-	/**
-	 * Lays out rectangles for antecedent and consequent nodes horizontally.
-	 */
-	private void layoutNodeBounds(FontMetrics metrics) {
-		itemsetNodeBounds.clear();
-
-		Dimension prefSize = getPreferredSize();
-		int nodeHeight = metrics.getHeight() + NODE_VERTICAL_PADDING;
-		int availableHeight = prefSize.height - itemset.getMeasures().size() * (metrics.getHeight() + VERTICAL_GAP)
-				- 2 * CONTENT_MARGIN;
-		int itemsetY = CONTENT_MARGIN + (availableHeight - nodeHeight) / 2;
-
-		int itemsetX = CONTENT_MARGIN + VERTICAL_GAP;
-
-		for (String label : itemset.getItems()) {
-			int width = metrics.stringWidth(label) + NODE_HORIZONTAL_PADDING;
-			itemsetNodeBounds.add(new Rectangle(itemsetX, itemsetY, width, nodeHeight));
-			itemsetX += width + VERTICAL_GAP;
-		}
-	}
-
-	/**
-	 * Draws all antecedent and consequent nodes.
-	 */
-	private void drawNodes(Graphics2D graphics) {
-		for (int i = 0; i < itemsetNodeBounds.size(); i++) {
-			drawSingleNode(graphics, itemset.getItems().get(i), itemsetNodeBounds.get(i));
-		}
-	}
-
-	/**
-	 * Draws the rule's measure text and bars
-	 */
-	private void drawMeasureValues(Graphics2D graphics, FontMetrics metrics) {
-		graphics.setFont(DEFAULT_FONT);
-		int measureCount = itemset.getMeasures().size();
-		int lineHeight = metrics.getHeight() + VERTICAL_GAP;
-
-		// Calculate total height occupied by all measures
-		int totalMeasuresHeight = measureCount * lineHeight;
-
-		// Start y so the last measure is above CONTENT_MARGIN from bottom
-		int y = getHeight() - CONTENT_MARGIN - totalMeasuresHeight + metrics.getAscent();
-
-		int x = CONTENT_MARGIN;
-		int measureIndex = 0;
-		for (Map.Entry<String, String> entry : itemset.getMeasures().entrySet()) {
-			String name = entry.getKey();
-			String strValue = entry.getValue();
-			boolean isDouble = false;
-			double value = 0;
-			try {
-				value = Double.parseDouble(strValue);
-				isDouble = true;
-			} catch (NumberFormatException e) {
+			int cardW = w - ViewerStyle.SHADOW_DX;
+			int cardH = h - ViewerStyle.SHADOW_DY;
+			int contentX = PAD;
+			int contentW = cardW - 2 * PAD;
+			if (contentW <= 0 || cardH <= 2 * PAD) {
+				return;
 			}
 
-			
+			FontMetrics itemFm = g2.getFontMetrics(ViewerStyle.itemFont());
+			FontMetrics nameFm = g2.getFontMetrics(ViewerStyle.measureNameFont());
+			FontMetrics valueFm = g2.getFontMetrics(ViewerStyle.measureValueFont());
 
-			// Draw the bar
-			if(isDouble) {
-				graphics.setColor(Color.BLACK);
-				String text = name + ": " + formatValue(value); // Use your formatting method here
-				graphics.drawString(text, x, y);
-				
-				Double min = minValues.get(name);
-				Double max = maxValues.get(name);
-				if (min != null && max != null && max > min) {
-					double ratio = (value - min) / (max - min);
-					int barLength = (int) (ratio * BAR_WIDTH);
-					int barX = x + metrics.stringWidth(text) + 10;
-					int barY = y - metrics.getAscent() + (metrics.getAscent() + metrics.getDescent() - BAR_HEIGHT) / 2;
-	
-					Color color = MEASURE_COLORS.get(measureIndex % MEASURE_COLORS.size());
-					graphics.setColor(color);
-					graphics.fillRect(barX, barY, barLength, BAR_HEIGHT);
-	
-					graphics.setColor(Color.GRAY);
-					graphics.drawRect(barX, barY, BAR_WIDTH, BAR_HEIGHT);
+			// --- Measures are anchored at the bottom of the card ---
+			MeasureLayout ml = layoutMeasures(nameFm, valueFm);
+			int measuresH = ml.totalHeight();
+			int measuresTop = cardH - PAD - measuresH;
+
+			// --- Items occupy the remaining area, vertically centered ---
+			int chipsAreaTop = PAD;
+			int chipsAreaBottom = (ml.count > 0) ? measuresTop - SECTION_GAP - 1 - SECTION_GAP : cardH - PAD;
+			ChipLayout cl = layoutChips(itemFm, contentW);
+			int chipsY = chipsAreaTop + Math.max(0, (chipsAreaBottom - chipsAreaTop - cl.height) / 2);
+
+			g2.setFont(ViewerStyle.itemFont());
+			List<String> items = itemset.getItems();
+			for (int i = 0; i < cl.rects.size(); i++) {
+				Rectangle r = cl.rects.get(i);
+				int rowW = cl.rowWidths.get(cl.rowOfChip.get(i));
+				int offsetX = contentX + Math.max(0, (contentW - rowW) / 2);
+				Rectangle abs = new Rectangle(r.x + offsetX, r.y + chipsY, r.width, r.height);
+				ViewerStyle.paintChip(g2, items.get(i), items.get(i), abs, itemFm);
+			}
+
+			if (ml.count == 0) {
+				return;
+			}
+
+			// --- Separator ---
+			g2.setColor(ViewerStyle.SEPARATOR);
+			int sepY = measuresTop - SECTION_GAP - 1;
+			g2.drawLine(contentX, sepY, contentX + contentW, sepY);
+
+			// --- Measure rows: name | value | bar ---
+			int y = measuresTop;
+			int valueRight = contentX + ml.nameColWidth + COL_GAP + ml.valueColWidth;
+			int barX = valueRight + COL_GAP;
+			int barW = contentX + contentW - barX;
+			int index = 0;
+			for (Map.Entry<String, String> e : itemset.getMeasures().entrySet()) {
+				String name = e.getKey();
+				String raw = e.getValue();
+				int baseline = y + (ml.rowHeight - nameFm.getHeight()) / 2 + nameFm.getAscent();
+
+				g2.setFont(ViewerStyle.measureNameFont());
+				g2.setColor(ViewerStyle.TEXT_SECONDARY);
+				g2.drawString(name, contentX, baseline);
+
+				Double ratio = barRatio(name, raw);
+				g2.setFont(ViewerStyle.measureValueFont());
+				g2.setColor(ViewerStyle.TEXT_PRIMARY);
+				String value = ViewerStyle.formatValue(raw);
+				if (ratio == null && ViewerStyle.parseDouble(raw) == null) {
+					// Free text: use all the remaining width, left aligned
+					int textX = contentX + ml.nameColWidth + COL_GAP;
+					String fitted = fitString(valueFm, value, contentX + contentW - textX);
+					g2.drawString(fitted, textX, baseline);
+				} else {
+					g2.drawString(value, valueRight - valueFm.stringWidth(value), baseline);
+					if (ratio != null && barW >= BAR_MIN_WIDTH) {
+						Color color = ViewerStyle.measureColor(name, index);
+						int barY = y + (ml.rowHeight - BAR_HEIGHT) / 2;
+						ViewerStyle.paintBar(g2, barX, barY, barW, BAR_HEIGHT, ratio, color);
+					}
 				}
-			}else {
-				graphics.setColor(Color.BLACK);
-				String text = name + ": " + strValue; // Use your formatting method here
-				graphics.drawString(text, x, y);
+				y += ml.rowHeight + MEASURE_ROW_GAP;
+				index++;
 			}
-
-			y += lineHeight;
-			measureIndex++;
+		} finally {
+			g2.dispose();
 		}
 	}
 
-	// Helper method to format double with max 5 digits after decimal
-	private String formatValue(double val) {
-		return String.format("%.4f", val);
-	}
-
 	/**
-	 * Renders a rounded rectangle node with centered text label.
+	 * Truncates a string with an ellipsis so that it fits in maxWidth pixels.
 	 */
-	private void drawSingleNode(Graphics2D graphics, String label, Rectangle bounds) {
-		graphics.setColor(new Color(240, 240, 240));
-		graphics.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 10, 10);
-		graphics.setColor(Color.BLACK);
-		graphics.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 10, 10);
-		FontMetrics metrics = graphics.getFontMetrics();
-		int textX = bounds.x + (bounds.width - metrics.stringWidth(label)) / 2;
-		int textY = bounds.y + (bounds.height - metrics.getHeight()) / 2 + metrics.getAscent();
-		graphics.drawString(label, textX, textY);
+	private static String fitString(FontMetrics fm, String s, int maxWidth) {
+		if (fm.stringWidth(s) <= maxWidth) {
+			return s;
+		}
+		String ellipsis = "\u2026";
+		int end = s.length();
+		while (end > 0 && fm.stringWidth(s.substring(0, end) + ellipsis) > maxWidth) {
+			end--;
+		}
+		return end == 0 ? "" : s.substring(0, end) + ellipsis;
+	}
+
+	// ------------------------------------------------------------------
+	// Tooltip
+	// ------------------------------------------------------------------
+
+	private String buildToolTip() {
+		StringBuilder sb = new StringBuilder("<html><b>Itemset</b> (");
+		sb.append(itemset.getItems().size()).append(itemset.getItems().size() == 1 ? " item)" : " items)");
+		sb.append("<br>");
+		StringBuilder items = new StringBuilder();
+		for (String it : itemset.getItems()) {
+			if (items.length() > 0) {
+				items.append(", ");
+			}
+			items.append(ViewerStyle.escapeHtml(it));
+		}
+		sb.append(ViewerStyle.escapeHtml(ViewerStyle.abbreviate(items.toString(), 400)));
+		if (!itemset.getMeasures().isEmpty()) {
+			sb.append("<br><br>");
+			for (Map.Entry<String, String> e : itemset.getMeasures().entrySet()) {
+				sb.append("<b>").append(ViewerStyle.escapeHtml(e.getKey())).append(":</b> ")
+						.append(ViewerStyle.escapeHtml(e.getValue().trim())).append("<br>");
+			}
+		}
+		sb.append("</html>");
+		return sb.toString();
 	}
 
 	/**
-	 * Get itemset
-	 * 
+	 * Get the itemset
+	 *
 	 * @return the itemset
 	 */
 	public Itemset getItemset() {

@@ -1,0 +1,9 @@
+@FILETYPE="Stable Periodic frequent itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+2 #SUP: 4 #MAXLA: 1
+2 5 #SUP: 5 #MAXLA: 1
+2 3 5 #SUP: 5 #MAXLA: 1
+2 3 #SUP: 5 #MAXLA: 1
+5 #SUP: 6 #MAXLA: 1
+3 5 #SUP: 7 #MAXLA: 1
+3 #SUP: 7 #MAXLA: 0

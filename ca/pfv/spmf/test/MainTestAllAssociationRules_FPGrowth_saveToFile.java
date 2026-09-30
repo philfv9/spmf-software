@@ -22,8 +22,8 @@ public class MainTestAllAssociationRules_FPGrowth_saveToFile {
 		// By changing the following lines to some other values
 		// it is possible to restrict the number of items in the antecedent and
 		// consequent of rules
-		int maxConsequentLength = 40;
-		int maxAntecedentLength = 40;
+		int maxConsequentLength = 50;
+		int maxAntecedentLength = 60;
 
 		// STEP 1: Applying the FP-GROWTH algorithm to find frequent itemsets
 		double minsupp = 0.5;
@@ -36,7 +36,7 @@ public class MainTestAllAssociationRules_FPGrowth_saveToFile {
 		
 		// STEP 2: Generating all rules from the set of frequent itemsets (based on Agrawal & Srikant, 94)
 		double  minconf = 0.60;
-		AlgoAgrawalFaster94 algoAgrawal = new AlgoAgrawalFaster94();
+		AlgoAgrawalFaster94 algoAgrawal = new AlgoAgrawalFaster94("Association rules");
 		algoAgrawal.setMaxConsequentLength(maxConsequentLength);
 		algoAgrawal.setMaxAntecedentLength(maxAntecedentLength);
 		algoAgrawal.runAlgorithm(patterns, output, databaseSize, minconf);

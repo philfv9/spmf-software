@@ -127,6 +127,10 @@ public class AlgoFPGrowthTOPK {
 	    }else{ // if the user want to save the result to a file
 			patterns = null;
 			writer = new BufferedWriter(new FileWriter(output)); 
+			writer.write("@FILETYPE=\"Frequent itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 		}
 		
 		// ======================================

@@ -18,7 +18,7 @@ import ca.pfv.spmf.tools.dataset_converter.SequenceDatabaseConverter;
 import ca.pfv.spmf.tools.dataset_converter.TransactionDatabaseConverter;
 import ca.pfv.spmf.tools.resultConverter.ResultConverter;
 /*
- * Copyright (c) 2008-2015 Philippe Fournier-Viger
+ * Copyright (c) 2008-2026 Philippe Fournier-Viger
  *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
@@ -34,6 +34,8 @@ import ca.pfv.spmf.tools.resultConverter.ResultConverter;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license
  */
 /**
  * This class executes commands from the command line interface or graphical

@@ -1,3 +1,5 @@
+@FILETYPE="Database of double vectors"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
 0.35 2.26
 0.43 2.3
 0.4 2.34

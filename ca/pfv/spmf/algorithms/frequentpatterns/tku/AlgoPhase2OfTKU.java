@@ -56,7 +56,7 @@ class AlgoPhase2OfTKU {
 
 	/** #CIs checked by Phase II **/
 	private String inputFilePath;
-	
+
 	/** The path to a file of sorted candidates */
 	private String sortedCandidatePath;
 
@@ -65,14 +65,13 @@ class AlgoPhase2OfTKU {
 	/** the output file path */
 	private String outputTopKHUIsFilePath;
 
-	/** delimiter used in some files  by TKU */
+	/** delimiter used in some files by TKU */
 	private final String delimiter = ":";
 
 	/** The number of top-k HUIs found */
 	private int numTopKHUI;
 
-	void runAlgorithm(int minUtil, int transactionCount,
-			int currentK, String inputPath, String sortedCandidateFile,
+	void runAlgorithm(int minUtil, int transactionCount, int currentK, String inputPath, String sortedCandidateFile,
 			String outputFile) throws IOException {
 
 		minUtility = minUtil;
@@ -100,7 +99,6 @@ class AlgoPhase2OfTKU {
 		// Read Candidate from disk
 		readCandidateItemsets(HDB, BNF, HDB.length, sortedCandidatePath, bfw);
 
-
 		// System.out.println("");
 		// System.out.println("Border_Minutil:"+gMin_Util);
 
@@ -110,6 +108,10 @@ class AlgoPhase2OfTKU {
 
 		FileWriter fw1 = new FileWriter(outputTopKHUIsFilePath);
 		BufferedWriter bfw1 = new BufferedWriter(fw1);
+		bfw1.write("@FILETYPE=\"Top-k High-utility itemsets\"");
+		bfw1.newLine();
+		bfw1.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		bfw1.newLine();
 
 		String record = "";
 		setNumberOfTopKHUIs(0);
@@ -142,14 +144,14 @@ class AlgoPhase2OfTKU {
 		// + getNumTopKHUI());
 		// System.out.println(" Final border minimum utility threshold : "
 		// + gMin_Util);
-		// System.out.println("Total_CI      :"+num_CI);
-		// System.out.println("Check_CIs     :"+Check_CIs);
+		// System.out.println("Total_CI :"+num_CI);
+		// System.out.println("Check_CIs :"+Check_CIs);
 
 		fw.close();
 		bfw.close();
-		
+
 		/****************************************************/
-		/**  Delete the temporary files (added by Philippe) */
+		/** Delete the temporary files (added by Philippe) */
 		File fileToDelete = new File(temporaryFilePathWHUIs);
 		fileToDelete.delete();
 		fileToDelete = new File(sortedCandidateFile);
@@ -158,9 +160,8 @@ class AlgoPhase2OfTKU {
 
 	}// End main()
 
-
-	int readCandidateItemsets(ArrayList<Integer> HDB[], ArrayList<Integer> BNF[], int num_trans,
-			String CIPath,  BufferedWriter Lbfw) throws IOException {
+	int readCandidateItemsets(ArrayList<Integer> HDB[], ArrayList<Integer> BNF[], int num_trans, String CIPath,
+			BufferedWriter Lbfw) throws IOException {
 
 		RedBlackTree<StringPair> Heap = new RedBlackTree<StringPair>(true);
 
@@ -202,8 +203,7 @@ class AlgoPhase2OfTKU {
 							if (HDB[i].contains(Integer.parseInt(candidate[s]))) {
 								Match_Count++;
 
-								int index = HDB[i].indexOf(Integer
-										.parseInt(candidate[s]));
+								int index = HDB[i].indexOf(Integer.parseInt(candidate[s]));
 								ArrayList<Integer> B = BNF[i];
 
 								int Ben = B.get(index);
@@ -215,18 +215,18 @@ class AlgoPhase2OfTKU {
 								break;
 							}
 
-						}// end for-s
+						} // end for-s
 
 						// System.out.println("Match_Count:"+Match_Count);
 
 						if (Match_Count == candidate.length) {
 							EUtility += PUtility;
 
-						}// End if
+						} // End if
 
-					}// End if(HDB[i].size()!=0)
+					} // End if(HDB[i].size()!=0)
 
-				}// End for-i
+				} // End for-i
 
 				/*--*/// System.out.println("=====================HU:"+CI[0]+":"+EUtility);
 
@@ -239,9 +239,9 @@ class AlgoPhase2OfTKU {
 
 					num_HU++;
 				}
-			}// if(CIR[1] >= MSC)
+			} // if(CIR[1] >= MSC)
 
-		}// End while
+		} // End while
 
 		Lbfw.flush();
 
@@ -254,14 +254,19 @@ class AlgoPhase2OfTKU {
 
 	}// End ReadCI
 
-	static void readDatabase(ArrayList<Integer> HDB[], ArrayList<Integer> BNF[], int num_trans,
-			String DBPath) throws IOException {
+	static void readDatabase(ArrayList<Integer> HDB[], ArrayList<Integer> BNF[], int num_trans, String DBPath)
+			throws IOException {
 		FileReader bf = new FileReader(DBPath);
 		BufferedReader bfr = new BufferedReader(bf);
 
 		String record = "";
 		int trans_count = 0;
 		while ((record = bfr.readLine()) != null) {
+			if (record.isEmpty() || record.charAt(0) == '#' || record.charAt(0) == '%' || record.charAt(0) == '@') {
+
+				continue;
+
+			}
 			String data[] = record.split(":"); // data[0] Transaction;
 												// data[1] TWU
 												// data[2] Benefit
@@ -273,10 +278,10 @@ class AlgoPhase2OfTKU {
 				HDB[trans_count].add(Integer.parseInt(transaction[i]));
 				BNF[trans_count].add(Integer.parseInt(benefit[i]));
 
-			}// End for-i
+			} // End for-i
 			trans_count++;
 
-		}// End while
+		} // End while
 
 	}// End ReadDB
 
@@ -285,7 +290,7 @@ class AlgoPhase2OfTKU {
 			HDB[i] = new ArrayList<Integer>(0);
 			BNF[i] = new ArrayList<Integer>(0);
 
-		}// End for
+		} // End for
 
 	}// End Initialization
 
@@ -298,7 +303,7 @@ class AlgoPhase2OfTKU {
 				NCH.popMinimum();
 
 			}
-		}// End if-else
+		} // End if-else
 
 		if ((NCH.minimum().y > minUtility) && (NCH.size() >= theCurrentK)) {
 			minUtility = NCH.minimum().y;

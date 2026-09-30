@@ -180,6 +180,10 @@ public class AlgoHierarchicalClustering {
 	 */
 	public void saveToFile(String output) throws IOException {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Clusters\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		
 		// First, we will print the attribute names
 		for(String attributeName : attributeNames){

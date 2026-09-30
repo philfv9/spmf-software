@@ -35,6 +35,8 @@ import ca.pfv.spmf.tools.MemoryLogger;
 * 
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
+* 
+* Do not remove copyright and license information.
 */
 // import ca.pfv.spmf.tools.MemoryLogger;
 /**
@@ -1065,10 +1067,15 @@ public class AlgoHMG {
 	        
 
 	        try (BufferedWriter w = new BufferedWriter(new FileWriter(f))) {
+	        	
 
 	            if (spmfStyleOutput) {
 	                // Write SPMF header using ASCII-based IDs
 	                w.write("@CONVERTED_FROM_TEXT");
+	        		w.append(System.lineSeparator());
+	        		w.write("@FILETYPE=\"Frequent string patterns\"");
+	        		w.append(System.lineSeparator());
+	        		w.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
 	                w.newLine();
 	                // Collect unique characters
 	                Set<Character> uniqueChars = new HashSet<>();
@@ -1097,6 +1104,10 @@ public class AlgoHMG {
 	                }
 
 	            } else {
+	            	w.write("@FILETYPE=\"Frequent string patterns\"");
+	        		w.append(System.lineSeparator());
+	        		w.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+	                w.newLine();
 	                // Old style: just string of characters
 	                for (PatternSupport ps : patterns) {
 	                    w.write(ps.pattern + " #SUP: " + ps.support);

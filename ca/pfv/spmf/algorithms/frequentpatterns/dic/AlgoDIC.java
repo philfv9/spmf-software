@@ -691,6 +691,10 @@ public class AlgoDIC {
 	 */
 	private void writeOutput(String output) throws IOException {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(output))) {
+			writer.write("@FILETYPE=\"Frequent itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 			for (Map.Entry<IntArrayWrapper, ItemsetData> entry : itemsets.entrySet()) {
 				if (entry.getValue().state == State.SOLID_CIRCLE) {
 					itemsetCount++;

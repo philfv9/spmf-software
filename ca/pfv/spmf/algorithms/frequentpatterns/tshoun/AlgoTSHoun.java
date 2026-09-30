@@ -88,6 +88,10 @@ public class AlgoTSHoun {
 		this.minUtilityRatio = minUtilityRatio;
 		
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"On-shelf high-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		
 		// reset the utility to check the memory usage
 		MemoryLogger.getInstance().reset();

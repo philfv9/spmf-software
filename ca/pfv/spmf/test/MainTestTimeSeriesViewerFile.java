@@ -18,7 +18,7 @@ public class MainTestTimeSeriesViewerFile {
 	public static void main(String [] arg) throws IOException{
 		
 		// the input file
-		String input = fileToPath("contextSAX_SplitNumber2.txt");    // contextSAX_SplitLength3  // 
+		String input = fileToPath("contextSAX.txt");    // contextSAX_SplitLength3  // 
 
 		// Parameters of the algorithm
 		String separator = ",";

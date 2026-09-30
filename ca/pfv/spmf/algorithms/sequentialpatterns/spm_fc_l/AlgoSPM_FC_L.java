@@ -16,6 +16,8 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.spm_fc_l;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  */
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -119,6 +121,10 @@ public class AlgoSPM_FC_L {
             writer = null;
         } else { // if the user want to save the result to a file
             writer = new BufferedWriter(new FileWriter(outputFilePath));
+			writer.write("@FILETYPE=\"Frequent sequential patterns\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
         }
 
         /*we calculate in how many sequences a pattern have to appear to be

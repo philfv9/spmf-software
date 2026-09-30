@@ -1,0 +1,6 @@
+@FILETYPE="Periodic frequent itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+4 #SUP: 3 #MAXPER: 3 #MINPER: 1 #AVGPER: 1.75 
+2 4 #SUP: 2 #MAXPER: 3 #MINPER: 1 #AVGPER: 2.3333 
+1 4 #SUP: 2 #MAXPER: 3 #MINPER: 2 #AVGPER: 2.3333 
+2 #SUP: 3 #MAXPER: 3 #MINPER: 0 #AVGPER: 1.75 

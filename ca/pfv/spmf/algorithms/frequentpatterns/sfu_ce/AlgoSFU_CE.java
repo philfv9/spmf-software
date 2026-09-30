@@ -335,6 +335,11 @@ public class AlgoSFU_CE {
         startTimestamp = System.currentTimeMillis();
         // initialize writer
         writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Skyline High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
+		
         // create a map to store the Utility of each item
         mapItemToU = new HashMap<>();
         // create a map to store the TWU of each item

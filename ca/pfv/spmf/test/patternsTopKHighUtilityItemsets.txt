@@ -1,0 +1,10 @@
+@FILETYPE="Top-k High-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+6 4 2 1 5 3 #UTIL: 30
+4 2 #UTIL: 30
+4 2 3 #UTIL: 34
+4 2 5 #UTIL: 36
+4 2 5 3 #UTIL: 40
+2 5 #UTIL: 31
+2 5 3 #UTIL: 37
+1 5 3 #UTIL: 31

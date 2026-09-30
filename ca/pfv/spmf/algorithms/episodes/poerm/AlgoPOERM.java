@@ -812,6 +812,10 @@ public class AlgoPOERM {
 			MemoryLogger.getInstance().checkMemory();
 			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename, false)));
 			// rankRuleBySupport();
+			bw.write("@FILETYPE=\"Frequent episode rules\"");
+			bw.append(System.lineSeparator());
+			bw.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			bw.append(System.lineSeparator());
 
 			StringBuilder buffer = new StringBuilder();
 			for (POERRule poerrule : this.ruleAppear) {

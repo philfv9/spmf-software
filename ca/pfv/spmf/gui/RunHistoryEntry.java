@@ -1,7 +1,7 @@
 package ca.pfv.spmf.gui;
 
 /*
- * Copyright (c) 2008-2021 Philippe Fournier-Viger
+ * Copyright (c) 2008-2026 Philippe Fournier-Viger
  *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
@@ -17,8 +17,8 @@ package ca.pfv.spmf.gui;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
- *
- * Do not remove copyright or license information.
+ * 
+ * Do not remove copyright and license
  */
 
 import java.time.LocalDateTime;
@@ -81,18 +81,22 @@ public final class RunHistoryEntry {
     /** The wall-clock date and time at which the run started */
     private final LocalDateTime timestamp;
 
-    /** The duration of the run in milliseconds */
+    /** The duration of the run in milliseconds (never negative) */
     private final long durationMillis;
 
     /**
-     * Constructs a new history entry with all required fields.
+     * Constructs a new history entry with all required fields. Null values are
+     * tolerated and replaced by sensible defaults (empty strings, empty array,
+     * {@link #STATUS_STOPPED}, current time). Any status other than
+     * {@link #STATUS_OK} is normalised to {@link #STATUS_STOPPED}, and negative
+     * durations are clamped to zero.
      *
-     * @param algorithmName the name of the algorithm
-     * @param inputFile     the input file path, or empty string if none
-     * @param outputFile    the output file path, or empty string if none
-     * @param parameters    the parameter values (a defensive copy is taken)
-     * @param status        either {@link #STATUS_OK} or {@link #STATUS_STOPPED}
-     * @param timestamp     the date and time at which the run started
+     * @param algorithmName  the name of the algorithm
+     * @param inputFile      the input file path, or empty string if none
+     * @param outputFile     the output file path, or empty string if none
+     * @param parameters     the parameter values (a defensive copy is taken)
+     * @param status         either {@link #STATUS_OK} or {@link #STATUS_STOPPED}
+     * @param timestamp      the date and time at which the run started
      * @param durationMillis the duration of the run in milliseconds
      */
     public RunHistoryEntry(String algorithmName,
@@ -102,15 +106,31 @@ public final class RunHistoryEntry {
                            String status,
                            LocalDateTime timestamp,
                            long durationMillis) {
-        this.algorithmName  = algorithmName  != null ? algorithmName  : "";
-        this.inputFile      = inputFile      != null ? inputFile      : "";
-        this.outputFile     = outputFile     != null ? outputFile     : "";
-        this.parameters     = parameters     != null
-                ? Arrays.copyOf(parameters, parameters.length)
-                : new String[0];
-        this.status         = status         != null ? status         : STATUS_STOPPED;
-        this.timestamp      = timestamp      != null ? timestamp      : LocalDateTime.now();
-        this.durationMillis = durationMillis;
+        this.algorithmName  = algorithmName != null ? algorithmName : "";
+        this.inputFile      = inputFile     != null ? inputFile     : "";
+        this.outputFile     = outputFile    != null ? outputFile    : "";
+        this.parameters     = copyParameters(parameters);
+        this.status         = STATUS_OK.equals(status) ? STATUS_OK : STATUS_STOPPED;
+        this.timestamp      = timestamp     != null ? timestamp     : LocalDateTime.now();
+        this.durationMillis = Math.max(0L, durationMillis);
+    }
+
+    /**
+     * Returns a copy of the given array where null elements are replaced by
+     * empty strings, or an empty array if the input is null.
+     *
+     * @param source the array to copy
+     * @return a null-free copy
+     */
+    private static String[] copyParameters(String[] source) {
+        if (source == null) {
+            return new String[0];
+        }
+        String[] copy = new String[source.length];
+        for (int i = 0; i < source.length; i++) {
+            copy[i] = source[i] != null ? source[i] : "";
+        }
+        return copy;
     }
 
     // =========================================================================
@@ -120,7 +140,7 @@ public final class RunHistoryEntry {
     /**
      * Returns the name of the algorithm that was run.
      *
-     * @return the algorithm name
+     * @return the algorithm name (never null)
      */
     public String getAlgorithmName() {
         return algorithmName;
@@ -129,7 +149,7 @@ public final class RunHistoryEntry {
     /**
      * Returns the input file path that was used, or an empty string if none.
      *
-     * @return the input file path
+     * @return the input file path (never null)
      */
     public String getInputFile() {
         return inputFile;
@@ -138,7 +158,7 @@ public final class RunHistoryEntry {
     /**
      * Returns the output file path that was used, or an empty string if none.
      *
-     * @return the output file path
+     * @return the output file path (never null)
      */
     public String getOutputFile() {
         return outputFile;
@@ -147,10 +167,30 @@ public final class RunHistoryEntry {
     /**
      * Returns a defensive copy of the parameter values that were supplied.
      *
-     * @return a copy of the parameters array
+     * @return a copy of the parameters array (never null)
      */
     public String[] getParameters() {
         return Arrays.copyOf(parameters, parameters.length);
+    }
+
+    /**
+     * Returns the number of parameters that were supplied.
+     *
+     * @return the parameter count
+     */
+    public int getParameterCount() {
+        return parameters.length;
+    }
+
+    /**
+     * Returns the parameters as a single display string, e.g.
+     * {@code "[0.5, 3, true]"}. Used by the history table and by
+     * {@link #toString()} so that both render parameters identically.
+     *
+     * @return the formatted parameter list
+     */
+    public String getParametersAsString() {
+        return Arrays.toString(parameters);
     }
 
     /**
@@ -175,6 +215,16 @@ public final class RunHistoryEntry {
     }
 
     /**
+     * Returns true if the algorithm was stopped before completion (status is
+     * {@link #STATUS_STOPPED}).
+     *
+     * @return true if stopped, false on success
+     */
+    public boolean isStopped() {
+        return !isSucceeded();
+    }
+
+    /**
      * Returns the date and time at which the run started.
      *
      * @return the run timestamp
@@ -186,7 +236,7 @@ public final class RunHistoryEntry {
     /**
      * Returns the wall-clock duration of the run in milliseconds.
      *
-     * @return the duration in milliseconds
+     * @return the duration in milliseconds (never negative)
      */
     public long getDurationMillis() {
         return durationMillis;
@@ -203,14 +253,14 @@ public final class RunHistoryEntry {
     }
 
     /**
-     * Returns a human-readable representation of the run duration, e.g.
-     * {@code "1.234 s"} or {@code "00:01:05"} for longer runs.
+     * Returns a human-readable representation of the run duration:
+     * {@code "1.234 s"} for runs under one minute, or {@code "hh:mm:ss"}
+     * (e.g. {@code "00:01:05"}) for longer runs.
      *
      * @return the formatted duration string
      */
     public String getFormattedDuration() {
         if (durationMillis < 60_000L) {
-            // Show as fractional seconds for runs under one minute
             return String.format("%.3f s", durationMillis / 1000.0);
         }
         long totalSeconds = durationMillis / 1000L;
@@ -232,7 +282,7 @@ public final class RunHistoryEntry {
                 algorithmName,
                 inputFile,
                 outputFile,
-                Arrays.toString(parameters),
+                getParametersAsString(),
                 status,
                 getFormattedDuration());
     }

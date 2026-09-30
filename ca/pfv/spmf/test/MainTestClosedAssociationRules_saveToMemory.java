@@ -18,14 +18,14 @@ public class MainTestClosedAssociationRules_saveToMemory {
 
 	public static void main(String [] arg) throws IOException{
 		// input and output file paths
-		String input = fileToPath("bad.txt");
+		String input = fileToPath("contextZart.txt");
 		String output = null;
 		// Note: we here set the output file path to null because we want
 		// to save the result to memory instead of saving it to a file.
 		
 		// the threshold
-		double minsupp = 0.20;
-		double  minconf = 0.40;
+		double minsupp = 0.60;
+		double  minconf = 0.60;
 		
 		// Loading the transaction database
 		TransactionDatabase database = new TransactionDatabase();

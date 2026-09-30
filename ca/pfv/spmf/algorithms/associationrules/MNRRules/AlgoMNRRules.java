@@ -106,6 +106,11 @@ public class AlgoMNRRules {
 	    	// if the user wants to save the result to a file
 	    	rules = null;
 			writer = new BufferedWriter(new FileWriter(outputFilePath)); 
+			writer.write("@FILETYPE=\"Minimal non-redundant association rules\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
+			
 		}
 		
 		// save the parameters received by the user

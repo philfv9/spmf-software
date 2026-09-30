@@ -65,7 +65,7 @@ public class DescriptionAlgoVHUQI extends DescriptionOfAlgorithm {
 	public DescriptionOfParameter[] getParametersDescription() {
         
 		DescriptionOfParameter[] parameters = new DescriptionOfParameter[4];
-		parameters[0] = new DescriptionOfParameter("Profit table", "(e.g. dbHUQI.txt)", String.class, false);
+		parameters[0] = new DescriptionOfParameter("Profit table", "(e.g. dbHUQI_p.txt)", String.class, false);
 		parameters[1] = new DescriptionOfParameter("Minimum utility (%)", "(e.g. 0.2)", Float.class, false);
 		parameters[2] = new DescriptionOfParameter("Relative coefficient", "(e.g. 3)", Integer.class, false);
 		parameters[3] = new DescriptionOfParameter("Method", "(e.g. COMBINEALL)", String.class, false);

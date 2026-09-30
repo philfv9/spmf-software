@@ -1,4 +1,5 @@
 package ca.pfv.spmf.algorithms.frequentpatterns.DFIList;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -89,18 +90,18 @@ public class AlgoDFIList {
 	public void runAlgorithm(String input, String output) throws IOException {
 
 		startTimestampSortFCI = System.currentTimeMillis();
-		
+
 		// Read the database to find the maximum item name
 		findMax(input);
 		itemMax += 1;
-		
+
 		// Read the frequent closed itemset
 		String[] closedItemsets = readFCI(input);
-		
+
 		// Sort frequent closed itemsets
 		sortFCI(closedItemsets);
 		endTimeSortFCI = System.currentTimeMillis();
-		
+
 		// Extract the support counts of closed itemsets
 		int[] s = supportCount(closedItemsets);
 		closedItemsets = null;
@@ -118,6 +119,10 @@ public class AlgoDFIList {
 
 		// Create the output file
 		FileWriter fileWriter = new FileWriter(output);
+		fileWriter.write("@FILETYPE=\"Frequent itemsets\"");
+		fileWriter.append(System.lineSeparator());
+		fileWriter.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		fileWriter.append(System.lineSeparator());
 
 		for (int i = 0; i < h[0].size(); i++) {
 			String z = String.valueOf(h[0].get(i));
@@ -137,6 +142,7 @@ public class AlgoDFIList {
 
 	/**
 	 * Derive the frequent itemset
+	 * 
 	 * @param p
 	 * @param l
 	 * @param h
@@ -159,11 +165,12 @@ public class AlgoDFIList {
 			ArrayList<ArrayList<Integer>> newH = new ArrayList<ArrayList<Integer>>();
 			for (int j = i + 1; j < h.size(); j++) {
 				String z = newP + " " + l.get(j);
-				ArrayList<Integer> tempValue  = intersection(h.get(i), h.get(j));
+				ArrayList<Integer> tempValue = intersection(h.get(i), h.get(j));
 				if (!tempValue.contains(-1)) {
 					newH.add(tempValue);
 					newL.add(l.get(j));
-					fileWriter.write("" + z + " #SUP: " + s[tempValue.get(0)] + System.lineSeparator()); // new implement
+					fileWriter.write("" + z + " #SUP: " + s[tempValue.get(0)] + System.lineSeparator()); // new
+																											// implement
 					frequentItemsetCount++;
 				}
 				checkMemoryUsage();
@@ -189,6 +196,7 @@ public class AlgoDFIList {
 
 	/**
 	 * Read the frequent closed itemset
+	 * 
 	 * @param input input file path
 	 * @return A list of strings
 	 * @throws IOException if error reading the input file
@@ -202,6 +210,13 @@ public class AlgoDFIList {
 		String record = "";
 		int i = 0;
 		while ((record = br.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (record.isEmpty() == true || record.charAt(0) == '#' || record.charAt(0) == '%'
+					|| record.charAt(0) == '@') {
+				continue;
+			}
+
 			closedItemset[i] = record;
 			i++;
 		}
@@ -213,6 +228,7 @@ public class AlgoDFIList {
 
 	/**
 	 * sor the frequent closed itemsets
+	 * 
 	 * @param closedItemsets the closed itemsets
 	 * @throws IOException if error writing a temporary file
 	 */
@@ -247,6 +263,7 @@ public class AlgoDFIList {
 
 	/**
 	 * Get the support counts
+	 * 
 	 * @param closedItemsets the closed itemsets
 	 * @return support counts of these closed itemsets
 	 */
@@ -261,6 +278,7 @@ public class AlgoDFIList {
 
 	/**
 	 * Build CID List
+	 * 
 	 * @return a list of CID list
 	 * @throws FileNotFoundException if error reading the temporary file
 	 */
@@ -303,6 +321,7 @@ public class AlgoDFIList {
 
 	/**
 	 * Implementatio of a bubble sort
+	 * 
 	 * @param specific
 	 * @param l
 	 * @param cidList
@@ -335,6 +354,7 @@ public class AlgoDFIList {
 
 	/**
 	 * Calculate the intersetion of two list
+	 * 
 	 * @param cidseq1 the first list
 	 * @param cidseq2 the second list
 	 * @return the intersection
@@ -378,6 +398,13 @@ public class AlgoDFIList {
 		String record = "";
 		// For each line
 		while ((record = br.readLine()) != null) {
+			// if the line is a comment, is empty or is a
+			// kind of metadata, skip it
+			if (record.isEmpty() == true || record.charAt(0) == '#' || record.charAt(0) == '%'
+					|| record.charAt(0) == '@') {
+				continue;
+			}
+
 			String[] temp = record.split(SUPCONSTANT)[0].split(" ");
 			for (int i = 0; i < temp.length; i++) {
 				checkMemoryUsage();

@@ -59,7 +59,7 @@ public class DescriptionAlgoMAPD extends DescriptionOfAlgorithm {
 		parameters[1] = new DescriptionOfParameter("Max. pattern length", "(e.g. 3)", Integer.class, false);
 		parameters[2] = new DescriptionOfParameter("Min. gap", "(e.g. 0)", Integer.class, false);
 		parameters[3] = new DescriptionOfParameter("Max. gap", "(e.g. 3)", Integer.class, false);
-		parameters[4] = new DescriptionOfParameter("Charset", "(e.g. actg)", String.class, true);
+		parameters[4] = new DescriptionOfParameter("Charset", "(e.g. actg)", String.class, false);
 		return parameters;
 	}
 

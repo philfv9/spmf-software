@@ -1,3 +1,5 @@
+@FILETYPE="Clusters"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
 @ATTRIBUTEDEF=X
 @ATTRIBUTEDEF=Y
 [Instance2 1.0 0.0][Instance0 1.0 1.0][Instance1 0.0 1.0]

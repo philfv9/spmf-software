@@ -6,9 +6,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.AlgoCloSpan;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.AbstractionCreator_Qualitative;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.SequenceDatabase;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.creators.AbstractionCreator;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.creators.AbstractionCreator_Qualitative;
 
 /**
  * Example of how to use the algorithm CloSpan, saving the results in the
@@ -33,7 +32,7 @@ public class MainTestCloSpan_saveToMemory {
         // each pattern appears will be shown in the result
         boolean outputSequenceIdentifiers = false;
 
-        AbstractionCreator abstractionCreator = AbstractionCreator_Qualitative.getInstance();
+        AbstractionCreator_Qualitative abstractionCreator = AbstractionCreator_Qualitative.getInstance();
 
         SequenceDatabase sequenceDatabase = new SequenceDatabase();
 

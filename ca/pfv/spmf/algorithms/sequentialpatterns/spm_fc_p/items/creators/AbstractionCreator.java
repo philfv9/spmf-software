@@ -34,6 +34,8 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.spm_fc_p.items.patterns.Pattern
  * You should have received a copy of the GNU General Public License
  * along with SPMF.  If not, see <http://www.gnu.org/licenses/>.
  * 
+ * Do not remove copyright and license information.w
+ * 
  * @author agomariz
  */
 public abstract class AbstractionCreator {

@@ -1,2 +1,4 @@
+@FILETYPE="Time series database"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
 @NAME=ECG2
 3,2,8,9,8,9,8,7,6,7,5,4,2,7,9,8,5

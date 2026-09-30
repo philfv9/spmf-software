@@ -838,6 +838,10 @@ public class AlgoGrimp {
 			List<List<Integer>> originalSequence, CrossoverVariant crossoverVariant, MutationVariant mutationVariant,
 			boolean debug) {
 		try (PrintWriter writer = new PrintWriter(new FileWriter(outputFile))) {
+			writer.write("@FILETYPE=\"Frequent itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 			// Write only patterns in requested format
 			for (int[] pattern : patterns) {
 				int support = countPatternSupport(originalSequence, pattern);

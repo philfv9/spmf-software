@@ -76,6 +76,11 @@ public class AlgoFUIMTWU {
 		startTimestamp = System.currentTimeMillis();
 
 		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Frequent high-utility itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+
 
 		// create a map to store the TWU of each item
 		mapItemToTWU = new HashMap<Integer, Integer>();

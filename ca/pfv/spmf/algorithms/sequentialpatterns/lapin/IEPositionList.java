@@ -1,22 +1,20 @@
 package ca.pfv.spmf.algorithms.sequentialpatterns.lapin;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Arrays;
 
 /***
  * This is an implementation of an 2-IE-position list used by the LAPIN
  * algorithm.
- * 
+ *
  * The LAPIN-SPAM algorithm was originally described in this paper:
- * 
+ *
  * Zhenlu Yang and Masrau Kitsuregawa. LAPIN-SPAM: An improved algorithm for
  * mining sequential pattern In Proc. of Int'l Special Workshop on Databases For
  * Next Generation Researchers (SWOD'05) in conjunction with ICDE'05, pp. 8-11,
  * Tokyo, Japan, Apr. 2005.
  *
  * Copyright (c) 2008-2013 Philippe Fournier-Viger
- * 
+ *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
  *
@@ -31,109 +29,147 @@ import java.util.List;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  */
 public class IEPositionList {
 
-	/** List of item pairs, each with its own list of positions */
-	private final List<PairWithList> listPairs;
+    /** Sorted flat array of encoded pair keys: key = item1 * MULTIPLIER + item2 **/
+    private long[] pairKeys;
 
-	/**
-	 * Constructor
-	 */
-	public IEPositionList() {
-		listPairs = new ArrayList<PairWithList>();
-	}
+    /** Parallel array of primitive short[] position lists, one per pair **/
+    private short[][] pairPositions;
 
-	/**
-	 * Sort the list of pairs by ascending order
-	 */
-	public void sort() {
-		Collections.sort(listPairs);
-	}
+    /** Number of valid positions per pair **/
+    private int[] pairSizes;
 
-	/**
-	 * Register a new position for a pair of items in this IE-position list
-	 * 
-	 * @param item1    the first item
-	 * @param item2    the second item
-	 * @param position the position (an itemset number, e.g. 0,1...)
-	 */
-	public void register(int item1, int item2, short position) {
-		// Create the corresponding pair object
-		PairWithList thePair = new PairWithList(item1, item2);
+    /** Number of distinct pairs stored **/
+    private int pairCount;
 
-		// DO a binary search to see if a pair for item1 and item2 is already stored
-		// there
-		int index = Collections.binarySearch(listPairs, thePair);
+    /** Large prime used to encode a pair of ints as a single long **/
+    private static final long MULTIPLIER = 1_000_003L;
 
-		// if not
-		if (index < 0) {
-			// we add the new pair object that we have just created
-			listPairs.add(thePair);
-			// we create the position list of that pair object
-			thePair.createPositionList();
-			// we add the position
-			thePair.listPositions.add(position);
-		} else {
-			// otherwise, we reuse the same pair object previously used for item1 and item2
-			thePair = listPairs.get(index);
-			// we add the position to the list of positions for that pair
-			thePair.listPositions.add(position);
-		}
-	}
+    /**
+     * Constructor
+     */
+    public IEPositionList() {
+        pairKeys = new long[8];
+        pairPositions = new short[8][];
+        pairSizes = new int[8];
+        pairCount = 0;
+    }
 
-	/**
-	 * Get a string representation of this 2-IE position list
-	 * 
-	 * @return a string
-	 */
-	public String toString() {
-		// create a string buffer
-		StringBuilder buffer = new StringBuilder();
-		// Fore each pair
-		for (PairWithList thePair : listPairs) {
-			// append item1 and item2
-			buffer.append("  position list of pair: {").append(thePair.item1).append(",").append(thePair.item2)
-					.append("}  is: ");
-			// append the list of positions
-			for (Short pos : thePair.listPositions) {
-				buffer.append(pos).append(" ");
-			}
-			buffer.append("\n");
-		}
-		return buffer.toString();
-	}
+    /**
+     * Encodes a pair of item ids as a single long key.
+     *
+     * @param item1 the first item (smaller)
+     * @param item2 the second item (larger)
+     * @return the encoded long key
+     */
+    private static long encodeKey(int item1, int item2) {
+        return (long) item1 * MULTIPLIER + item2;
+    }
 
-	/**
-	 * Get the list of positions for a pair of items : item1 and item2
-	 * 
-	 * @param item1 the first item
-	 * @param item2 the second item
-	 * @return the list of positions as a list of Shorts, or null if none.
-	 */
-//	public List<Short> getListForPair(int item1, int item2) {
-//		// Create the pair object
-//		PairWithList thePair = new PairWithList(item1, item2);
-//
-//		// Perform a binary search to find the pair
-//		int index = Collections.binarySearch(listPairs, thePair);
-//		// if not found, return null
-//		return (index >= 0) ? listPairs.get(index).listPositions : null;
-//	}
-	public List<Short> getListForPair(int item1, int item2) {
-	    // Create the target pair object
-	    PairWithList target = new PairWithList(item1, item2);
-	    List<Short> result = new ArrayList<>();
+    /**
+     * Sorts the internal pair arrays by key so that binary search can be used during lookups.
+     */
+    public void sort() {
+        // insertion sort is fine; arrays are already nearly sorted as items are visited in order
+        for (int i = 1; i < pairCount; i++) {
+            long key = pairKeys[i];
+            short[] pos = pairPositions[i];
+            int sz = pairSizes[i];
+            int j = i - 1;
+            while (j >= 0 && pairKeys[j] > key) {
+                pairKeys[j + 1] = pairKeys[j];
+                pairPositions[j + 1] = pairPositions[j];
+                pairSizes[j + 1] = pairSizes[j];
+                j--;
+            }
+            pairKeys[j + 1] = key;
+            pairPositions[j + 1] = pos;
+            pairSizes[j + 1] = sz;
+        }
+    }
 
-	    // Linear search through all pairs and aggregate positions that match
-	    for (PairWithList pair : listPairs) {
-	        if (pair.equals(target)) {
-	            result.addAll(pair.listPositions);
-	        }
-	    }
+    /**
+     * Registers a new position for the given item pair.
+     *
+     * @param item1    the first item (must be smaller)
+     * @param item2    the second item (must be larger)
+     * @param position the itemset position where this pair co-occurs
+     */
+    public void register(int item1, int item2, short position) {
+        long key = encodeKey(item1, item2);
+        // linear scan: during construction the list is small and not yet sorted
+        int idx = -1;
+        for (int i = pairCount - 1; i >= 0; i--) {
+            if (pairKeys[i] == key) { idx = i; break; }
+        }
+        if (idx < 0) {
+            // grow if needed
+            if (pairCount == pairKeys.length) {
+                int newCap = pairKeys.length * 2;
+                pairKeys = Arrays.copyOf(pairKeys, newCap);
+                pairPositions = Arrays.copyOf(pairPositions, newCap);
+                pairSizes = Arrays.copyOf(pairSizes, newCap);
+            }
+            idx = pairCount;
+            pairKeys[idx] = key;
+            pairPositions[idx] = new short[4];
+            pairSizes[idx] = 0;
+            pairCount++;
+        }
+        int sz = pairSizes[idx];
+        if (sz == pairPositions[idx].length) {
+            pairPositions[idx] = Arrays.copyOf(pairPositions[idx], sz * 2);
+        }
+        pairPositions[idx][sz] = position;
+        pairSizes[idx] = sz + 1;
+    }
 
-	    // Return null if nothing was found, or the list of positions otherwise
-	    return result.isEmpty() ? null : result;
-	}
+    /**
+     * Returns the primitive short[] position array for the given pair, or null if not found.
+     *
+     * @param item1 the first item
+     * @param item2 the second item
+     * @return the raw short[] (may be larger than the valid count), or null
+     */
+    public short[] getPrimitiveListForPair(int item1, int item2) {
+        long key = encodeKey(item1, item2);
+        int idx = Arrays.binarySearch(pairKeys, 0, pairCount, key);
+        return (idx >= 0) ? pairPositions[idx] : null;
+    }
 
+    /**
+     * Returns the number of valid positions stored for the given pair.
+     *
+     * @param item1 the first item
+     * @param item2 the second item
+     * @return the count, or 0 if not found
+     */
+    public int getSizeForPair(int item1, int item2) {
+        long key = encodeKey(item1, item2);
+        int idx = Arrays.binarySearch(pairKeys, 0, pairCount, key);
+        return (idx >= 0) ? pairSizes[idx] : 0;
+    }
+
+    /**
+     * Get a string representation of this 2-IE position list.
+     *
+     * @return a string
+     */
+    public String toString() {
+        StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < pairCount; i++) {
+            int item1 = (int) (pairKeys[i] / MULTIPLIER);
+            int item2 = (int) (pairKeys[i] % MULTIPLIER);
+            buffer.append("  position list of pair: {").append(item1).append(",").append(item2).append("}  is: ");
+            for (int j = 0; j < pairSizes[i]; j++) {
+                buffer.append(pairPositions[i][j]).append(" ");
+            }
+            buffer.append("\n");
+        }
+        return buffer.toString();
+    }
 }

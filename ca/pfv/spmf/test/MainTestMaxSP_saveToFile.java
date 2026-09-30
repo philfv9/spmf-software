@@ -4,30 +4,31 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.BIDE_and_prefixspan.AlgoMaxSP;
-import ca.pfv.spmf.input.sequence_database_list_integers.SequenceDatabase;
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixspan.AlgoMaxSP2;
 /*
- * Example of how to use the BIDE+ algorithm, from the source code.
+ * Example of how to use the MaxSP algorithm, from the source code.
+ * @author copyright Philippe Fournier-Viger 2026
  */
 public class MainTestMaxSP_saveToFile {
 
 	public static void main(String [] arg) throws IOException{    
-		// Load a sequence database
-		SequenceDatabase sequenceDatabase = new SequenceDatabase(); 
-		sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"));
-//		sequenceDatabase.print();
+		// Input sequence database
+		String inputFile = fileToPath("contextPrefixSpan.txt");
+		
+		// Output file path
+		String outputPath = ".//output.txt";
 		
 		int minsup = 2; // we use a minsup of 2 sequences (50 % of the database size)
 		
-		AlgoMaxSP algo  = new AlgoMaxSP();  //
+		AlgoMaxSP2 algo  = new AlgoMaxSP2();  //
 		
         // if you set the following parameter to true, the sequence ids of the sequences where
         // each pattern appears will be shown in the result
         algo.setShowSequenceIdentifiers(false);
 		
 		// execute the algorithm
-		algo.runAlgorithm(sequenceDatabase, ".//output.txt", minsup);    
-		algo.printStatistics(sequenceDatabase.size());
+		algo.runAlgorithm(inputFile, outputPath, minsup);    
+		algo.printStatistics();
 	}
 	
 	public static String fileToPath(String filename) throws UnsupportedEncodingException{

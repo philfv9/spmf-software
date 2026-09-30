@@ -1,50 +1,61 @@
 package ca.pfv.spmf.gui.viewers.instanceviewer;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Image;
+import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseWheelEvent;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JViewport;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import ca.pfv.spmf.gui.preferences.PreferencesManager;
 import ca.pfv.spmf.gui.visuals.plot.Plot;
-import ca.pfv.spmf.gui.visuals.plot.Plot.Data;
+import ca.pfv.spmf.gui.visuals.plot.Plot.AxisFormat;
 import ca.pfv.spmf.gui.visuals.plot.Plot.LegendFormat;
 import ca.pfv.spmf.gui.visuals.plot.Plot.Line;
 import ca.pfv.spmf.gui.visuals.plot.Plot.Marker;
+import ca.pfv.spmf.gui.visuals.plot.Plot.PointHit;
 import ca.pfv.spmf.patterns.cluster.DoubleArray;
 import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
 
 /* This file is copyright (c) 2008-2016 Philippe Fournier-Viger
-* 
+*
 * This file is part of the SPMF DATA MINING SOFTWARE
 * (http://www.philippe-fournier-viger.com/spmf).
-* 
+*
 * SPMF is free software: you can redistribute it and/or modify it under the
 * terms of the GNU General Public License as published by the Free Software
 * Foundation, either version 3 of the License, or (at your option) any later
 * version.
-* 
+*
 * SPMF is distributed in the hope that it will be useful, but WITHOUT ANY
 * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -53,446 +64,476 @@ import ca.pfv.spmf.test.MainTestApriori_simple_saveToFile;
 */
 
 /**
- * This is the panel in the Instance viewer window
- * @author Philippe Fournier-Viger, 2016
+ * The panel of the instance viewer (scatter plot of two attributes of a list
+ * of instances). All instances are drawn as one series, as vectors directly on
+ * the component (crisp on HiDPI screens); the plot is rebuilt only when the
+ * data or an option changes.
  *
+ * @author Philippe Fournier-Viger, 2016
  */
-public class InstancesViewerPanel extends JPanel {
-	
-	/**
-	 * static UID
-	 */
+public class InstancesViewerPanel extends JPanel implements Scrollable {
+
 	private static final long serialVersionUID = 1L;
 
-	/** The object used to draw plots **/
-	Plot plot = null;
-	
-	/** This indicates the level of zoom */
-	double scaleLevel = 1.0;
-	
-	/**  The height **/
-	int height;
-	
-	/** The width **/
+	private static final String SERIES_KEY = "Instances";
+	private static final Color POINT_COLOR = Plot.DEFAULT_PALETTE[0];
+	private static final int HOVER_RADIUS = 12;
+	private static final int MAX_CANVAS_SIZE = 30_000;
+
+	/** The instances to be displayed */
+	private final List<DoubleArray> multipleInstances;
+	/** Attribute names (axis titles), may be null */
+	private String[] attributeNames;
+
+	private Plot plot;
+	private boolean plotDirty = true;
+
+	/** Logical canvas size; zoom changes these */
 	int width;
-	
-	/** the height after scaling **/
-	int originalHeigth;
-	
-	/** the width after scaling **/
+	int height;
 	int originalWidth;
+	int originalHeigth;
 
-	/** The instances to be displayed **/
-	private List<DoubleArray> multipleInstances;
-	
-	/** min and max values on the X axis **/
-    double minX = 0;
-    double maxX = Double.MIN_VALUE;
-	
-	/** min and max values on the Y axis **/
-    double minY = Double.MAX_VALUE;
-    double maxY = Double.MIN_VALUE;
-    
-    /**  If true, the grid will be drawn **/
-    boolean drawTheGrid = false;
-	
-    /**  The size of the markers in points**/
+	boolean drawTheGrid = false;
 	private int markerSize = 5;
-    
-    /** The listeners **/
-    List<InstanceViewerPanelListener> listeners = new ArrayList<InstanceViewerPanelListener>();
 
-    /** The selected attribute for the X axis */
 	private int attributeSelectedX;
-	
-	 /** The selected attribute for the Y axis */
 	private int attributeSelectedY;
 
-    /**
-     * Constructor
-     * @param instances  to display
+	/** bounds of the data for the selected attributes */
+	private double minX, maxX, minY, maxY;
+
+	private PointHit hover;
+	private final List<InstanceViewerPanelListener> listeners = new ArrayList<InstanceViewerPanelListener>();
+
+	/**
+	 * Constructor
+	 * @param instances the instances to display
 	 * @param attributeSelectedX the attribute selected on the X axis
 	 * @param attributeSelectedY the attribute selected on the Y axis
-     */
-	public InstancesViewerPanel(List<DoubleArray> instances, int attributeSelectedX, int attributeSelectedY){
-		this.attributeSelectedX = attributeSelectedX;
-		this.attributeSelectedY = attributeSelectedY;
-		
-		addMouseMotionListener(new MouseMotionAdapter() {
-			@Override
-			public void mouseMoved(MouseEvent e) {
-				// Get the coordinates of the chart area
-				Rectangle area = plot.getPlotAreaRectangle();
-				
-				// Get the relative X and Y position in the chart area
-				double x = e.getX()/scaleLevel - area.getX();
-				double y = area.getHeight() - (e.getY()/scaleLevel - area.getY());
-				
-				// Calculate the location of the mouse on the X axis of the chart
-				double chartMouseX = ((x / area.width) * (maxX - minX)) + minX;
-				// Calculate the location of the mouse on the Y axis of the chart
-				double chartMouseY = ((y / area.height) * (maxY - minY)) + minY;
-				
-				// If the mouse is not in the chart area
-				if(chartMouseX < minX  ||chartMouseX > maxX ||
-						chartMouseY < minY  ||chartMouseY > maxY){
-					// we use the default cursor
-					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-					
-					// inform all listeners that the cursor position has changed
-					for(InstanceViewerPanelListener listener : listeners){
-						listener.notifyMouseOutOfChart();
-					}
-				}else{
-					// otherwise, we use the crosshair cursor
-					setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
-//					System.out.println(chartMouseX + "     " + chartMouseY);
+	 */
+	public InstancesViewerPanel(List<DoubleArray> instances, int attributeSelectedX, int attributeSelectedY) {
+		this(instances, attributeSelectedX, attributeSelectedY, null);
+	}
 
-					
-					// inform all listeners that the cursor position has changed
-					for(InstanceViewerPanelListener listener : listeners){
-						listener.notifyOfNewMousePosition(chartMouseX, chartMouseY);
-					}
-				}	
+	public InstancesViewerPanel(List<DoubleArray> instances, int attributeSelectedX, int attributeSelectedY,
+			String[] attributeNames) {
+		this.multipleInstances = instances != null ? instances : new ArrayList<DoubleArray>();
+		this.attributeSelectedX = Math.max(0, attributeSelectedX);
+		this.attributeSelectedY = Math.max(0, attributeSelectedY);
+		this.attributeNames = attributeNames;
 
-			}
-		});
-		this.multipleInstances = instances;
-
-		
 		originalWidth = width = 600;
 		originalHeigth = height = 500;
-		
-		setPreferredSize(new Dimension(width,height));
-		
-		plot = 	null;		
-	}
-	
-	@Override
-	protected void paintComponent(Graphics g) {
-		
-        super.paintComponent(g);
-        
-        Graphics2D g2 = ( Graphics2D ) g; // cast g to Graphics2D  
-        
-        // Adjust the zoom
-        g2.scale(scaleLevel, scaleLevel);
 
-        // Draw the plot
-        Image image = drawThePlot();
-        g2.drawImage(image,0,0, this);
+		setBackground(Color.WHITE);
+		setOpaque(true);
+		setPreferredSize(new Dimension(width, height));
+		installMouseHandling();
 	}
 
-	private Image drawThePlot() {
-        Image image = createImage(width, height);
-        
-        // if nothing to draw
-        if(multipleInstances.size() == 0){
-           return image;
-        }
-        
-        minX = 0;
-        maxX = 0;
-        minY = 0;
-        maxY = 0;
-        
-        // grid color
-        Color gridColor = (drawTheGrid) ? Color.BLACK : Color.WHITE;
-        
-        // Choose the type of legend
-        
-        plot = 	Plot.plot(Plot.plotOpts().
-//				title("Time series").
-//				titleFont(new Font("Arial", Font.ITALIC, 16)).
-				width(width).
-				height(height).
-				bgColor(Color.WHITE).
-				fgColor(Color.BLACK).
-			//	padding(50). // padding for the whole image
-//				plotPadding(30). // padding between plot border and the very plot
-//				labelPadding(20). // padding between label and other elements
-				labelFont(new Font("Arial", Font.BOLD, 12)).
-			//	grids(5, 5).
-				gridColor(gridColor).
-			//	gridStroke(new BasicStroke(1)).
-				//tickSize(10).
-				legend(LegendFormat.NONE));
+	// ---------------------------------------------------------------
+	// Plot construction
+	// ---------------------------------------------------------------
 
-        
-        // For each time series
-        for(int i = 0; i < multipleInstances.size(); i++){
-
-        	DoubleArray instance = multipleInstances.get(i);
-        	Data data = plot.data();
-        	
-
-    		data.xy(instance.data[attributeSelectedX], instance.data[attributeSelectedY]);
-    		
-    		if(instance.data[1] < minY){
-    			minY = instance.data[1];
-    		}
-    		if(instance.data[1] > maxY){
-    			maxY = instance.data[1];
-    		}
-    		
-    		if(instance.data[0] < minX){
-    			minX = instance.data[0];
-    		}
-    		if(instance.data[0] > maxX){
-    			maxX = instance.data[0];
-    		}
-        	
-    		// Market color
-        	Color color = Color.BLUE;
-        	
-//        	public enum Line { NONE, SOLID, DASHED };
-//        	public enum Marker { NONE, CIRCLE, SQUARE, DIAMOND, COLUMN, BAR };
-        	
-        	plot.series("Point" + (i+1), data,
-    				Plot.seriesOpts().
-    					color(color).
-    					line(Line.NONE).
-    					marker(Marker.CIRCLE).
-    					markerColor(color).
-    					markerSize(markerSize)
-    					);
-        }
-
-		// configuring axes
-        plot.
-		xAxis("x", Plot.axisOpts().format(Plot.AxisFormat.NUMBER).range(minX, maxX)).
-		yAxis("y", Plot.axisOpts().range(minY, maxY));
-        
-
-        plot.drawChartOnGraphics2D((Graphics2D)image.getGraphics());
-		return image;
-	}
-	
-	@Override
-	public void update(Graphics g) {
-		super.update(g);
-		
-		paintComponent(g);
-	}
-	
-//	@Override
-	public Dimension getPreferredSize() {
-		return new Dimension((int)scaleLevel*width, (int)scaleLevel*height);
+	private String attributeName(int index) {
+		if (attributeNames != null && index >= 0 && index < attributeNames.length
+				&& attributeNames[index] != null && !attributeNames[index].isEmpty()) {
+			return attributeNames[index];
+		}
+		return "Attribute " + index;
 	}
 
-	public void increaseZoom() {
-		//scaleLevel *= 2.0;
-		width *= 2.0;
-		height *= 2.0;
+	private Plot buildPlot() {
+		int n = multipleInstances.size();
+		double[] x = new double[n];
+		double[] y = new double[n];
+		minX = Double.POSITIVE_INFINITY; maxX = Double.NEGATIVE_INFINITY;
+		minY = Double.POSITIVE_INFINITY; maxY = Double.NEGATIVE_INFINITY;
+		for (int i = 0; i < n; i++) {
+			DoubleArray inst = multipleInstances.get(i);
+			double[] d = inst != null ? inst.data : null;
+			boolean ok = d != null && attributeSelectedX < d.length && attributeSelectedY < d.length;
+			x[i] = ok ? d[attributeSelectedX] : Double.NaN;
+			y[i] = ok ? d[attributeSelectedY] : Double.NaN;
+			if (ok && !Double.isNaN(x[i]) && !Double.isNaN(y[i])) {
+				if (x[i] < minX) minX = x[i];
+				if (x[i] > maxX) maxX = x[i];
+				if (y[i] < minY) minY = y[i];
+				if (y[i] > maxY) maxY = y[i];
+			}
+		}
+		if (minX > maxX) { minX = 0; maxX = 0; minY = 0; maxY = 0; }
 
-//		System.out.println(scaleLevel);
-		// necessary to update the scroll bar(s) if this panel is in a JScrollPane
+		Plot p = Plot.plot(Plot.plotOpts()
+				.width(Math.max(1, getWidth() > 0 ? getWidth() : width))
+				.height(Math.max(1, getHeight() > 0 ? getHeight() : height))
+				.bgColor(Color.WHITE)
+				.plotPadding(Math.max(8, markerSize + 4))
+				.legend(LegendFormat.NONE));
+
+		// ONE series for all instances (the old code created one series per point)
+		p.series(SERIES_KEY, Plot.data().xy(x, y), Plot.seriesOpts()
+				.color(POINT_COLOR)
+				.line(Line.NONE)
+				.marker(markerSize > 0 ? Marker.CIRCLE : Marker.NONE)
+				.markerSize(Math.max(1, markerSize)));
+
+		p.xAxis("x", Plot.axisOpts().format(AxisFormat.NUMBER).title(attributeName(attributeSelectedX))
+				.niceRange(true).gridLines(drawTheGrid))
+		 .yAxis("y", Plot.axisOpts().format(AxisFormat.NUMBER).title(attributeName(attributeSelectedY))
+				.niceRange(true).gridLines(drawTheGrid));
+		return p;
+	}
+
+	private Plot ensurePlot() {
+		if (plot == null || plotDirty) {
+			plot = buildPlot();
+			plotDirty = false;
+		}
+		return plot;
+	}
+
+	private void invalidatePlot() {
+		plotDirty = true;
+		hover = null;
 		revalidate();
-		// necessary to redraw the image correctly
 		repaint();
 	}
-	
-	public void decreaseZoom() {
-		// Adjust the width and height		
-		// If the width and height are not less than 50 % of the original value, we zoom out
-		if(width >= originalWidth){
-			width /= 2;
-			height /= 2;
-//			System.out.println(scaleLevel);
-			// necessary to update the scroll bar(s) if this panel is in a JScrollPane
-			revalidate();
-			// necessary to redraw the image correctly
+
+	public Plot getPlot() {
+		return ensurePlot();
+	}
+
+	// ---------------------------------------------------------------
+	// Painting
+	// ---------------------------------------------------------------
+
+	@Override
+	protected void paintComponent(Graphics g) {
+		super.paintComponent(g);
+		Graphics2D g2 = (Graphics2D) g.create();
+		try {
+			Plot p = ensurePlot();
+			p.resize(getWidth(), getHeight(), g2);
+			p.drawChartOnGraphics2D(g2);     // vectors, inherits the HiDPI transform
+			drawHover(g2, p);
+		} finally {
+			g2.dispose();
+		}
+	}
+
+	private void drawHover(Graphics2D g2, Plot p) {
+		if (hover == null) return;
+		Rectangle r = p.getPlotAreaRectangle();
+		Graphics2D g = (Graphics2D) g2.create();
+		try {
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+			g.clip(r);
+			g.setColor(new Color(0, 0, 0, 60));
+			g.setStroke(new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f,
+					new float[] { 3f, 3f }, 0f));
+			g.draw(new Line2D.Double(r.x, hover.pixelY, r.x + r.width, hover.pixelY));
+			g.draw(new Line2D.Double(hover.pixelX, r.y, hover.pixelX, r.y + r.height));
+
+			double rad = Math.max(markerSize, 4) + 3;
+			Ellipse2D ring = new Ellipse2D.Double(hover.pixelX - rad, hover.pixelY - rad, 2 * rad, 2 * rad);
+			Color c = new Color(214, 64, 64);
+			g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), 60));
+			g.fill(ring);
+			g.setColor(c);
+			g.setStroke(new BasicStroke(1.6f));
+			g.draw(ring);
+		} finally {
+			g.dispose();
+		}
+	}
+
+	// ---------------------------------------------------------------
+	// Mouse handling
+	// ---------------------------------------------------------------
+
+	private void installMouseHandling() {
+		MouseAdapter adapter = new MouseAdapter() {
+			@Override public void mouseMoved(MouseEvent e) { handleMouse(e.getPoint()); }
+			@Override public void mouseDragged(MouseEvent e) { handleMouse(e.getPoint()); }
+			@Override public void mouseExited(MouseEvent e) { handleMouse(null); }
+
+			@Override
+			public void mouseWheelMoved(MouseWheelEvent e) {
+				if (e.isControlDown()) {
+					if (e.getWheelRotation() < 0) increaseZoom();
+					else decreaseZoom();
+					e.consume();
+					return;
+				}
+				Container parent = getParent();
+				if (parent != null) {
+					parent.dispatchEvent(SwingUtilities.convertMouseEvent(InstancesViewerPanel.this, e, parent));
+				}
+			}
+		};
+		addMouseListener(adapter);
+		addMouseMotionListener(adapter);
+		addMouseWheelListener(adapter);
+	}
+
+	private void handleMouse(Point pt) {
+		if (plot == null || plotDirty) return;
+		Rectangle area = plot.getPlotAreaRectangle();
+
+		if (pt == null || !area.contains(pt)) {
+			setCursor(Cursor.getDefaultCursor());
+			if (hover != null) {
+				hover = null;
+				repaint();
+			}
+			for (InstanceViewerPanelListener l : listeners) {
+				l.notifyMouseOutOfChart();
+				l.notifyOfInstanceUnderMouse(-1, Double.NaN, Double.NaN);
+			}
+			return;
+		}
+
+		setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+		double chartX = plot.pixelToX(pt.x);
+		double chartY = plot.pixelToY(pt.y);
+		PointHit hit = plot.nearestPoint(pt.x, pt.y, HOVER_RADIUS);
+
+		for (InstanceViewerPanelListener l : listeners) {
+			l.notifyOfNewMousePosition(chartX, chartY);
+			if (hit != null) l.notifyOfInstanceUnderMouse(hit.index, hit.x, hit.y);
+			else l.notifyOfInstanceUnderMouse(-1, Double.NaN, Double.NaN);
+		}
+
+		boolean changed = (hit == null) != (hover == null) || (hit != null && hit.index != hover.index);
+		if (changed) {
+			hover = hit;
 			repaint();
 		}
-
 	}
 
-	/**
-	 * This method is called when the user click on the button to export the current plot to a file
-	 * @throws IOException if an error occurs
-	 */
-	protected void export() {
-		
-		// ask the user to choose the filename and path
-		String outputFilePath = null;
+	// ---------------------------------------------------------------
+	// Zoom / Scrollable
+	// ---------------------------------------------------------------
+
+	public void increaseZoom() {
+		if (width * 2 > MAX_CANVAS_SIZE || height * 2 > MAX_CANVAS_SIZE) return;
+		width *= 2;
+		height *= 2;
+		invalidatePlot();
+	}
+
+	public void decreaseZoom() {
+		if (width >= originalWidth) {
+			width /= 2;
+			height /= 2;
+			invalidatePlot();
+		}
+	}
+
+	/** Restores the initial size (the chart then fills the window). */
+	public void resetZoom() {
+		width = originalWidth;
+		height = originalHeigth;
+		invalidatePlot();
+	}
+
+	@Override
+	public Dimension getPreferredSize() {
+		return new Dimension(width, height);
+	}
+
+	@Override
+	public Dimension getPreferredScrollableViewportSize() {
+		return getPreferredSize();
+	}
+
+	@Override
+	public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+		return 24;
+	}
+
+	@Override
+	public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+		return orientation == SwingConstants.HORIZONTAL ? visibleRect.width : visibleRect.height;
+	}
+
+	@Override
+	public boolean getScrollableTracksViewportWidth() {
+		Container p = getParent();
+		return p instanceof JViewport && p.getWidth() > getPreferredSize().width;
+	}
+
+	@Override
+	public boolean getScrollableTracksViewportHeight() {
+		Container p = getParent();
+		return p instanceof JViewport && p.getHeight() > getPreferredSize().height;
+	}
+
+	// ---------------------------------------------------------------
+	// Export / print
+	// ---------------------------------------------------------------
+
+	/** Renders the chart as currently displayed ({@code scale} = 2 for HiDPI). */
+	public BufferedImage renderImage(double scale) {
+		int w = Math.max(1, getWidth() > 0 ? getWidth() : width);
+		int h = Math.max(1, getHeight() > 0 ? getHeight() : height);
+		double s = Math.max(1.0, Math.min(scale, 16000.0 / Math.max(w, h)));
+		BufferedImage img = new BufferedImage((int) Math.ceil(w * s), (int) Math.ceil(h * s),
+				BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = img.createGraphics();
 		try {
-		    File path;
-		    // Get the last path used by the user, if there is one
-		    String previousPath = PreferencesManager.getInstance().getOutputFilePath();
-		    // If there is no previous path (first time user), 
-		    // show the files in the "examples" package of
-		    // the spmf distribution.
-		    if (previousPath == null) {
-		        URL main = MainTestApriori_simple_saveToFile.class.getResource("MainTestApriori_saveToFile.class");
-		        if (!"file".equalsIgnoreCase(main.getProtocol())) {
-		            path = null;
-		        } else {
-		            path = new File(main.getPath());
-		        }
-		    } else {
-		        // Otherwise, use the last path used by the user.
-		        path = new File(previousPath);
-		    }
-
-		    // ASK THE USER TO CHOOSE A FILE
-		    final JFileChooser fc;
-		    if (path != null) {
-		        fc = new JFileChooser(path.getAbsolutePath());
-		    } else {
-		        fc = new JFileChooser();
-		    }
-		    int returnVal = fc.showSaveDialog(InstancesViewerPanel.this);
-
-		    // If the user chose a file
-		    if (returnVal == JFileChooser.APPROVE_OPTION) {
-		        File file = fc.getSelectedFile();
-		        outputFilePath = file.getPath(); // save the file path
-		        // save the path of this folder for next time.
-		        if (fc.getSelectedFile() != null) {
-		            PreferencesManager.getInstance().setOutputFilePath(fc.getSelectedFile().getParent());
-		        }
-		    }else{
-		    	// the user did not choose so we return
-		    	return;
-		    }
-
-		} catch (Exception e) {
-		    JOptionPane.showMessageDialog(null,
-		            "An error occured while opening the save plot dialog. ERROR MESSAGE = " + e.toString(), "Error",
-		            JOptionPane.ERROR_MESSAGE);
+			g.scale(s, s);
+			g.setColor(Color.WHITE);
+			g.fillRect(0, 0, w, h);
+			Plot p = ensurePlot();
+			p.resize(w, h, g);
+			p.drawChartOnGraphics2D(g);
+		} finally {
+			g.dispose();
 		}
+		return img;
+	}
 
-		try{
-			
-			// add the .png extension
-			if(outputFilePath.endsWith("png") == false){
-				outputFilePath = outputFilePath + ".png";
-			}
-			File outputFile = new File(outputFilePath);
-			BufferedImage image = (BufferedImage)drawThePlot();
-			ImageIO.write(image, "png", outputFile);
-
-		}catch (Exception e) {
-		    JOptionPane.showMessageDialog(null,
-		            "An error occured while attempting to save the plot. ERROR MESSAGE = " + e.toString(), "Error",
-		            JOptionPane.ERROR_MESSAGE);
+	/** Called when the user clicks the button to export the current plot to a PNG file. */
+	protected void export() {
+		String path = promptForFilePath("png", "PNG image");
+		if (path == null) return;
+		try {
+			ImageIO.write(renderImage(2.0), "png", new File(path));
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(this,
+					"An error occurred while attempting to save the plot. ERROR MESSAGE = " + e,
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
-	
-	/**
-	 * This method is for printing the panel
-	 */
+	/** Prints the chart as vectors. */
 	public void doPrint() {
 		PrinterJob pj = PrinterJob.getPrinterJob();
-		pj.setJobName(" SPMF print time series");
-
+		pj.setJobName("SPMF print instances");
 		pj.setPrintable(new Printable() {
 			@Override
-			public int print(Graphics pg, PageFormat pageFormat, int pageNum)
-					throws PrinterException {
-			      if(pageNum > 0){
-					return Printable.NO_SUCH_PAGE;
+			public int print(Graphics pg, PageFormat pageFormat, int pageNum) throws PrinterException {
+				if (pageNum > 0) return Printable.NO_SUCH_PAGE;
+				int cw = Math.max(1, getWidth() > 0 ? getWidth() : width);
+				int ch = Math.max(1, getHeight() > 0 ? getHeight() : height);
+				Graphics2D g2 = (Graphics2D) pg.create();
+				try {
+					g2.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+					double s = Math.min(pageFormat.getImageableWidth() / cw, pageFormat.getImageableHeight() / ch);
+					g2.scale(s, s);
+					Plot p = ensurePlot();
+					p.resize(cw, ch, g2);
+					p.drawChartOnGraphics2D(g2);
+				} finally {
+					g2.dispose();
 				}
-
-		        Image image = drawThePlot();
-		        
-		        Graphics2D g2 = (Graphics2D) pg;
-		        g2.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
-		        g2.scale(pageFormat.getImageableWidth()/width, pageFormat.getImageableHeight()/ height);
-		        g2.drawImage(image,0,0, null);
-		        return Printable.PAGE_EXISTS;
+				return Printable.PAGE_EXISTS;
 			}
-		}); 
-		if (pj.printDialog() == false)
-			return;
-
+		});
+		if (!pj.printDialog()) return;
 		try {
 			pj.print();
 		} catch (PrinterException ex) {
-			// handle exception
+			JOptionPane.showMessageDialog(this, "Printing failed: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
-	
-	/**
-	 * Add a listener to the changes to this panel
-	 * @param listener a listener
-	 */
-	public void addListener(InstanceViewerPanelListener listener){
-		listeners.add(listener);
+	private String promptForFilePath(String extension, String description) {
+		try {
+			File initialDir = getInitialDirectory();
+			JFileChooser fc = initialDir != null ? new JFileChooser(initialDir) : new JFileChooser();
+			fc.setDialogTitle("Save as " + extension.toUpperCase(Locale.ROOT));
+			fc.setFileFilter(new FileNameExtensionFilter(description + " (*." + extension + ")", extension));
+			fc.setSelectedFile(new File(fc.getCurrentDirectory(), "instances." + extension));
+			while (true) {
+				if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return null;
+				File file = fc.getSelectedFile();
+				if (!file.getName().toLowerCase(Locale.ROOT).endsWith("." + extension)) {
+					file = new File(file.getPath() + "." + extension);
+				}
+				if (file.exists()) {
+					int r = JOptionPane.showConfirmDialog(this,
+							"\"" + file.getName() + "\" already exists. Overwrite?", "Confirm overwrite",
+							JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+					if (r == JOptionPane.CANCEL_OPTION || r == JOptionPane.CLOSED_OPTION) return null;
+					if (r == JOptionPane.NO_OPTION) continue;
+				}
+				PreferencesManager.getInstance().setOutputFilePath(file.getParent());
+				return file.getPath();
+			}
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(this,
+					"An error occurred while opening the save plot dialog. ERROR MESSAGE = " + e,
+					"Error", JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
 	}
 
-	/**
-	 * Set the option to draw the grid of the chart to true or false
-	 * @param drawTheGrid a boolean indicating whether the grid should be drawn
-	 */
+	private static File getInitialDirectory() {
+		try {
+			String previousPath = PreferencesManager.getInstance().getOutputFilePath();
+			if (previousPath != null) return new File(previousPath);
+			URL main = MainTestApriori_simple_saveToFile.class.getResource("MainTestApriori_saveToFile.class");
+			if (main != null && "file".equalsIgnoreCase(main.getProtocol())) {
+				return new File(main.getPath()).getParentFile();
+			}
+		} catch (Exception ignored) {
+			// default directory
+		}
+		return null;
+	}
+
+	// ---------------------------------------------------------------
+	// Listeners / options / getters
+	// ---------------------------------------------------------------
+
+	public void addListener(InstanceViewerPanelListener listener) {
+		if (listener != null) listeners.add(listener);
+	}
+
 	public void setDrawGrid(boolean drawTheGrid) {
 		this.drawTheGrid = drawTheGrid;
-		
-		// necessary to update the scroll bar(s) if this panel is in a JScrollPane
-		revalidate();
-		// necessary to redraw the image correctly
-		repaint();
+		invalidatePlot();
 	}
 
-	/**
-	 * 
-	 * Set the size of the markers
-	 * @param selection true will draw the markers, otherwise not
-	 */
+	/** @param selection marker size in points (0 = no markers) */
 	public void setMarkersSize(int selection) {
-		this.markerSize = selection;
-		
-		// necessary to update the scroll bar(s) if this panel is in a JScrollPane
-		revalidate();
-		// necessary to redraw the image correctly
-		repaint();
+		this.markerSize = Math.max(0, selection);
+		invalidatePlot();
+	}
+
+	/** Sets the attribute names used as axis titles. */
+	public void setAttributeNames(String[] names) {
+		this.attributeNames = names;
+		invalidatePlot();
 	}
 
 	/**
-	 * Get the minimum on the X axis
-	 * @return the value
-	 */
-	public double getMinX() {
-		return minX;
-	}
-	/**
-	 * Get the maximum on the X axis
-	 * @return the value
-	 */
-	public double getMaxX() {
-		return maxX;
-	}
-	/**
-	 * Get the minimum on the Y axis
-	 * @return the value
-	 */
-	public double getMinY() {
-		return minY;
-	}
-	/**
-	 * Get the maximum on the Y axis
-	 * @return the value
-	 */
-	public double getMaxY() {
-		return maxY;
-	}
-
-	/**
-	 * Set the selection of atributes
+	 * Set the selection of attributes
 	 * @param attributeSelectedX the attribute selected on the X axis
 	 * @param attributeSelectedY the attribute selected on the Y axis
 	 */
-	public void setAttributeSelection(int attributeSelectedX,
-			int attributeSelectedY) {
-		this.attributeSelectedX = attributeSelectedX;
-		this.attributeSelectedY = attributeSelectedY;
-		
-		// necessary to update the scroll bar(s) if this panel is in a JScrollPane
-		revalidate();
-		// necessary to redraw the image correctly
-		repaint();
+	public void setAttributeSelection(int attributeSelectedX, int attributeSelectedY) {
+		this.attributeSelectedX = Math.max(0, attributeSelectedX);
+		this.attributeSelectedY = Math.max(0, attributeSelectedY);
+		invalidatePlot();
 	}
 
+	public int getInstanceCount() {
+		return multipleInstances.size();
+	}
+
+	/** Minimum of the selected X attribute */
+	public double getMinX() { ensurePlot(); return minX; }
+	/** Maximum of the selected X attribute */
+	public double getMaxX() { ensurePlot(); return maxX; }
+	/** Minimum of the selected Y attribute */
+	public double getMinY() { ensurePlot(); return minY; }
+	/** Maximum of the selected Y attribute */
+	public double getMaxY() { ensurePlot(); return maxY; }
 }

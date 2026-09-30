@@ -43,7 +43,7 @@ public class MainTestWFIM {
 
         String inputDatabase = fileToPath("DB_RWFIM.txt");
         String inputWeights  = fileToPath("weights_RWFIM.txt");
-        String output        = ".//output_WFIM.txt";
+        String output        = ".//output.txt";
 
         double minSupRatio = 0.40;   // 40%
         double minWeight   = 0.5;    // no minimum weight constraint

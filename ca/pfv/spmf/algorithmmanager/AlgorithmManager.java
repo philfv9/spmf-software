@@ -306,4 +306,9 @@ public class AlgorithmManager {
         }
         return null;
     }
+    
+    /** Get all the algorithm descriptions */
+    public List<DescriptionOfAlgorithm> getAlgorithms() {
+        return algorithms;
+    }
 }

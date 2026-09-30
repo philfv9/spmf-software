@@ -252,7 +252,12 @@ public class AlgoDCI_Closed_FAST {
 		// Use try-with-resources to guarantee the output file is always closed,
 		// even if an exception is thrown during mining.
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(output))) {
+			
 			writer = bw;
+			writer.write("@FILETYPE=\"Frequent closed itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 
 			// output the closed itemset of universal items if any exist.
 			// This must happen inside the try block so that writer is non-null.

@@ -211,6 +211,10 @@ public class AlgoHUESpan {
 		} else { // if the user want to save the result to a file
 			this.huepisodes = null;
 			this.writer = new BufferedWriter(new FileWriter(outputFile));
+			writer.write("@FILETYPE=\"High-Utility episodes\"");
+			writer.newLine();
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.newLine();
 
 		}
 

@@ -1,18 +1,11 @@
 package ca.pfv.spmf.gui.visual_pattern_viewer.rules;
 
-import java.awt.Color;
-import java.awt.Component;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 
 import ca.pfv.spmf.gui.visual_pattern_viewer.LayoutMode;
-import ca.pfv.spmf.gui.visual_pattern_viewer.PatternsPanel;
+import ca.pfv.spmf.gui.visual_pattern_viewer.PatternListPanel;
 import ca.pfv.spmf.gui.visual_pattern_viewer.PatternsReader;
 
 /*
@@ -35,57 +28,31 @@ import ca.pfv.spmf.gui.visual_pattern_viewer.PatternsReader;
  * along with SPMF. If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Panel that parses a file of association rules (including extended SPMF format
- * with item mappings) and displays each rule as a {@link RulePanel}.
- * Provides sorting by measure or lexicographically, and the ability to export
- * the entire view as a PNG.
- * <p>
- * Supports optional pagination: call {@link #setPageSize(int)} to limit the
- * number of patterns shown per page, or pass {@code Integer.MAX_VALUE} to show
- * all patterns at once.
+ * Panel displaying each association rule read by a {@link RulesReader} as a
+ * {@link RulePanel}. Sorting, search, filters, pagination and export are
+ * inherited from {@link PatternListPanel}.
  *
  * @author Philippe Fournier-Viger
  */
-public class RulesPanel extends PatternsPanel {
+public class RulesPanel extends PatternListPanel<Rule, RulePanel> {
+
 	/** serial UID **/
-	private static final long serialVersionUID = 123982348l;
+	private static final long serialVersionUID = 123982348L;
 
-	/** Vertical gap between panels in pixels */
-	private static final int GAP_BETWEEN_PATTERNS = 10;
-
-	/** Class to read the rules from a file */
-	RulesReader reader = null;
-
-	/** All panels, each corresponding to a rule */
-	private final List<RulePanel> allPanels = new ArrayList<>();
+	/** The reader holding the rules */
+	private final RulesReader rulesReader;
 
 	/**
-	 * Ordered list of indices into {@link #allPanels} that pass the current
-	 * search/filter. {@code null} means no filter is active (all panels visible).
-	 */
-	private List<Integer> visiblePanelIndices = null;
-
-	/** Precomputed min and max values for measures */
-	private final Map<String, Double> minValues;
-	private final Map<String, Double> maxValues;
-
-	/**
-	 * Creates a panel, parses the given file for rules or transactions, and builds
-	 * child panels. Supports both standard and extended SPMF formats.
+	 * Constructor
 	 *
 	 * @param reader a reader that has already parsed the file
 	 * @param mode   the layout mode
 	 * @throws IOException if reading the file fails
 	 */
 	public RulesPanel(PatternsReader reader, LayoutMode mode) throws IOException {
-		super(mode);
-		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-		setBackground(Color.LIGHT_GRAY);
-		this.reader = (RulesReader) reader;
-		this.minValues = reader.getAllMinValues();
-		this.maxValues = reader.getAllMaxValues();
-		buildPanels();
-		rebuildPanels();
+		super(reader, mode);
+		this.rulesReader = (RulesReader) reader;
+		initialize();
 	}
 
 	/**
@@ -95,334 +62,36 @@ public class RulesPanel extends PatternsPanel {
 	 * @param ascending true for ascending order; false for descending
 	 */
 	public void sortRulesByMeasure(String measure, boolean ascending) {
-		reader.sortPatternsByMeasure(measure, ascending);
-		allPanels.clear();
-		buildPanels();
-		rebuildPanels();
-	}
-
-	/**
-	 * Resolves the ordered list of indices that are currently visible (after
-	 * filtering). If no filter is active this is simply 0 … allPanels.size()-1.
-	 */
-	private List<Integer> resolveVisibleIndices() {
-		if (visiblePanelIndices != null) {
-			// Already filtered – return the stored ordered list
-			return visiblePanelIndices;
-		}
-		// No filter: all panels in order
-		List<Integer> all = new ArrayList<>(allPanels.size());
-		for (int i = 0; i < allPanels.size(); i++) {
-			all.add(i);
-		}
-		return all;
-	}
-
-	/**
-	 * Clears and rebuilds the layout. Respects both the current filter state and
-	 * pagination settings. Only the patterns that belong to the current page are
-	 * added to the Swing hierarchy; the rest are not rendered, keeping the UI fast
-	 * even with thousands of patterns.
-	 */
-	@Override
-	public void rebuildPanels() {
-		removeAll();
-
-		// Full ordered list of visible indices (may be all of them)
-		List<Integer> visible = resolveVisibleIndices();
-
-		// --- Pagination: compute the window [fromIdx, toIdx) ---
-		int totalVisible = visible.size();
-		int fromIdx; // inclusive
-		int toIdx;   // exclusive
-
-		if (pageSize == Integer.MAX_VALUE || pageSize <= 0) {
-			// Show-all mode
-			fromIdx = 0;
-			toIdx = totalVisible;
-		} else {
-			// Clamp currentPage just in case
-			int totalPages = Math.max(1, (int) Math.ceil((double) totalVisible / pageSize));
-			if (currentPage >= totalPages) {
-				currentPage = totalPages - 1;
-			}
-			fromIdx = currentPage * pageSize;
-			toIdx = Math.min(fromIdx + pageSize, totalVisible);
-		}
-
-		// Collect the panels for this page
-		List<RulePanel> panelsToDisplay = new ArrayList<>();
-		for (int i = fromIdx; i < toIdx; i++) {
-			panelsToDisplay.add(allPanels.get(visible.get(i)));
-		}
-
-		// --- Build layout ---
-		if (layoutMode == LayoutMode.VERTICAL) {
-			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-			for (RulePanel panel : panelsToDisplay) {
-				panel.setAlignmentX(Component.CENTER_ALIGNMENT);
-				add(Box.createVerticalStrut(GAP_BETWEEN_PATTERNS));
-				add(panel);
-			}
-			add(Box.createVerticalGlue());
-		} else if (layoutMode == LayoutMode.HORIZONTAL) {
-			setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-			for (RulePanel panel : panelsToDisplay) {
-				panel.setAlignmentY(Component.CENTER_ALIGNMENT);
-				add(Box.createHorizontalStrut(GAP_BETWEEN_PATTERNS));
-				add(panel);
-			}
-			add(Box.createHorizontalGlue());
-		} else {
-			// GRID (default)
-			int columns = 3;
-			int rows = panelsToDisplay.isEmpty() ? 1
-					: (int) Math.ceil((double) panelsToDisplay.size() / columns);
-			setLayout(new java.awt.GridLayout(rows, columns, GAP_BETWEEN_PATTERNS, GAP_BETWEEN_PATTERNS));
-			for (RulePanel panel : panelsToDisplay) {
-				add(panel);
-			}
-		}
-
-		revalidate();
-		repaint();
-	}
-
-	/**
-	 * @return an ordered list of all sorting orders that are offered
-	 */
-	@Override
-	public List<String> getListOfSortingOrders() {
-		return reader.getListOfSortingOrders();
-	}
-
-	/**
-	 * Sort the rules based on the user's choice. Resets to page 0 after sorting
-	 * so the user always sees the top of the newly ordered list.
-	 *
-	 * @param choice the choice as a String
-	 */
-	@Override
-	public void sortPatterns(String choice) {
-		reader.sortPatterns(choice);
-		allPanels.clear();
-		buildPanels();
-		// Reset to first page after sorting so the user sees the top results
-		currentPage = 0;
-		rebuildPanels();
+		sortPatterns(measure + (ascending ? " (asc)" : " (desc)"));
 	}
 
 	@Override
-	public int getTotalPatternCount() {
-		return reader.getPatterns().size();
+	protected List<Rule> getPatterns() {
+		return rulesReader.getPatterns();
 	}
 
-	/**
-	 * Get the list of available measures
-	 *
-	 * @return a Set
-	 */
-	public Set<String> getAllMeasures() {
-		return reader.getAllMeasures();
-	}
-
-	/**
-	 * Get the minimum numeric value observed for the given measure
-	 *
-	 * @return the minimum numeric value observed for the given measure (or null if
-	 *         none)
-	 */
-	public Double getMinForMeasureOriginal(String measure) {
-		return reader.getMinForMeasure(measure);
-	}
-
-	/**
-	 * Get the maximum numeric value observed for the given measure
-	 *
-	 * @return the maximum numeric value observed for the given measure (or null if
-	 *         none)
-	 */
-	public Double getMaxForMeasureOriginal(String measure) {
-		return reader.getMaxForMeasure(measure);
-	}
-
-	/**
-	 * Builds all {@link RulePanel}s once and stores them in memory.
-	 */
-	private void buildPanels() {
-		List<Rule> patterns = reader.getPatterns();
-		for (Rule rule : patterns) {
-			RulePanel panel = new RulePanel(rule, minValues, maxValues);
-			allPanels.add(panel);
-		}
-	}
-
-	/**
-	 * Applies a text search and measure-based filtering to the list of rules
-	 * currently loaded in memory. Only rules that match the search string (if
-	 * provided) and satisfy all measure thresholds (with the specified operators)
-	 * will be displayed.
-	 * <p>
-	 * The original list of rules remains unchanged in memory; filtering is applied
-	 * dynamically and temporarily to the view only. Resets to page 0 after
-	 * filtering so the user always sees the first page of results.
-	 * </p>
-	 *
-	 * @param searchString      a string to search for (case-insensitive) in the
-	 *                          string representation of each rule; may be null or
-	 *                          empty to skip text search
-	 * @param measureThresholds a map from measure names to threshold values; may be
-	 *                          null or empty to skip numeric filtering
-	 * @param measureOperators  a map from measure names to operator strings, either
-	 *                          "≥" or "≤"; if an operator is missing or
-	 *                          unrecognized, "≥" is assumed
-	 */
 	@Override
-	public void applySearchAndFilters(String searchString, Map<String, Double> measureThresholds,
-	        Map<String, String> measureOperators) {
-
-	    List<Integer> matched = new ArrayList<>();
-
-	    for (int i = 0; i < allPanels.size(); i++) {
-	        Rule rule = allPanels.get(i).getRule();
-
-	        // Text filter with token matching
-	        if (searchString != null && !searchString.isBlank()) {
-	            String patternStr = rule.toString().toLowerCase();
-	            String[] tokens = searchString.toLowerCase().split("\\s+");
-	            boolean allTokensMatch = true;
-	            for (String token : tokens) {
-	                if (!patternStr.contains(token)) {
-	                    allTokensMatch = false;
-	                    break;
-	                }
-	            }
-	            if (!allTokensMatch) {
-	                continue;
-	            }
-	        }
-
-	        // Measure filters with operator support
-	        if (measureThresholds != null && !measureThresholds.isEmpty()) {
-	            boolean failed = false;
-	            for (Map.Entry<String, Double> entry : measureThresholds.entrySet()) {
-	                String measure = entry.getKey();
-	                Double threshold = entry.getValue();
-	                String rawValue = rule.getMeasures().get(measure);
-	                if (rawValue == null) {
-	                    // Rule doesn't have this measure - exclude it
-	                    failed = true;
-	                    break;
-	                }
-	                double value;
-	                try {
-	                    value = Double.parseDouble(rawValue);
-	                } catch (NumberFormatException e) {
-	                    // Non-numeric value - exclude it
-	                    failed = true;
-	                    break;
-	                }
-	                String operator = "\u2265"; // default ≥
-	                if (measureOperators != null && measureOperators.containsKey(measure)) {
-	                    operator = measureOperators.get(measure);
-	                }
-	                
-	                // Apply the filter based on operator
-	                if ("\u2264".equals(operator)) {
-	                    // For ≤: exclude if value is GREATER than threshold
-	                    if (value > threshold) {
-	                        failed = true;
-	                        break;
-	                    }
-	                } else {
-	                    // For ≥: exclude if value is LESS than threshold
-	                    if (value < threshold) {
-	                        failed = true;
-	                        break;
-	                    }
-	                }
-	            }
-	            if (failed) {
-	                continue;
-	            }
-	        }
-
-	        matched.add(i);
-	    }
-
-	    visiblePanelIndices = matched;
-	    // Always go back to the first page after a new filter is applied
-	    currentPage = 0;
-	    rebuildPanels();
+	protected RulePanel createPanel(Rule rule) {
+		return new RulePanel(rule, minValues, maxValues);
 	}
 
-	/**
-	 * Clears any active text search or measure-based filtering. The view is reset
-	 * to show all original rules loaded from the file, starting at page 0.
-	 */
 	@Override
-	public void clearSearchAndFilters() {
-		visiblePanelIndices = null;
-		currentPage = 0;
-		rebuildPanels();
+	protected Map<String, String> getMeasures(Rule rule) {
+		return rule.getMeasures();
 	}
 
-	/**
-	 * Get the number of visible patterns (after filtering, across ALL pages).
-	 *
-	 * @return the number of visible patterns
-	 */
 	@Override
-	public int getNumberOfVisiblePatterns() {
-		if (visiblePanelIndices == null) {
-			return allPanels.size();
-		}
-		return visiblePanelIndices.size();
+	protected String getSearchableText(Rule rule) {
+		return rule.toString();
 	}
 
-	/**
-	 * Populates the provided map with measure values from all rules. Each measure
-	 * name maps to a list of its numeric values across all patterns.
-	 *
-	 * @param measureValuesMap the map to populate with measure values
-	 */
 	@Override
-	public void populateMeasureValues(Map<String, List<Double>> measureValuesMap) {
-		List<Rule> patterns = reader.getPatterns();
-		for (Rule rule : patterns) {
-			Map<String, String> measures = rule.getMeasures();
-			for (Map.Entry<String, String> entry : measures.entrySet()) {
-				String measureName = entry.getKey();
-				String valueStr = entry.getValue();
-				try {
-					double value = Double.parseDouble(valueStr);
-					List<Double> valuesList = measureValuesMap.get(measureName);
-					if (valuesList != null) {
-						valuesList.add(value);
-					}
-				} catch (NumberFormatException e) {
-					// Skip non-numeric values
-				}
-			}
-		}
+	protected int getPatternSize(Rule rule) {
+		return rule.getAntecedent().size() + rule.getConsequent().size();
 	}
 
-	/**
-	 * Returns the sizes of all currently visible rules (across ALL pages, not just
-	 * the current page). The size of a rule is the total number of items in the
-	 * antecedent plus the consequent.
-	 *
-	 * @return a list of integers representing visible rule sizes
-	 */
 	@Override
-	public List<Integer> getVisiblePatternSizes() {
-		List<Integer> sizes = new ArrayList<>();
-		List<Integer> visible = resolveVisibleIndices();
-		for (int idx : visible) {
-			Rule rule = allPanels.get(idx).getRule();
-			int size = rule.getAntecedent().size() + rule.getConsequent().size();
-			sizes.add(size);
-		}
-		return sizes;
+	protected String getPatternTypeName() {
+		return "rules";
 	}
 }

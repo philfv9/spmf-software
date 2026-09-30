@@ -31,7 +31,7 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.cost.SequentialPatterns;
  * @author Jiaxuan Li
  *
  */
-class MainTestCEPN {
+public class MainTestCEPN {
 
 	public static void main(String[] args) throws IOException {
 		// the input file

@@ -882,6 +882,10 @@ public class AlgoTKE {
 	public void writeResultTofile(String path) throws IOException {
 		// Prepare the file
 		BufferedWriter writer = new BufferedWriter(new FileWriter(path));
+		writer.write("@FILETYPE=\"Top-k frequent episodes\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		if (kEpisodes.size() > 0) {
 			// sort the patterns in sorted order before printing them

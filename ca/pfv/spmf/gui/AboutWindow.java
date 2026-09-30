@@ -1,7 +1,7 @@
 package ca.pfv.spmf.gui;
 
 /*
- * Copyright (c) 2008-2022 Philippe Fournier-Viger
+ * Copyright (c) 2008-2026 Philippe Fournier-Viger
  *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
@@ -17,189 +17,306 @@ package ca.pfv.spmf.gui;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
- *
- * Do not remove copyright or license information.
+ * 
+ * Do not remove copyright and license
  */
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Insets;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.Window;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.KeyEvent;
+import java.net.URL;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
+import javax.swing.Timer;
+import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.HyperlinkEvent;
 
 import ca.pfv.spmf.algorithmmanager.AlgorithmManager;
 
 /**
- * This class is a modal dialog that provides general information about the
- * SPMF software: version number, algorithm count, tool count, license
- * information, and links to the website, documentation, and contributors page.
+ * Modal "About" dialog: logo, version, algorithm/tool counts, license and
+ * project information, system information (for bug reports) and links to the
+ * website, documentation and contributors page.
  *
  * @author Philippe Fournier-Viger
  */
 public class AboutWindow extends JDialog {
 
-    /** Default serial UID */
     private static final long serialVersionUID = 6173164103462475327L;
 
-    /** URL of the SPMF documentation page */
-    private static final String URL_DOCUMENTATION =
-            "http://philippe-fournier-viger.com/spmf/index.php?link=documentation.php";
-
-    /** URL of the SPMF contributors page */
-    private static final String URL_CONTRIBUTORS =
-            "http://philippe-fournier-viger.com/spmf/index.php?link=contributors.php";
-
-    /** URL of the SPMF website */
     private static final String URL_WEBSITE =
             "http://www.philippe-fournier-viger.com/spmf/";
+    private static final String URL_DOCUMENTATION =
+            "http://philippe-fournier-viger.com/spmf/index.php?link=documentation.php";
+    private static final String URL_CONTRIBUTORS =
+            "http://philippe-fournier-viger.com/spmf/index.php?link=contributors.php";
+    private static final String URL_LICENSE = "http://www.gnu.org/licenses/";
 
-    /** Background colour used for the information text area */
-    private static final Color COLOR_INFO_BACKGROUND = Color.WHITE;
+    /** Width of the wrapped description text, in pixels. */
+    private static final int TEXT_WIDTH = 440;
 
-    /** Border colour used for the information text area wrapper */
-    private static final Color COLOR_INFO_BORDER = new Color(200, 200, 200);
+    private static final Color CARD_BG        = Color.WHITE;
+    private static final Color CARD_BORDER    = new Color(214, 220, 226);
+    private static final Color TEXT_PRIMARY   = new Color(44, 62, 80);
+    private static final Color TEXT_SECONDARY = new Color(118, 124, 132);
+
+    private final Font fontBase;
+    private final Font fontSmall;
+    private final Font fontSmallBold;
 
     /**
-     * Constructor. Builds and displays the About dialog.
+     * Builds the About dialog (call {@code setVisible(true)} to show it).
      *
-     * @param window the parent frame used for dialog positioning
-     * @throws Exception if the AlgorithmManager cannot be initialised
+     * @param owner the parent window used for positioning (may be null)
+     * @throws Exception kept for compatibility; failures to count algorithms
+     *                   are handled internally
      */
-    public AboutWindow(JFrame window) throws Exception {
-        super(window);
-
-        setIconImage(Toolkit.getDefaultToolkit().getImage(
-                AboutWindow.class.getResource("/ca/pfv/spmf/gui/icons/About24.gif")));
+    public AboutWindow(Window owner) throws Exception {
+        super(owner, "About SPMF", ModalityType.APPLICATION_MODAL);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
-        setTitle("About SPMF " + Main.SPMF_VERSION);
 
-        // Use APPLICATION_MODAL so the parent frame is blocked while this dialog
-        // is open. Do not also call setModalExclusionType — it would contradict
-        // the modal setting and is unnecessary.
-        setModalityType(ModalityType.APPLICATION_MODAL);
+        URL iconUrl = AboutWindow.class.getResource("/ca/pfv/spmf/gui/icons/About24.gif");
+        if (iconUrl != null) {
+            setIconImage(new ImageIcon(iconUrl).getImage());
+        }
 
-        // ----- Root panel with padding ----
-        JPanel root = new JPanel(new BorderLayout(10, 10));
-        root.setBorder(new EmptyBorder(12, 12, 12, 12));
+        Font base = UIManager.getFont("Label.font");
+        if (base == null) {
+            base = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+        }
+        fontBase      = base.deriveFont(Font.PLAIN, base.getSize2D() + 0.5f);
+        fontSmall     = base.deriveFont(Font.PLAIN, base.getSize2D() - 1f);
+        fontSmallBold = fontSmall.deriveFont(Font.BOLD);
+
+        JPanel root = new JPanel(new BorderLayout(0, 12));
+        root.setBorder(new EmptyBorder(16, 20, 14, 20));
+        root.add(buildHeader(), BorderLayout.NORTH);
+        root.add(buildBody(), BorderLayout.CENTER);
+        root.add(buildButtons(), BorderLayout.SOUTH);
         setContentPane(root);
 
-        // ----- Logo ----
-        JLabel logoLabel = new JLabel(new ImageIcon(
-                AboutWindow.class.getResource("/ca/pfv/spmf/gui/spmf.png")));
-        logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        logoLabel.setBorder(new EmptyBorder(0, 0, 6, 0));
-        root.add(logoLabel, BorderLayout.NORTH);
+        getRootPane().registerKeyboardAction(e -> dispose(),
+                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+                JComponent.WHEN_IN_FOCUSED_WINDOW);
 
-        // ----- Info text ----
-        // Count algorithms and tools from the AlgorithmManager
-        int algorithmCount = AlgorithmManager.getInstance()
-                .getListOfAlgorithmsAsString(false, false, false, true, false).size();
-        int toolCount = AlgorithmManager.getInstance()
-                .getListOfAlgorithmsAsString(true, true, true, false, false).size();
-
-        // Build the HTML body text. Using HTML inside a JEditorPane gives us
-        // word-wrap, correct background colour, and the system UI font without
-        // the monospaced look of a plain JTextArea.
-        String bodyHtml = "<html><body style='font-family: Dialog; font-size: 11pt; width: 420px;'>"
-                + "<p>Thanks for using <b>SPMF version " + Main.SPMF_VERSION + "</b>. "
-                + "This version has <b>" + algorithmCount + " algorithms</b> and "
-                + "<b>" + toolCount + " tools</b>.</p>"
-                + "<p>SPMF is distributed under the open-source <b>GNU GPL license version 3</b>.<br>"
-                + "This license is available at: "
-                + "<a href='http://www.gnu.org/licenses/'>http://www.gnu.org/licenses/</a>.</p>"
-                + "<p>SPMF was founded in <b>2008</b> by <b>Philippe Fournier-Viger</b> and many "
-                + "persons have contributed to the project.</p>"
-                + "<p>Click the buttons below for more information.</p>"
-                + "</body></html>";
-
-        // JEditorPane with text/html renders HTML, respects system font, word-wraps.
-        // White background is set explicitly to match the original readable appearance.
-        JEditorPane infoPane = new JEditorPane("text/html", bodyHtml);
-        infoPane.setEditable(false);
-        infoPane.setOpaque(true);
-        infoPane.setBackground(COLOR_INFO_BACKGROUND);
-        infoPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-
-        // Wrap the pane in a white panel with a subtle light-gray border so the
-        // white area is cleanly separated from the dialog's gray background
-        JPanel infoWrapper = new JPanel(new BorderLayout());
-        infoWrapper.setBackground(COLOR_INFO_BACKGROUND);
-        infoWrapper.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(COLOR_INFO_BORDER, 1),
-                new EmptyBorder(6, 8, 6, 8)));
-        infoWrapper.add(infoPane, BorderLayout.CENTER);
-        root.add(infoWrapper, BorderLayout.CENTER);
-
-        // ----- Buttons ----
-        JButton btnDocumentation = new JButton("Documentation");
-        btnDocumentation.setToolTipText("Open the SPMF documentation page in your browser");
-        btnDocumentation.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                openWebPage(URL_DOCUMENTATION);
-            }
-        });
-
-        JButton btnContributors = new JButton("Contributors");
-        btnContributors.setToolTipText("Open the SPMF contributors page in your browser");
-        btnContributors.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                openWebPage(URL_CONTRIBUTORS);
-            }
-        });
-
-        JButton btnWebsite = new JButton("Website");
-        btnWebsite.setToolTipText("Open the SPMF website in your browser");
-        btnWebsite.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                openWebPage(URL_WEBSITE);
-            }
-        });
-
-        // Close button so the user has an explicit way to dismiss the dialog
-        JButton btnClose = new JButton("Close");
-        btnClose.setToolTipText("Close this window");
-        btnClose.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-            }
-        });
-
-        // Button panel — centred row with all four buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
-        buttonPanel.setBorder(new EmptyBorder(6, 0, 0, 0));
-        buttonPanel.add(btnDocumentation);
-        buttonPanel.add(btnContributors);
-        buttonPanel.add(btnWebsite);
-        buttonPanel.add(btnClose);
-        root.add(buttonPanel, BorderLayout.SOUTH);
-
-        // Let pack() compute the natural size from content rather than hardcoding
         pack();
-        setLocationRelativeTo(window);
+        setLocationRelativeTo(owner);
     }
 
-    /**
-     * Opens the given URL in the system default web browser.
-     *
-     * @param url the URL to open
-     */
-    private void openWebPage(String url) {
-        try {
-            java.awt.Desktop.getDesktop().browse(java.net.URI.create(url));
-        } catch (java.io.IOException e) {
-            System.out.println(e.getMessage());
+    // -------------------------------------------------------------------------
+    // Sections
+    // -------------------------------------------------------------------------
+
+    private JComponent buildHeader() {
+        JPanel header = new JPanel();
+        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
+        header.setOpaque(false);
+
+        URL logoUrl = AboutWindow.class.getResource("/ca/pfv/spmf/gui/spmf.png");
+        JLabel logo = (logoUrl != null) ? new JLabel(new ImageIcon(logoUrl)) : new JLabel("SPMF");
+        if (logoUrl == null) {
+            logo.setFont(fontBase.deriveFont(Font.BOLD, 40f));
+            logo.setForeground(new Color(41, 128, 185));
         }
+        logo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        header.add(logo);
+        header.add(Box.createVerticalStrut(6));
+
+        int[] counts = countAlgorithmsAndTools();
+        JLabel version = new JLabel("Version " + Main.SPMF_VERSION
+                + "  \u00B7  " + fmt(counts[0]) + " algorithms"
+                + "  \u00B7  " + fmt(counts[1]) + " tools");
+        version.setFont(fontSmall);
+        version.setForeground(TEXT_SECONDARY);
+        version.setAlignmentX(Component.CENTER_ALIGNMENT);
+        header.add(version);
+        return header;
+    }
+
+    private JComponent buildBody() {
+        JPanel body = new JPanel(new BorderLayout(0, 10));
+        body.setOpaque(false);
+        body.add(buildDescriptionCard(), BorderLayout.CENTER);
+        body.add(buildSystemCard(), BorderLayout.SOUTH);
+        return body;
+    }
+
+    private JComponent buildDescriptionCard() {
+        String html = "<html><body style='margin:0'>"
+                + "<p style='margin-top:0'>Thank you for using <b>SPMF</b>, an open-source "
+                + "data mining library specialized in pattern mining.</p>"
+                + "<p>SPMF was founded in 2008 by <b>Philippe Fournier-Viger</b>. Many people "
+                + "have contributed to the project since then &mdash; see the "
+                + "<a href='" + URL_CONTRIBUTORS + "'>contributors page</a>.</p>"
+                + "<p>SPMF is distributed under the <b>GNU General Public License, version 3</b>. "
+                + "The license text is available at "
+                + "<a href='" + URL_LICENSE + "'>www.gnu.org/licenses</a>.</p>"
+                + "<p style='margin-bottom:0'>If you use SPMF in your research, please cite it. "
+                + "Citation details are given on the <a href='" + URL_WEBSITE + "'>website</a>.</p>"
+                + "</body></html>";
+
+        JEditorPane pane = new JEditorPane();
+        pane.setContentType("text/html");
+        pane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        pane.setFont(fontBase);
+        pane.setForeground(TEXT_PRIMARY);
+        pane.setText(html);
+        pane.setEditable(false);
+        pane.setOpaque(false);
+        pane.setBorder(null);
+        pane.setFocusable(false);
+        pane.addHyperlinkListener(e -> {
+            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                BrowserUtil.open(this, e.getURL() != null ? e.getURL().toString() : e.getDescription());
+            }
+        });
+        // Give the HTML view a width so it can compute its wrapped height
+        pane.setSize(new Dimension(TEXT_WIDTH, Short.MAX_VALUE));
+        pane.setPreferredSize(new Dimension(TEXT_WIDTH, pane.getPreferredSize().height));
+
+        return card(pane);
+    }
+
+    private JComponent buildSystemCard() {
+        JLabel title = new JLabel("System");
+        title.setFont(fontSmallBold);
+        title.setForeground(TEXT_SECONDARY);
+
+        String info = systemInfo();
+
+        JButton copy = new JButton("Copy");
+        copy.setFont(fontSmall);
+        copy.setMargin(new Insets(1, 8, 1, 8));
+        copy.setFocusPainted(false);
+        copy.setToolTipText("Copy this information to the clipboard (useful when reporting a bug)");
+        copy.addActionListener(e -> {
+            Toolkit.getDefaultToolkit().getSystemClipboard()
+                    .setContents(new StringSelection(info), null);
+            copy.setText("Copied");
+            copy.setEnabled(false);
+            Timer t = new Timer(1500, ev -> {
+                copy.setText("Copy");
+                copy.setEnabled(true);
+            });
+            t.setRepeats(false);
+            t.start();
+        });
+
+        JPanel top = new JPanel(new BorderLayout());
+        top.setOpaque(false);
+        top.add(title, BorderLayout.WEST);
+        top.add(copy, BorderLayout.EAST);
+
+        JTextArea area = new JTextArea(info);
+        area.setEditable(false);
+        area.setOpaque(false);
+        area.setBorder(null);
+        area.setFocusable(false);
+        area.setFont(fontSmall);
+        area.setForeground(TEXT_PRIMARY);
+
+        JPanel content = new JPanel(new BorderLayout(0, 4));
+        content.setOpaque(false);
+        content.add(top, BorderLayout.NORTH);
+        content.add(area, BorderLayout.CENTER);
+        return card(content);
+    }
+
+    private JComponent buildButtons() {
+        JButton website = new JButton("Website");
+        website.setToolTipText("Open the SPMF website in your browser");
+        website.addActionListener(e -> BrowserUtil.open(this, URL_WEBSITE));
+
+        JButton docs = new JButton("Documentation");
+        docs.setToolTipText("Open the SPMF documentation in your browser");
+        docs.addActionListener(e -> BrowserUtil.open(this, URL_DOCUMENTATION));
+
+        JButton contributors = new JButton("Contributors");
+        contributors.setToolTipText("Open the list of contributors in your browser");
+        contributors.addActionListener(e -> BrowserUtil.open(this, URL_CONTRIBUTORS));
+
+        JButton close = new JButton("Close");
+        close.addActionListener(e -> dispose());
+        getRootPane().setDefaultButton(close);
+
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        left.setOpaque(false);
+        left.add(website);
+        left.add(docs);
+        left.add(contributors);
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        right.setOpaque(false);
+        right.add(close);
+
+        JPanel bar = new JPanel(new BorderLayout());
+        bar.setOpaque(false);
+        bar.setBorder(new EmptyBorder(2, 0, 0, 0));
+        bar.add(left, BorderLayout.WEST);
+        bar.add(right, BorderLayout.EAST);
+        return bar;
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    private static JPanel card(JComponent content) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(CARD_BG);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(CARD_BORDER, 1),
+                new EmptyBorder(12, 14, 12, 14)));
+        card.add(content, BorderLayout.CENTER);
+        return card;
+    }
+
+    /** Returns {algorithmCount, toolCount}; -1 for a value that could not be determined. */
+    private static int[] countAlgorithmsAndTools() {
+        int algorithms = -1;
+        int tools = -1;
+        try {
+            AlgorithmManager am = AlgorithmManager.getInstance();
+            algorithms = am.getListOfAlgorithmsAsString(false, false, false, true, false).size();
+            tools      = am.getListOfAlgorithmsAsString(true, true, true, false, false).size();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new int[] {algorithms, tools};
+    }
+
+    private static String fmt(int count) {
+        return count < 0 ? "?" : Integer.toString(count);
+    }
+
+    private static String systemInfo() {
+        String nl = System.lineSeparator();
+        return "SPMF " + Main.SPMF_VERSION + nl
+                + "Java " + System.getProperty("java.version")
+                + " (" + System.getProperty("java.vendor") + ")" + nl
+                + System.getProperty("os.name") + " " + System.getProperty("os.version")
+                + " (" + System.getProperty("os.arch") + ")" + nl
+                + "Max heap: " + (Runtime.getRuntime().maxMemory() >> 20) + " MB";
     }
 }

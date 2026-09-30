@@ -90,6 +90,10 @@ public class AlgoCharmMFI {
 			writer = null;
 	    }else{ // if the user wants to save the result to a file
 			writer = new BufferedWriter(new FileWriter(output)); 
+			writer.write("@FILETYPE=\"Frequent maximal itemsets\"");
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 		}
 
 		// Initialize the structure to store maximal itemsets
@@ -132,7 +136,7 @@ public class AlgoCharmMFI {
 				for(int i=0; i < level.size(); i++){
 					Itemset itemset = level.get(i);
 					// save the itemset an its support
-					writer.write(itemset.toString() + " #SUP: "	+ itemset.getAbsoluteSupport());
+					writer.write(itemset.toString() + "#SUP: "	+ itemset.getAbsoluteSupport());
 					if(showTransactionIdentifiers) {
 						BitSet bitset = itemset.getTransactionsIds();
 			        	writer.append(" #TID:");

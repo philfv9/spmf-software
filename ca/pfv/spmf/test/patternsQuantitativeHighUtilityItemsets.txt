@@ -1,0 +1,15 @@
+@FILETYPE="Quantitative high utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+(4,4,6) #UTIL: 1455
+(4,5,6) #UTIL: 1067
+(3,9) (2,8) #UTIL: 1542
+(3,9) (4,6) #UTIL: 1428
+(3,9) (1,7) #UTIL: 1140
+(3,9) (2,8) (4,6) #UTIL: 2124
+(3,9) (2,8) (1,7) #UTIL: 1836
+(3,9) (2,8) (4,6) (1,7) #UTIL: 2418
+(3,9) (4,6) (1,7) #UTIL: 1722
+(2,8) (4,6) #UTIL: 1278
+(2,8) (4,6) (1,7) #UTIL: 1572
+(4,4,6) (1,7) #UTIL: 1558
+(2,6) (4,4) (1,7) #UTIL: 1204

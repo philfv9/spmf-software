@@ -190,6 +190,11 @@ public class AlgoMERIT {
 
         startTimestamp = System.currentTimeMillis();
         writer         = new BufferedWriter(new FileWriter(output));
+        writer.write("@FILETYPE=\"Erasable itemsets\"");
+		writer.append(System.lineSeparator());
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.append(System.lineSeparator());
+		
         erasableCount  = 0;
         totalProfit    = 0;
         preCounter     = 0;

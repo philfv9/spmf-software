@@ -32,7 +32,8 @@ import ca.pfv.spmf.tools.MemoryLogger;
  */
 
 /**
- * This class is the TKU algorithm. This algorithm is described in this paper:<br/>
+ * This class is the TKU algorithm. This algorithm is described in this
+ * paper:<br/>
  * <br/>
  * 
  * Tseng, V., Wu, C., Fournier-Viger, P., Yu, P. S. (2016). Efficient Algorithms
@@ -83,13 +84,10 @@ public class AlgoTKU {
 	/**
 	 * Run the algorithm
 	 * 
-	 * @param inputFile
-	 *            an input file path
-	 * @param outputFile
-	 *            an output file path
+	 * @param inputFile  an input file path
+	 * @param outputFile an output file path
 	 */
-	public void runAlgorithm(String inputFile, String outputFile, int k)
-			throws IOException {
+	public void runAlgorithm(String inputFile, String outputFile, int k) throws IOException {
 
 		MemoryLogger.getInstance().reset();
 		totalTime = System.currentTimeMillis();
@@ -110,6 +108,9 @@ public class AlgoTKU {
 		theCandidateFile = "topKcandidate.txt";
 		itemCount = tool.getMaxID() + 1;
 
+//		System.out.println("MAX ID = " + tool.getMaxID());
+//		System.out.println("ITEM COUNT = " + itemCount);
+
 		arrayTWUItems = new int[itemCount];
 		arrayMIU = new int[itemCount];
 		arrayMAU = new int[itemCount];
@@ -118,12 +119,13 @@ public class AlgoTKU {
 
 		FileWriter fw_CI = new FileWriter(theCandidateFile);
 		BufferedWriter bfw_CI = new BufferedWriter(fw_CI);
+		
 
 		// Generate P1 & perform Pre_Evaluation
 		// Generate 1-Potential HUIs
 
-		globalMinUtil = preEvaluation(theInputFile, arrayTWUItems, itemCount,
-				arrayMIU, arrayMAU, globalMinUtil, kValue);
+		globalMinUtil = preEvaluation(theInputFile, arrayTWUItems, itemCount, arrayMIU, arrayMAU, globalMinUtil,
+				kValue);
 
 		// System.out.println("(1) gMin_Util:"+gMin_Util);
 
@@ -133,7 +135,7 @@ public class AlgoTKU {
 		// Calculate how many nodes in the UP-Tree
 		tree.traverse_tree(tree.root, 0);
 
-		// System.out.println("    #Nodes:"+gNum_Node);
+		// System.out.println(" #Nodes:"+gNum_Node);
 		// System.out.println("(2) gMin_Uti:"+gMin_Util);
 
 		// Sum_Descendents
@@ -153,8 +155,8 @@ public class AlgoTKU {
 
 					UpdateNodeCountHeap(DSNodeCountHeap, DS_Value);
 				}
-			}// End for-j
-		}// End for-i
+			} // End for-j
+		} // End for-i
 
 		// System.out.println("DSNodeCountHeap.size():"+DSNodeCountHeap.size());
 
@@ -175,8 +177,7 @@ public class AlgoTKU {
 		// Mining Phase
 		String prefix = "";
 
-		tree.UPGrowth(tree, ulist, prefix, bfw_CI, ISNodeCountHeap,
-				arrayTWUItems);
+		tree.UPGrowth(tree, ulist, prefix, bfw_CI, ISNodeCountHeap, arrayTWUItems);
 
 		// System.out.println("ISNodeCountHeap.size():"+ISNodeCountHeap.size());
 
@@ -206,8 +207,8 @@ public class AlgoTKU {
 		// ================================== PHASE 3
 
 		AlgoPhase2OfTKU algoPhase2 = new AlgoPhase2OfTKU();
-		algoPhase2.runAlgorithm((int)globalMinUtil, tool.getDBSize(), k,
-				inputFile, sortedTopKcandidateFile, outputFile);
+		algoPhase2.runAlgorithm((int) globalMinUtil, tool.getDBSize(), k, inputFile, sortedTopKcandidateFile,
+				outputFile);
 
 		patternCount = algoPhase2.getNumberOfTopKHUIs();
 
@@ -215,20 +216,19 @@ public class AlgoTKU {
 
 		// =================================== STATISTICS
 		totalTime = (System.currentTimeMillis() - totalTime) / 1000.0;
-		
+
 //		System.out.println(globalMinUtil);
 
 	}// End main()
-	
+
 	/**
 	 * Run the algorithm
-	 * @param theCandidateFile a file path to a candidate file
+	 * 
+	 * @param theCandidateFile        a file path to a candidate file
 	 * @param sortedTopKcandidateFile a path to a sorted candidate file
 	 * @throws IOException if error occur while reading/writing to file
 	 */
-	void runSortHUIAlgorithm(String theCandidateFile, String sortedTopKcandidateFile)
-			throws IOException {
-
+	void runSortHUIAlgorithm(String theCandidateFile, String sortedTopKcandidateFile) throws IOException {
 
 		// Record the start time
 		double StartTime = System.currentTimeMillis();
@@ -248,6 +248,13 @@ public class AlgoTKU {
 		String record = "";
 		int numHUIs = 0;
 		while ((record = bfr.readLine()) != null) {
+			// Skip comments and metadata
+
+			if (record.isEmpty() || record.charAt(0) == '#' || record.charAt(0) == '%' || record.charAt(0) == '@') {
+				continue;
+
+			}
+
 			String temp[] = record.split(":");
 
 			Heap.add(new StringPair(temp[0], Integer.parseInt(temp[1])));
@@ -260,6 +267,10 @@ public class AlgoTKU {
 
 		FileWriter fw1 = new FileWriter(TopK_HUI);
 		BufferedWriter bfw1 = new BufferedWriter(fw1);
+//		bfw1.write("@FILETYPE=\"Top-k High-utility itemsets\"");
+//		bfw1.newLine();
+//		bfw1.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+//		bfw1.newLine();
 
 		int nElements = Heap.size();
 		for (int i = 0; i < nElements; i++) {
@@ -282,17 +293,13 @@ public class AlgoTKU {
 	public void printStats() {
 		System.out.println("=============  TKU - v.2.26  =============");
 		System.out.println(" Total execution time : " + totalTime + " s");
-		System.out.println(" Number of top-k high utility patterns : "
-				+ patternCount);
-		System.out.println(" Max memory usage : "
-				+ MemoryLogger.getInstance().getMaxMemory() + " MB");
-		System.out
-				.println("===================================================");
+		System.out.println(" Number of top-k high utility patterns : " + patternCount);
+		System.out.println(" Max memory usage : " + MemoryLogger.getInstance().getMaxMemory() + " MB");
+		System.out.println("===================================================");
 	}
 
-	public double preEvaluation(String HDB, int[] TWU1, int num_Item,
-			int[] MinBNF, int[] MaxBNF, double mini_utility, int pK)
-			throws IOException {
+	public double preEvaluation(String HDB, int[] TWU1, int num_Item, int[] MinBNF, int[] MaxBNF, double mini_utility,
+			int pK) throws IOException {
 		// System.out.println(gNum_Item);
 		// System.out.println(num_Item);
 
@@ -305,6 +312,11 @@ public class AlgoTKU {
 		String transaction = "";
 
 		while ((transaction = bfr.readLine()) != null) {
+			// Skip comments and metadata
+			if (transaction.isEmpty() || transaction.charAt(0) == '#' || transaction.charAt(0) == '%'
+					|| transaction.charAt(0) == '@') {
+				continue;
+			}
 
 			// System.out.println("Transaction:#"+num_Trans);
 
@@ -325,20 +337,15 @@ public class AlgoTKU {
 				// Find mius of items
 				if (MinBNF[Integer.parseInt(temp2[s])] == 0) {
 					if (Integer.parseInt(temp3[s]) > 0) {
-						MinBNF[Integer.parseInt(temp2[s])] = Integer
-								.parseInt(temp3[s]);
+						MinBNF[Integer.parseInt(temp2[s])] = Integer.parseInt(temp3[s]);
 					}
-				} else if (MinBNF[Integer.parseInt(temp2[s])] > (Integer
-						.parseInt(temp3[s]))) {
-					MinBNF[Integer.parseInt(temp2[s])] = Integer
-							.parseInt(temp3[s]);
+				} else if (MinBNF[Integer.parseInt(temp2[s])] > (Integer.parseInt(temp3[s]))) {
+					MinBNF[Integer.parseInt(temp2[s])] = Integer.parseInt(temp3[s]);
 				}
 
 				// Find maus of items
-				if (MaxBNF[Integer.parseInt(temp2[s])] < (Integer
-						.parseInt(temp3[s]))) {
-					MaxBNF[Integer.parseInt(temp2[s])] = Integer
-							.parseInt(temp3[s]);
+				if (MaxBNF[Integer.parseInt(temp2[s])] < (Integer.parseInt(temp3[s]))) {
+					MaxBNF[Integer.parseInt(temp2[s])] = Integer.parseInt(temp3[s]);
 				}
 
 				// System.out.println("OKOK");
@@ -348,18 +355,16 @@ public class AlgoTKU {
 				if (s > 0) {
 					// System.out.println(a.toString());
 
-					// System.out.println(temp2[0]+" "+temp2[s]+":"+(Integer.parseInt(temp3[0])+Integer.parseInt(temp3[s])));
+					// System.out.println(temp2[0]+"
+					// "+temp2[s]+":"+(Integer.parseInt(temp3[0])+Integer.parseInt(temp3[s])));
 
-					a.incrementCount(
-							Integer.parseInt(temp2[0]),
-							Integer.parseInt(temp2[s]),
-							Integer.parseInt(temp3[0])
-									+ Integer.parseInt(temp3[s]));
+					a.incrementCount(Integer.parseInt(temp2[0]), Integer.parseInt(temp2[s]),
+							Integer.parseInt(temp3[0]) + Integer.parseInt(temp3[s]));
 				}
 
-			}// End for
+			} // End for
 
-		}// End while
+		} // End while
 
 		fr.close();
 		bfr.close();
@@ -432,12 +437,12 @@ public class AlgoTKU {
 							// topKList.dequeueMin();
 							// System.out.println("Raise threshold:"+TopKList.min().mPriority);
 						}
-					}// End if-else
+					} // End if-else
 				}
-			}// End for-j
-		}// End for-i
+			} // End for-j
+		} // End for-i
 			// System.out.println("Initial utility is:"+topKList.peek().priority);
-		// System.out.println("count:"+count);
+			// System.out.println("count:"+count);
 
 		return topKList.peek().priority;
 
@@ -484,8 +489,8 @@ public class AlgoTKU {
 					// System.out.println(list.size());
 					// System.out.println(list);
 				}
-			}// if(TWU1[i]>0)
-		}// End for
+			} // if(TWU1[i]>0)
+		} // End for
 
 		// System.out.println(flist);
 		// System.out.println(list.size());
@@ -499,8 +504,7 @@ public class AlgoTKU {
 				if (Order[target] > Order[list.get(i)]) {
 					list.add(i, target);
 					return 0;
-				} else if ((Order[target] == Order[list.get(i)])
-						&& (target < list.get(i))) {
+				} else if ((Order[target] == Order[list.get(i)]) && (target < list.get(i))) {
 					list.add(i, target);
 					return 0;
 				} else if (i == (list.size() - 1)) {
@@ -509,7 +513,7 @@ public class AlgoTKU {
 				}
 			}
 
-		}// End if-else
+		} // End if-else
 
 		return -1; // if error return -1
 	}// End InsertItem
@@ -529,13 +533,12 @@ public class AlgoTKU {
 						tran[j] = tran[j + 1];
 						tran[j + 1] = temp;
 					}
-				}// End if-else
-			}// End for-j
-		}// End for-i
+				} // End if-else
+			} // End for-j
+		} // End for-i
 	}// End sorttrans
 
-	public void sorttrans2(int tran[], String bran[], int pre, int tranlen,
-			int P1[]) {
+	public void sorttrans2(int tran[], String bran[], int pre, int tranlen, int P1[]) {
 		int temp1;
 		String temp2;
 
@@ -561,9 +564,9 @@ public class AlgoTKU {
 						tran[j + 1] = temp1;
 						bran[j + 1] = temp2;
 					}
-				}// End if-else
-			}// End for-j
-		}// End for-i
+				} // End if-else
+			} // End for-j
+		} // End for-i
 	}// End sorttrans
 
 	public void UpdateNodeCountHeap(RedBlackTree<Integer> NCH, int NewValue) {
@@ -574,7 +577,7 @@ public class AlgoTKU {
 				NCH.add(NewValue);
 				NCH.popMinimum();
 			}
-		}// End if-else
+		} // End if-else
 
 		if ((NCH.minimum() > globalMinUtil) && (NCH.size() >= kValue)) {
 			globalMinUtil = NCH.minimum();
@@ -601,11 +604,16 @@ public class AlgoTKU {
 		FileReader fr = new FileReader(HDB);
 		BufferedReader bfr = new BufferedReader(fr);
 
-		String transaction;
-		while ((transaction = bfr.readLine()) != null) {
+		String record;
+		while ((record = bfr.readLine()) != null) {
+			if (record.isEmpty() || record.charAt(0) == '#' || record.charAt(0) == '%' || record.charAt(0) == '@') {
+
+				continue;
+
+			}
 			// System.out.println(gMin_Util);
 
-			String temp1[] = transaction.split(":");
+			String temp1[] = record.split(":");
 
 			String temp2[] = temp1[0].split(" ");
 			String bran[] = temp1[2].split(" ");
@@ -627,7 +635,7 @@ public class AlgoTKU {
 																		// to
 																		// tree
 
-		}// End for
+		} // End for
 
 		fr.close();
 		bfr.close();
@@ -677,13 +685,12 @@ public class AlgoTKU {
 
 				this.HeaderTable[i] = null;
 
-			}// End for
+			} // End for
 
 		}// End constructor of FPtree
 
 		// Insert transaction to FPtree
-		public void insPatternBase(int tran[], int tranlen, int L1[], int TWU,
-				int IC, int SumBNF) // For Local Tree
+		public void insPatternBase(int tran[], int tranlen, int L1[], int TWU, int IC, int SumBNF) // For Local Tree
 		{
 			treenode par = root;
 
@@ -740,8 +747,7 @@ public class AlgoTKU {
 
 							par = nNode;
 							break;
-						} else if (((L1[target] == L1[comp.item]))
-								&& ((target < comp.item))) {
+						} else if (((L1[target] == L1[comp.item])) && ((target < comp.item))) {
 
 							int M = TWU - (SumBNF - arrayMIU[target] * IC);
 							SumBNF = SumBNF - (arrayMIU[target] * IC);
@@ -778,14 +784,13 @@ public class AlgoTKU {
 
 							par = nNode;
 
-						}// End if-else
-					}// End for-j
-				}// End if-else
-			}// End for-i
+						} // End if-else
+					} // End for-j
+				} // End if-else
+			} // End for-i
 		}// End instrans
 
-		public void instrans2(int tran[], String bran[], int tranlen, int L1[],
-				int IC) // For Global Tree
+		public void instrans2(int tran[], String bran[], int tranlen, int L1[], int IC) // For Global Tree
 		{
 			int TWU = 0;
 
@@ -838,8 +843,7 @@ public class AlgoTKU {
 
 							par = nNode;
 							break;
-						} else if (((L1[target] == L1[comp.item]))
-								&& ((target < comp.item))) {
+						} else if (((L1[target] == L1[comp.item])) && ((target < comp.item))) {
 							treenode nNode = new treenode(target, TWU, IC);
 							par.childlink.add(j, nNode);
 
@@ -870,14 +874,14 @@ public class AlgoTKU {
 
 							par = nNode;
 
-						}// End if-else
-					}// End for-j
-				}// End if-else
-			}// End for-i
+						} // End if-else
+					} // End for-j
+				} // End if-else
+			} // End for-i
 		}// End instrans
 
-		public void instrans3(int tran[], String bran[], int tranlen, int L1[],
-				int IC, RedBlackTree<Integer> NodeCountHeap) // For Global Tree
+		public void instrans3(int tran[], String bran[], int tranlen, int L1[], int IC,
+				RedBlackTree<Integer> NodeCountHeap) // For Global Tree
 		{
 			int TWU = 0;
 
@@ -939,8 +943,7 @@ public class AlgoTKU {
 
 							par = nNode;
 							break;
-						} else if (((L1[target] == L1[comp.item]))
-								&& ((target < comp.item))) {
+						} else if (((L1[target] == L1[comp.item])) && ((target < comp.item))) {
 							// new
 							if (comp.twu > globalMinUtil) {
 								UpdateNodeCountHeap(NodeCountHeap, TWU);
@@ -980,17 +983,15 @@ public class AlgoTKU {
 
 							par = nNode;
 
-						}// End if-else
-					}// End for-j
-				}// End if-else
-			}// End for-i
+						} // End if-else
+					} // End for-j
+				} // End if-else
+			} // End for-i
 		}// End instrans
 
 		// For Global
-		public void UPGrowth(FPtree tree2, ArrayList<Integer> flist2,
-				String prefix, BufferedWriter bfw_UCI,
-				RedBlackTree<Integer> ISNodeCountHeap, int LP1[])
-				throws IOException {
+		public void UPGrowth(FPtree tree2, ArrayList<Integer> flist2, String prefix, BufferedWriter bfw_UCI,
+				RedBlackTree<Integer> ISNodeCountHeap, int LP1[]) throws IOException {
 			// Buttom-up traversal of Header Table
 			for (int i = 0; i < flist2.size(); i++) {
 				if (LP1[flist2.get(i)] >= globalMinUtil) {
@@ -1040,13 +1041,11 @@ public class AlgoTKU {
 
 							path.add(cptr.item);
 
-							LocalF1[cptr.item] = LocalF1[cptr.item]
-									+ chlink.twu;
-							LocalCount[cptr.item] = LocalCount[cptr.item]
-									+ chlink.count;
+							LocalF1[cptr.item] = LocalF1[cptr.item] + chlink.twu;
+							LocalCount[cptr.item] = LocalCount[cptr.item] + chlink.count;
 							cptr = cptr.parentlink;
 
-						}// End while
+						} // End while
 
 						// Put path into Conditional pattern base
 
@@ -1059,13 +1058,12 @@ public class AlgoTKU {
 						// Turn to the next horizontal link
 						chlink = chlink.hlink;
 
-					}// End while
+					} // End while
 
 					// show conditional pattern base and count of path
 					/*
-					 * System.out.println("Print Conditional Pattern Base");
-					 * for(int h=0;h<CPB.size();h++) {
-					 * System.out.println(CPB.get(h)+":"+CPBC.get(h));
+					 * System.out.println("Print Conditional Pattern Base"); for(int
+					 * h=0;h<CPB.size();h++) { System.out.println(CPB.get(h)+":"+CPBC.get(h));
 					 * 
 					 * }
 					 * 
@@ -1083,8 +1081,7 @@ public class AlgoTKU {
 								InsertItem(localflist, j, LocalF1);
 
 								/*
-								 * String fprefix=""+citem; fprefix=
-								 * fprefix.concat(" "+j);
+								 * String fprefix=""+citem; fprefix= fprefix.concat(" "+j);
 								 * 
 								 * System.out.println(fprefix+":"+LocalF1[j]);
 								 */
@@ -1096,10 +1093,8 @@ public class AlgoTKU {
 								int SumMiu = 0;
 
 								for (int u = 0; u < TempItem.length; u++) {
-									SumMau += arrayMAU[Integer
-											.parseInt(TempItem[u])];
-									SumMiu += arrayMIU[Integer
-											.parseInt(TempItem[u])];
+									SumMau += arrayMAU[Integer.parseInt(TempItem[u])];
+									SumMiu += arrayMIU[Integer.parseInt(TempItem[u])];
 								}
 
 								int MAU = SumMau * LocalCount[j];
@@ -1112,8 +1107,7 @@ public class AlgoTKU {
 									// bfw_UCI.write(Nprefix +
 									// " "+j+","+LocalF1[j]+","+MIU);
 
-									bfw_UCI.write(Nprefix + " " + j + ":"
-											+ LocalF1[j]);
+									bfw_UCI.write(Nprefix + " " + j + ":" + LocalF1[j]);
 
 									bfw_UCI.newLine();
 
@@ -1129,22 +1123,21 @@ public class AlgoTKU {
 										// Nprefix +
 										// " "+j+","+LocalF1[j]+","+MIU);
 
-										UpdateNodeCountHeap(ISNodeCountHeap,
-												MIU);
+										UpdateNodeCountHeap(ISNodeCountHeap, MIU);
 
-									}// End if
-								}// End if
+									} // End if
+								} // End if
 
 								/*--*/// System.out.println(Nprefix +
-											// " "+j+":"+LocalF1[j]);
+										// " "+j+":"+LocalF1[j]);
 
 								// if(num_FI % 10000 ==0)
 								// System.out.println("num_CI:"+num_FI);
 
 							}
 
-						}// End if-else
-					}// End for-j
+						} // End if-else
+					} // End for-j
 						// local infrequent items are filtering
 
 					// insert current item (prefix) into the first order
@@ -1177,36 +1170,32 @@ public class AlgoTKU {
 							for (int h = 0; h < ltran.size(); h++) {
 								if (LocalF1[ltran.get(h)] >= globalMinUtil) {
 
-									Sum_MinBNF = Sum_MinBNF + CPBC.get(k)
-											* arrayMIU[ltran.get(h)];
+									Sum_MinBNF = Sum_MinBNF + CPBC.get(k) * arrayMIU[ltran.get(h)];
 
 									tran[tranlen++] = ltran.get(h);
 								} else {
 									int sum = CPBW.get(k);
-									sum = sum - CPBC.get(k)
-											* arrayMIU[ltran.get(h)];
+									sum = sum - CPBC.get(k) * arrayMIU[ltran.get(h)];
 
 									CPBW.set(k, sum);
-								}// End if-else
-							}// End for-h
+								} // End if-else
+							} // End for-h
 
 							sorttrans(tran, 0, tranlen, LocalF1);
 
 							/*
-							 * for(int h=0; h<tranlen; h++) {
-							 * System.out.print(tran[h]+" "); if(h==(tranlen-1))
-							 * System.out.println();
+							 * for(int h=0; h<tranlen; h++) { System.out.print(tran[h]+" ");
+							 * if(h==(tranlen-1)) System.out.println();
 							 * 
 							 * }//End for
 							 */
 
-							C_FPtree.insPatternBase(tran, tranlen, LocalF1,
-									CPBW.get(k), CPBC.get(k), Sum_MinBNF);
+							C_FPtree.insPatternBase(tran, tranlen, LocalF1, CPBW.get(k), CPBC.get(k), Sum_MinBNF);
 
 							// C_FPtree.insPatternBase(tran, tranlen, LocalF1,
 							// CPBW.get(k),CPBC.get(k),Sum_MinBNF);
 
-						}// End for-k
+						} // End for-k
 
 						// System.out.println("localflist for "+"{"+Nprefix+"}:"+localflist);
 
@@ -1214,11 +1203,10 @@ public class AlgoTKU {
 
 						// System.out.println();
 
-						C_FPtree.UPGrowth_MinBNF(C_FPtree, localflist, Nprefix,
-								bfw_UCI, ISNodeCountHeap, LocalF1);
+						C_FPtree.UPGrowth_MinBNF(C_FPtree, localflist, Nprefix, bfw_UCI, ISNodeCountHeap, LocalF1);
 					}
-				}// End if(LP1[flist2.get(i)] >= gMin_Util)
-			}// End for-i
+				} // End if(LP1[flist2.get(i)] >= gMin_Util)
+			} // End for-i
 
 			MemoryLogger.getInstance().checkMemory();
 
@@ -1228,10 +1216,8 @@ public class AlgoTKU {
 
 		// ************************************************************************************************//
 
-		public void UPGrowth_MinBNF(FPtree tree2, ArrayList<Integer> flist2,
-				String prefix, BufferedWriter bfw_UCI,
-				RedBlackTree<Integer> ISNodeCountHeap, int[] LP1)
-				throws IOException {
+		public void UPGrowth_MinBNF(FPtree tree2, ArrayList<Integer> flist2, String prefix, BufferedWriter bfw_UCI,
+				RedBlackTree<Integer> ISNodeCountHeap, int[] LP1) throws IOException {
 			for (int i = 0; i < flist2.size(); i++) {
 				if (LP1[flist2.get(i)] >= globalMinUtil) {
 
@@ -1280,14 +1266,12 @@ public class AlgoTKU {
 
 							path.add(cptr.item);
 
-							LocalF1[cptr.item] = LocalF1[cptr.item]
-									+ chlink.twu;
-							LocalCount[cptr.item] = LocalCount[cptr.item]
-									+ chlink.count;
+							LocalF1[cptr.item] = LocalF1[cptr.item] + chlink.twu;
+							LocalCount[cptr.item] = LocalCount[cptr.item] + chlink.count;
 
 							cptr = cptr.parentlink;
 
-						}// End while
+						} // End while
 
 						// Put path into Conditional pattern base
 
@@ -1300,12 +1284,11 @@ public class AlgoTKU {
 						// turn to next horizontal link
 						chlink = chlink.hlink;
 
-					}// End while
+					} // End while
 
 					/*
-					 * System.out.println("Print Conditional Pattern Base");
-					 * for(int h=0;h<CPB.size();h++) {
-					 * System.out.println(CPB.get(h)+":"+CPBC.get(h));
+					 * System.out.println("Print Conditional Pattern Base"); for(int
+					 * h=0;h<CPB.size();h++) { System.out.println(CPB.get(h)+":"+CPBC.get(h));
 					 * 
 					 * }
 					 * 
@@ -1322,8 +1305,7 @@ public class AlgoTKU {
 								InsertItem(localflist, j, LocalF1);
 
 								/*
-								 * String fprefix=""+citem; fprefix=
-								 * fprefix.concat(" "+j);
+								 * String fprefix=""+citem; fprefix= fprefix.concat(" "+j);
 								 * 
 								 * System.out.println(fprefix+":"+LocalF1[j]);
 								 */
@@ -1338,10 +1320,8 @@ public class AlgoTKU {
 								int SumMiu = 0;
 
 								for (int u = 0; u < TempItem.length; u++) {
-									SumMau += arrayMAU[Integer
-											.parseInt(TempItem[u])];
-									SumMiu += arrayMIU[Integer
-											.parseInt(TempItem[u])];
+									SumMau += arrayMAU[Integer.parseInt(TempItem[u])];
+									SumMiu += arrayMIU[Integer.parseInt(TempItem[u])];
 								}
 
 								int MAU = SumMau * LocalCount[j];
@@ -1351,8 +1331,7 @@ public class AlgoTKU {
 
 									// bfw_UCI.write(Nprefix +
 									// " "+j+","+LocalF1[j]+","+MIU);
-									bfw_UCI.write(Nprefix + " " + j + ":"
-											+ LocalF1[j]);
+									bfw_UCI.write(Nprefix + " " + j + ":" + LocalF1[j]);
 
 									bfw_UCI.newLine();
 
@@ -1369,22 +1348,21 @@ public class AlgoTKU {
 										// Nprefix +
 										// " "+j+","+LocalF1[j]+","+MIU);
 
-										UpdateNodeCountHeap(ISNodeCountHeap,
-												MIU);
+										UpdateNodeCountHeap(ISNodeCountHeap, MIU);
 
-									}// End if
-								}// End if
+									} // End if
+								} // End if
 
 								/*--*/// System.out.println(Nprefix +
-											// " "+j+":"+LocalF1[j]);
+										// " "+j+":"+LocalF1[j]);
 
 								// if(num_FI % 10000 ==0)
 								// System.out.println("num_CI:"+num_FI);
 
 							}
 
-						}// End if-else
-					}// End for-j
+						} // End if-else
+					} // End for-j
 						// local infrequent items are filtering
 
 					// insert current item (prefix) into the first order
@@ -1416,35 +1394,31 @@ public class AlgoTKU {
 
 							for (int h = 0; h < ltran.size(); h++) {
 								if (LocalF1[ltran.get(h)] >= globalMinUtil) {
-									Sum_MinBNF = Sum_MinBNF + CPBC.get(k)
-											* arrayMIU[ltran.get(h)];
+									Sum_MinBNF = Sum_MinBNF + CPBC.get(k) * arrayMIU[ltran.get(h)];
 
 									tran[tranlen++] = ltran.get(h);
 								} else {
 									int sum = CPBW.get(k);
-									sum = sum - CPBC.get(k)
-											* arrayMIU[ltran.get(h)];
+									sum = sum - CPBC.get(k) * arrayMIU[ltran.get(h)];
 
 									CPBW.set(k, sum);
 								}
-							}// End for
+							} // End for
 
 							// sort items in conditional pattern path
 							sorttrans(tran, 0, tranlen, LocalF1);
 
 							// �L�X�Ƨǫ᪺���
 							/*
-							 * for(int h=0; h<tranlen; h++) {
-							 * System.out.print(tran[h]+" "); if(h==(tranlen-1))
-							 * System.out.println();
+							 * for(int h=0; h<tranlen; h++) { System.out.print(tran[h]+" ");
+							 * if(h==(tranlen-1)) System.out.println();
 							 * 
 							 * }//End for
 							 */
 
-							C_FPtree.insPatternBase(tran, tranlen, LocalF1,
-									CPBW.get(k), CPBC.get(k), Sum_MinBNF);
+							C_FPtree.insPatternBase(tran, tranlen, LocalF1, CPBW.get(k), CPBC.get(k), Sum_MinBNF);
 
-						}// End for
+						} // End for
 
 						// System.out.println("localflist for "+"{"+Nprefix+"}:"+localflist);
 
@@ -1452,12 +1426,11 @@ public class AlgoTKU {
 
 						// System.out.println();
 
-						C_FPtree.UPGrowth_MinBNF(C_FPtree, localflist, Nprefix,
-								bfw_UCI, ISNodeCountHeap, LocalF1);
+						C_FPtree.UPGrowth_MinBNF(C_FPtree, localflist, Nprefix, bfw_UCI, ISNodeCountHeap, LocalF1);
 
-					}// End if-else
-				}// End if(LP1[flist2.get(i)] >= gMin_Util)
-			}// End for-i
+					} // End if-else
+				} // End if(LP1[flist2.get(i)] >= gMin_Util)
+			} // End for-i
 
 			MemoryLogger.getInstance().checkMemory();
 
@@ -1475,7 +1448,7 @@ public class AlgoTKU {
 				// System.out.print("["+cNode.item+"]" + ":" + cNode.count+
 				// ",");
 				/*--*/// System.out.print("["+level+"]:"+cNode.item + " : " +
-							// cNode.count+ ",");
+						// cNode.count+ ",");
 
 				for (int i = 0; i < cNode.childlink.size(); i++) {
 					// if(i==0) System.out.print("(");
@@ -1484,8 +1457,8 @@ public class AlgoTKU {
 
 					// if(i==cNode.childlink.size()-1) System.out.print(")");
 
-				}// End for-i
-			}// End if
+				} // End for-i
+			} // End if
 		}// End traverse_tree()
 
 		public void SumDescendent(treenode cNode, int[] DS_Sum_Table) {
@@ -1494,7 +1467,7 @@ public class AlgoTKU {
 				// System.out.print("["+cNode.item+"]" + ":" + cNode.count+
 				// ",");
 				/*--*/// System.out.print("["+level+"]:"+cNode.item + " : " +
-							// cNode.count+ ",");
+						// cNode.count+ ",");
 
 				DS_Sum_Table[cNode.item] += cNode.count;
 
@@ -1505,8 +1478,8 @@ public class AlgoTKU {
 
 					// if(i==cNode.childlink.size()-1) System.out.print(")");
 
-				}// End for-i
-			}// End if
+				} // End for-i
+			} // End if
 
 		}// End SumDescendent
 

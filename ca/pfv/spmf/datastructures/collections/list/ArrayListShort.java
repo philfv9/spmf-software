@@ -19,6 +19,8 @@ import ca.pfv.spmf.datastructures.collections.comparators.ComparatorShort;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove the copyright and license information.
  */
 /**
  * This class implements a simple array of short (primitive type) that is

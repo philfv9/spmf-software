@@ -17,6 +17,8 @@ package ca.pfv.spmf.datastructures.matrix;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove the copyright and license information
  */
 /**
  * A simple matrix class for storing integers

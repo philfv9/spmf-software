@@ -13,7 +13,7 @@ public class MainTestEMSFUI_D {
 
 	public static void main(String [] arg) throws IOException{		
 		String input = fileToPath("contextHUIM.txt");
-		String output = ".output.txt";
+		String output = "output.txt";
 		// Applying the  algorithm
 		AlgoEMSFUI_D EMSFUI_D = new AlgoEMSFUI_D();
 		EMSFUI_D.runAlgorithm(input, output);

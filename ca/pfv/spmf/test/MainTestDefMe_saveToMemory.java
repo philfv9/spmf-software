@@ -7,8 +7,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import ca.pfv.spmf.algorithms.frequentpatterns.defme_fast.AlgoDefMe_FAST;
-import ca.pfv.spmf.algorithms.frequentpatterns.defme_simple.AlgoDefMe;
-import ca.pfv.spmf.input.transaction_database_list_integers.TransactionDatabase;
 import ca.pfv.spmf.patterns.itemset_array_integers_with_tids_bitset.Itemset;
 import ca.pfv.spmf.patterns.itemset_array_integers_with_tids_bitset.Itemsets;
 

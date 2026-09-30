@@ -4,16 +4,19 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -21,9 +24,12 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
 import javax.swing.text.SimpleAttributeSet;
@@ -33,7 +39,7 @@ import javax.swing.text.StyledDocument;
 import ca.pfv.spmf.gui.preferences.PreferencesManager;
 
 /*
- * Copyright (c) 2008-2015 Philippe Fournier-Viger
+ * Copyright (c) 2008-2026 Philippe Fournier-Viger
  *
  * This file is part of the SPMF DATA MINING SOFTWARE
  * (http://www.philippe-fournier-viger.com/spmf).
@@ -49,17 +55,15 @@ import ca.pfv.spmf.gui.preferences.PreferencesManager;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license
  */
 
 /**
- * A console panel used by the SPMF GUI. Displays text output with support for
- * status messages, font resizing, clipboard operations, and log saving.
- * 
- * <p>
- * This panel can redirect System.out to display program output in real-time,
- * with automatic scrolling, text trimming for large outputs, and context menu
- * operations for user convenience.
- * </p>
+ * Console panel of the SPMF GUI. Can capture {@code System.out} (black) and
+ * {@code System.err} (red), shows status messages in grey, follows new output
+ * only while the view is scrolled to the bottom, and offers copy / save /
+ * clear / zoom via a context menu, Ctrl+wheel and Ctrl+plus / Ctrl+minus.
  *
  * @author Philippe Fournier-Viger
  */
@@ -67,408 +71,333 @@ public class ConsolePanel extends JPanel {
 
 	private static final long serialVersionUID = 8344817215180749939L;
 
-	// -----------------------------------------------------------------------
-	// Configuration constants
-	// -----------------------------------------------------------------------
+	private static final Color COLOR_STATUS = new Color(120, 120, 120);
+	private static final Color COLOR_REGULAR = new Color(30, 30, 30);
+	private static final Color COLOR_ERROR = new Color(192, 57, 43);
 
-	/** Color for status messages */
-	private static final Color STATUS_MESSAGE_COLOR = Color.GRAY;
-
-	/** Color for regular messages */
-	private static final Color REGULAR_MESSAGE_COLOR = Color.BLACK;
-
-	/** Minimum allowed font size */
 	private static final int MIN_FONT_SIZE = 6;
-
-	/** Maximum allowed font size */
 	private static final int MAX_FONT_SIZE = 72;
-
-	/** Default font size if none is set in preferences */
 	private static final int DEFAULT_FONT_SIZE = 12;
 
-	/** Maximum number of characters before the console is auto-trimmed */
 	private static final int MAX_DOCUMENT_LENGTH = 500_000;
-
-	/** When trimming, reduce to this size */
 	private static final int TRIM_TARGET_LENGTH = MAX_DOCUMENT_LENGTH / 2;
 
-	/** System line separator */
+	/** Pixels of slack when deciding whether the view is "at the bottom". */
+	private static final int AUTOSCROLL_TOLERANCE = 24;
+
 	private static final String NEWLINE = System.lineSeparator();
 
-	/** Initial buffer capacity for the output stream */
-	private static final int BUFFER_INITIAL_CAPACITY = 256;
+	/** The true standard streams, captured once before any panel redirects them. */
+	private static final PrintStream ORIGINAL_OUT = System.out;
+	private static final PrintStream ORIGINAL_ERR = System.err;
 
-	// -----------------------------------------------------------------------
-	// Instance fields
-	// -----------------------------------------------------------------------
+	private final SimpleAttributeSet regularAttributes = new SimpleAttributeSet();
+	private final SimpleAttributeSet statusAttributes = new SimpleAttributeSet();
+	private final SimpleAttributeSet errorAttributes = new SimpleAttributeSet();
 
-	/** Pre-built attribute set for regular messages (immutable after init) */
-	private final SimpleAttributeSet regularAttributes;
-
-	/** Pre-built attribute set for status messages (immutable after init) */
-	private final SimpleAttributeSet statusAttributes;
-
-	/** Text pane to show console output */
 	private final JTextPane textPane;
-
-	/** The styled document backing the text pane */
 	private final StyledDocument doc;
+	private final JScrollPane scrollPane;
 
-	/** The original System.out, preserved so it can be restored */
-	private final PrintStream originalOut;
-
-	/** The original System.err, preserved so it can be restored */
-	private final PrintStream originalErr;
-
-	/** Our custom output stream redirector */
-	private TextPaneOutputStream outputStream;
-
-	// -----------------------------------------------------------------------
-	// Constructor
-	// -----------------------------------------------------------------------
+	private PrintStream redirectedOut;
+	private PrintStream redirectedErr;
 
 	/**
-	 * Constructs a new ConsolePanel.
-	 *
-	 * @param showClearButton if true, a "Clear Console" button is shown at the
-	 *                        bottom
+	 * @param showClearButton if true, a "Clear console" button is shown at the bottom
 	 */
 	public ConsolePanel(boolean showClearButton) {
-		// Pre-build reusable attribute sets to avoid repeated object creation
-		regularAttributes = new SimpleAttributeSet();
-		StyleConstants.setForeground(regularAttributes, REGULAR_MESSAGE_COLOR);
+		StyleConstants.setForeground(regularAttributes, COLOR_REGULAR);
+		StyleConstants.setForeground(statusAttributes, COLOR_STATUS);
+		StyleConstants.setForeground(errorAttributes, COLOR_ERROR);
 
-		statusAttributes = new SimpleAttributeSet();
-		StyleConstants.setForeground(statusAttributes, STATUS_MESSAGE_COLOR);
-
-		// Preserve original streams for restoration
-		originalOut = System.out;
-		originalErr = System.err;
-
-		// Create and configure UI components
-		textPane = createTextPane();
+		textPane = new JTextPane();
+		textPane.setEditable(false);
+		textPane.setBackground(Color.WHITE);
+		textPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, loadFontSize()));
+		// We manage scrolling ourselves so the user can read older output while
+		// new output keeps arriving.
+		((DefaultCaret) textPane.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 		doc = textPane.getStyledDocument();
 
-		setupLayout(showClearButton);
+		scrollPane = new JScrollPane(textPane);
+		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
+		setLayout(new BorderLayout());
+		add(scrollPane, BorderLayout.CENTER);
+		if (showClearButton) {
+			JButton clear = new JButton("Clear console");
+			clear.setFocusPainted(false);
+			clear.addActionListener(e -> clearConsole());
+			add(clear, BorderLayout.SOUTH);
+		}
+
 		setupContextMenu();
+		setupZoom();
 	}
 
 	// -----------------------------------------------------------------------
 	// Public API
 	// -----------------------------------------------------------------------
 
-	/**
-	 * Redirects {@link System#out} and {@link System#err} to this console panel.
-	 * Call {@link #restoreOutputStream()} to undo.
-	 */
+	/** Redirects {@code System.out} and {@code System.err} to this console. */
 	public void redirectOutputStream() {
-		if (outputStream == null) {
-			outputStream = new TextPaneOutputStream();
+		if (redirectedOut == null) {
+			redirectedOut = new PrintStream(new TextPaneOutputStream(regularAttributes), true, StandardCharsets.UTF_8);
+			redirectedErr = new PrintStream(new TextPaneOutputStream(errorAttributes), true, StandardCharsets.UTF_8);
 		}
-		PrintStream ps = new PrintStream(outputStream, true);
-		System.setOut(ps);
-		System.setErr(ps);
+		System.setOut(redirectedOut);
+		System.setErr(redirectedErr);
 	}
 
 	/**
-	 * Restores {@link System#out} and {@link System#err} to the original streams
-	 * captured at construction time.
+	 * Restores the original standard streams, but only if they are currently
+	 * redirected to this console (so another console's redirection is kept).
 	 */
 	public void restoreOutputStream() {
-		System.setOut(originalOut);
-		System.setErr(originalErr);
-		if (outputStream != null) {
-			outputStream.flush();
+		if (redirectedOut != null && System.out == redirectedOut) {
+			redirectedOut.flush();
+			System.setOut(ORIGINAL_OUT);
+		}
+		if (redirectedErr != null && System.err == redirectedErr) {
+			redirectedErr.flush();
+			System.setErr(ORIGINAL_ERR);
 		}
 	}
 
-	/**
-	 * Posts a grey status message (e.g. "Algorithm is running…").
-	 *
-	 * @param message the message to display
-	 */
+	/** Posts a grey status message. */
 	public void postStatusMessage(String message) {
-		if (message == null) {
-			return;
+		if (message != null) {
+			appendToDocument(message + NEWLINE, statusAttributes);
 		}
-		appendToDocument(message + NEWLINE, statusAttributes);
 	}
 
-	/**
-	 * Appends a line of text followed by a newline to the console.
-	 *
-	 * @param line the text to append
-	 */
+	/** Appends a line of regular output. */
 	public void appendLine(String line) {
-		if (line == null) {
-			return;
+		if (line != null) {
+			appendToDocument(line + NEWLINE, regularAttributes);
 		}
-		appendToDocument(line + NEWLINE, regularAttributes);
 	}
 
-	/**
-	 * Clears all text from the console.
-	 */
+	/** Clears the console. */
 	public void clearConsole() {
-		SwingUtilities.invokeLater(() -> {
-			textPane.setText("");
-			// Force garbage collection of the old document content
-			System.gc();
-		});
+		onEdt(() -> textPane.setText(""));
 	}
 
-	/**
-	 * Copies the currently selected text to the system clipboard.
-	 */
+	/** Copies the selection (or everything, if nothing is selected) to the clipboard. */
 	public void copyText() {
 		String text = textPane.getSelectedText();
+		if (text == null || text.isEmpty()) {
+			text = textPane.getText();
+		}
 		if (text != null && !text.isEmpty()) {
 			try {
-				Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-				clipboard.setContents(new StringSelection(text), null);
+				Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
 			} catch (IllegalStateException e) {
-				// Clipboard unavailable - ignore
-				originalOut.println("Clipboard unavailable: " + e.getMessage());
+				ORIGINAL_OUT.println("Clipboard unavailable: " + e.getMessage());
 			}
 		}
 	}
 
-	/**
-	 * Selects all text in the console.
-	 */
+	/** Selects all text. */
 	public void selectAll() {
+		textPane.requestFocusInWindow();
 		textPane.selectAll();
 	}
 
-	/**
-	 * Returns the current console text.
-	 * 
-	 * @return the complete text content
-	 */
+	/** @return the whole console text */
 	public String getText() {
 		return textPane.getText();
 	}
 
 	// -----------------------------------------------------------------------
-	// Private helpers - UI setup
+	// UI setup
 	// -----------------------------------------------------------------------
 
-	/**
-	 * Creates and configures the text pane, including font preferences.
-	 */
-	private JTextPane createTextPane() {
-		JTextPane pane = new JTextPane();
-		pane.setEditable(false);
-		pane.setBackground(Color.WHITE);
-
-		// Load font size from preferences
-		Integer fontSize = PreferencesManager.getInstance().getConsoleFontSize();
-		if (fontSize == null || fontSize < MIN_FONT_SIZE || fontSize > MAX_FONT_SIZE) {
-			fontSize = DEFAULT_FONT_SIZE;
-		}
-		pane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, fontSize));
-
-		// Enable auto-scrolling
-		DefaultCaret caret = (DefaultCaret) pane.getCaret();
-		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-
-		return pane;
+	private static int loadFontSize() {
+		Integer size = PreferencesManager.getInstance().getConsoleFontSize();
+		return (size == null || size < MIN_FONT_SIZE || size > MAX_FONT_SIZE) ? DEFAULT_FONT_SIZE : size;
 	}
 
-	/**
-	 * Lays out the scroll pane (center) and optional clear button (south).
-	 */
-	private void setupLayout(boolean showClearButton) {
-		setLayout(new BorderLayout());
-
-		JScrollPane scrollPane = new JScrollPane(textPane);
-		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		add(scrollPane, BorderLayout.CENTER);
-
-		if (showClearButton) {
-			JButton clearButton = new JButton("Clear Console");
-			clearButton.addActionListener(e -> clearConsole());
-			clearButton.setFocusPainted(false);
-			add(clearButton, BorderLayout.SOUTH);
-		}
-	}
-
-	/**
-	 * Installs a right-click context menu on the text pane.
-	 */
 	private void setupContextMenu() {
 		JPopupMenu menu = new JPopupMenu();
-
-		JMenuItem selectAllItem = new JMenuItem("Select All");
-		selectAllItem.addActionListener(e -> selectAll());
-		menu.add(selectAllItem);
-
-		JMenuItem copyItem = new JMenuItem("Copy");
-		copyItem.addActionListener(e -> copyText());
-		menu.add(copyItem);
-
+		menu.add(item("Copy", e -> copyText()));
+		menu.add(item("Select all", e -> selectAll()));
+		menu.addSeparator();
+		menu.add(item("Scroll to end", e -> scrollToEnd()));
+		menu.add(item("Clear", e -> clearConsole()));
+		menu.add(item("Save log to file\u2026", e -> saveLog()));
 		menu.addSeparator();
 
-		JMenuItem clearItem = new JMenuItem("Clear");
-		clearItem.addActionListener(e -> clearConsole());
-		menu.add(clearItem);
-
-		JMenuItem saveItem = new JMenuItem("Save Log to File...");
-		saveItem.addActionListener(e -> saveLog());
-		menu.add(saveItem);
-
-		menu.addSeparator();
-		menu.add(createFontSizeMenu());
+		JMenu fontMenu = new JMenu("Font size");
+		fontMenu.add(item("Increase  (Ctrl +)", e -> changeFontSize(+2)));
+		fontMenu.add(item("Decrease  (Ctrl -)", e -> changeFontSize(-2)));
+		fontMenu.addSeparator();
+		fontMenu.add(item("Reset to default", e -> setFontSize(DEFAULT_FONT_SIZE)));
+		menu.add(fontMenu);
 
 		textPane.setComponentPopupMenu(menu);
 	}
 
-	/**
-	 * Creates a submenu with Increase / Decrease font-size options.
-	 */
-	private JMenu createFontSizeMenu() {
-		JMenu menu = new JMenu("Font Size");
+	private static JMenuItem item(String text, java.awt.event.ActionListener l) {
+		JMenuItem i = new JMenuItem(text);
+		i.addActionListener(l);
+		return i;
+	}
 
-		JMenuItem increase = new JMenuItem("Increase");
-		increase.addActionListener(e -> changeFontSize(2));
-		menu.add(increase);
+	private void setupZoom() {
+		// Ctrl + wheel: zoom; otherwise let the scroll pane scroll
+		textPane.addMouseWheelListener(e -> {
+			if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0) {
+				changeFontSize(e.getWheelRotation() < 0 ? +1 : -1);
+			} else {
+				scrollPane.dispatchEvent(SwingUtilities.convertMouseEvent(textPane, e, scrollPane));
+			}
+		});
+		int ctrl = InputEvent.CTRL_DOWN_MASK;
+		bind(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, ctrl), "zoomIn", () -> changeFontSize(+2));
+		bind(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, ctrl), "zoomIn", () -> changeFontSize(+2));
+		bind(KeyStroke.getKeyStroke(KeyEvent.VK_ADD, ctrl), "zoomIn", () -> changeFontSize(+2));
+		bind(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, ctrl), "zoomOut", () -> changeFontSize(-2));
+		bind(KeyStroke.getKeyStroke(KeyEvent.VK_SUBTRACT, ctrl), "zoomOut", () -> changeFontSize(-2));
+		bind(KeyStroke.getKeyStroke(KeyEvent.VK_0, ctrl), "zoomReset", () -> setFontSize(DEFAULT_FONT_SIZE));
+	}
 
-		JMenuItem decrease = new JMenuItem("Decrease");
-		decrease.addActionListener(e -> changeFontSize(-2));
-		menu.add(decrease);
-
-		menu.addSeparator();
-
-		JMenuItem reset = new JMenuItem("Reset to Default");
-		reset.addActionListener(e -> resetFontSize());
-		menu.add(reset);
-
-		return menu;
+	private void bind(KeyStroke key, String name, Runnable action) {
+		textPane.getInputMap(JComponent.WHEN_FOCUSED).put(key, name);
+		textPane.getActionMap().put(name, new javax.swing.AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			@Override
+			public void actionPerformed(java.awt.event.ActionEvent e) {
+				action.run();
+			}
+		});
 	}
 
 	// -----------------------------------------------------------------------
-	// Private helpers - Font management
+	// Font size
 	// -----------------------------------------------------------------------
 
-	/**
-	 * Adjusts the font size by {@code delta} points, clamped to
-	 * [{@value #MIN_FONT_SIZE}, {@value #MAX_FONT_SIZE}].
-	 */
 	private void changeFontSize(int delta) {
-		Font current = textPane.getFont();
-		int newSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, current.getSize() + delta));
-		if (newSize != current.getSize()) {
-			textPane.setFont(current.deriveFont((float) newSize));
-			PreferencesManager.getInstance().setConsoleFontSize(newSize);
+		setFontSize(textPane.getFont().getSize() + delta);
+	}
+
+	private void setFontSize(int size) {
+		int clamped = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, size));
+		if (clamped != textPane.getFont().getSize()) {
+			textPane.setFont(textPane.getFont().deriveFont((float) clamped));
+			PreferencesManager.getInstance().setConsoleFontSize(clamped);
 		}
 	}
 
-	/**
-	 * Resets font size to the default value.
-	 */
-	private void resetFontSize() {
-		Font current = textPane.getFont();
-		textPane.setFont(current.deriveFont((float) DEFAULT_FONT_SIZE));
-		PreferencesManager.getInstance().setConsoleFontSize(DEFAULT_FONT_SIZE);
-	}
-
 	// -----------------------------------------------------------------------
-	// Private helpers - File operations
+	// Save
 	// -----------------------------------------------------------------------
 
-	/**
-	 * Prompts the user for a file and writes the current console text to it.
-	 */
 	private void saveLog() {
 		JFileChooser chooser = new JFileChooser();
-		chooser.setDialogTitle("Save Console Log");
+		chooser.setDialogTitle("Save console log");
+		chooser.setFileFilter(new FileNameExtensionFilter("Text files (*.txt)", "txt"));
 		chooser.setSelectedFile(new File("console_log.txt"));
-
 		if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
 			return;
 		}
-
 		File file = chooser.getSelectedFile();
-
-		// Confirm overwrite if file exists
-		if (file.exists()) {
-			int result = JOptionPane.showConfirmDialog(this, "File already exists. Overwrite?", "Confirm Overwrite",
-					JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-			if (result != JOptionPane.YES_OPTION) {
-				return;
-			}
+		if (!file.getName().contains(".")) {
+			file = new File(file.getParentFile(), file.getName() + ".txt");
 		}
-
-		try (PrintWriter out = new PrintWriter(new FileWriter(file))) {
-			out.print(textPane.getText());
-			JOptionPane.showMessageDialog(this, "Log saved successfully to:\n" + file.getAbsolutePath(),
-					"Save Successful", JOptionPane.INFORMATION_MESSAGE);
+		if (file.exists() && JOptionPane.showConfirmDialog(this,
+				"\"" + file.getName() + "\" already exists. Overwrite it?", "Confirm overwrite",
+				JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.YES_OPTION) {
+			return;
+		}
+		try {
+			Files.writeString(file.toPath(), textPane.getText(), StandardCharsets.UTF_8);
+			postStatusMessage("Log saved to " + file.getAbsolutePath());
 		} catch (IOException ex) {
-			JOptionPane.showMessageDialog(this, "Error saving log:\n" + ex.getMessage(), "Save Error",
+			JOptionPane.showMessageDialog(this, "Could not save the log:\n" + ex.getMessage(), "Save error",
 					JOptionPane.ERROR_MESSAGE);
-			originalOut.println("Error saving log: " + ex.getMessage());
 		}
 	}
 
 	// -----------------------------------------------------------------------
-	// Private helpers - Document management
+	// Document management
 	// -----------------------------------------------------------------------
 
-	/**
-	 * Thread-safe helper that appends styled text to the document and auto-scrolls.
-	 * Trims the beginning of the document if it exceeds
-	 * {@value #MAX_DOCUMENT_LENGTH}.
-	 */
 	private void appendToDocument(String text, SimpleAttributeSet attributes) {
 		if (text == null || text.isEmpty()) {
 			return;
 		}
-
-		Runnable task = () -> {
+		onEdt(() -> {
+			boolean followTail = isAtBottom();
 			try {
-				// Trim document if it's getting too large
-				int currentLength = doc.getLength();
-				if (currentLength > MAX_DOCUMENT_LENGTH) {
-					int excess = currentLength - TRIM_TARGET_LENGTH;
-					doc.remove(0, excess);
-				}
-
-				// Append new text
+				trimIfNeeded();
 				doc.insertString(doc.getLength(), text, attributes);
-
-				// Auto-scroll to the bottom
-				textPane.setCaretPosition(doc.getLength());
-
 			} catch (BadLocationException e) {
-				originalOut.println("Console append error: " + e.getMessage());
+				ORIGINAL_OUT.println("Console append error: " + e.getMessage());
 			}
-		};
+			if (followTail) {
+				scrollToEnd();
+			}
+		});
+	}
 
+	/** Removes the oldest lines once the document grows past the limit. */
+	private void trimIfNeeded() throws BadLocationException {
+		int length = doc.getLength();
+		if (length <= MAX_DOCUMENT_LENGTH) {
+			return;
+		}
+		int excess = length - TRIM_TARGET_LENGTH;
+		// Cut at the next line break so no partial line remains at the top
+		String around = doc.getText(excess, Math.min(4000, length - excess));
+		int nl = around.indexOf('\n');
+		if (nl >= 0) {
+			excess += nl + 1;
+		}
+		doc.remove(0, excess);
+	}
+
+	private boolean isAtBottom() {
+		JScrollBar bar = scrollPane.getVerticalScrollBar();
+		return bar.getValue() + bar.getVisibleAmount() >= bar.getMaximum() - AUTOSCROLL_TOLERANCE;
+	}
+
+	private void scrollToEnd() {
+		// After the insert, the scroll range is updated on a later layout pass
+		SwingUtilities.invokeLater(() -> {
+			JScrollBar bar = scrollPane.getVerticalScrollBar();
+			bar.setValue(bar.getMaximum());
+		});
+	}
+
+	private static void onEdt(Runnable r) {
 		if (SwingUtilities.isEventDispatchThread()) {
-			task.run();
+			r.run();
 		} else {
-			SwingUtilities.invokeLater(task);
+			SwingUtilities.invokeLater(r);
 		}
 	}
 
 	// -----------------------------------------------------------------------
-	// Inner class – buffered OutputStream → JTextPane
+	// OutputStream → document
 	// -----------------------------------------------------------------------
 
 	/**
-	 * An {@link OutputStream} that buffers bytes into complete chunks and flushes
-	 * them to the text pane. Much more efficient than writing one byte at a time,
-	 * because each Swing update can handle an entire string instead of a single
-	 * character.
+	 * Buffers bytes until a line break or flush, then decodes them as UTF-8 and
+	 * appends the text with the given style.
 	 */
-	private class TextPaneOutputStream extends OutputStream {
+	private final class TextPaneOutputStream extends OutputStream {
 
-		private final StringBuilder buffer = new StringBuilder(BUFFER_INITIAL_CAPACITY);
+		private final ByteArrayOutputStream buffer = new ByteArrayOutputStream(256);
+		private final SimpleAttributeSet attributes;
+
+		TextPaneOutputStream(SimpleAttributeSet attributes) {
+			this.attributes = attributes;
+		}
 
 		@Override
 		public synchronized void write(int b) {
-			buffer.append((char) b);
-			// Flush on newline for immediate feedback
+			buffer.write(b);
 			if (b == '\n') {
 				flushBuffer();
 			}
@@ -476,90 +405,61 @@ public class ConsolePanel extends JPanel {
 
 		@Override
 		public synchronized void write(byte[] data, int off, int len) {
-			if (data == null) {
-				throw new NullPointerException();
-			}
-			if (off < 0 || len < 0 || off + len > data.length) {
-				throw new IndexOutOfBoundsException();
-			}
-
-			buffer.append(new String(data, off, len));
-
-			// Flush if we have a newline
-			if (buffer.indexOf(NEWLINE) != -1) {
-				flushBuffer();
+			buffer.write(data, off, len);
+			for (int i = off + len - 1; i >= off; i--) {
+				if (data[i] == '\n') {
+					flushBuffer();
+					return;
+				}
 			}
 		}
 
 		@Override
 		public synchronized void flush() {
-			if (buffer.length() > 0) {
-				flushBuffer();
-			}
+			flushBuffer();
 		}
 
-		@Override
-		public synchronized void close() throws IOException {
-			flush();
-			super.close();
-		}
-
-		/**
-		 * Sends the current buffer content to the document and clears the buffer.
-		 */
 		private void flushBuffer() {
-			if (buffer.length() == 0) {
+			if (buffer.size() == 0) {
 				return;
 			}
-			String text = buffer.toString();
-			buffer.setLength(0);
-			appendToDocument(text, regularAttributes);
+			String text = buffer.toString(StandardCharsets.UTF_8);
+			buffer.reset();
+			appendToDocument(text, attributes);
 		}
 	}
 
 	// -----------------------------------------------------------------------
-	// Test / demo
+	// Demo
 	// -----------------------------------------------------------------------
 
-	/**
-	 * Simple demo that creates a frame with a ConsolePanel and prints some text.
-	 * 
-	 * @param args command-line arguments (not used)
-	 */
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(() -> {
-			JFrame frame = new JFrame("ConsolePanel Test");
+			JFrame frame = new JFrame("ConsolePanel test");
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
 			ConsolePanel console = new ConsolePanel(true);
 			console.redirectOutputStream();
-
-			frame.add(console, BorderLayout.CENTER);
+			frame.add(console);
 			frame.setSize(700, 500);
 			frame.setLocationRelativeTo(null);
 			frame.setVisible(true);
 
-			// Test output
-			console.postStatusMessage("Console initialized.");
-			System.out.println("Regular output line 1");
-			System.out.println("Regular output line 2");
-			System.out.println("Regular output line 3");
-			console.postStatusMessage("Ready.");
-
-			// Test bulk output
-			new Thread(() -> {
-				try {
-					Thread.sleep(1000);
-					console.postStatusMessage("Starting bulk output test...");
-					for (int i = 0; i < 100; i++) {
-						System.out.println("Line " + i + ": Test output");
-						Thread.sleep(10);
+			console.postStatusMessage("Console initialised.");
+			System.out.println("Regular output \u2014 accents: \u00E9\u00E8\u00E0 \u4E2D\u6587");
+			System.err.println("This is an error line");
+			Thread t = new Thread(() -> {
+				for (int i = 0; i < 200; i++) {
+					System.out.println("Line " + i);
+					try {
+						Thread.sleep(25);
+					} catch (InterruptedException e) {
+						return;
 					}
-					console.postStatusMessage("Bulk output test complete.");
-				} catch (InterruptedException e) {
-					e.printStackTrace();
 				}
-			}).start();
+				console.postStatusMessage("Done. Try scrolling up while this runs.");
+			});
+			t.setDaemon(true);
+			t.start();
 		});
 	}
 }

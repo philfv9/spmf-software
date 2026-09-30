@@ -27,8 +27,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 
+import ca.pfv.spmf.gui.LauncherWindow;
 import ca.pfv.spmf.gui.Main;
-import ca.pfv.spmf.gui.WelcomeWindow;
 import ca.pfv.spmf.gui.preferences.PreferencesManager;
 
 /*
@@ -78,7 +78,7 @@ public class PluginWindow extends JDialog {
 	JTable jTableInstalledPlugins;
 	private JScrollPane jScrollPaneInstalled;
 
-	public PluginWindow(WelcomeWindow welcome) {
+	public PluginWindow(LauncherWindow welcome) {
 		this.setAlwaysOnTop(true);
 		this.setModal(true);
 

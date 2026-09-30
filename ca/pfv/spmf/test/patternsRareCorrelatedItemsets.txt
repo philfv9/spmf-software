@@ -1,0 +1,17 @@
+@FILETYPE="Rare correlated itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+1 #SUP: 3 #BOND: 1.0
+4 #SUP: 1 #BOND: 1.0
+4 1 #SUP: 1 #BOND: 0.3333333333333333
+4 3 #SUP: 1 #BOND: 0.25
+4 1 3 #SUP: 1 #BOND: 0.25
+1 2 #SUP: 2 #BOND: 0.4
+1 2 3 #SUP: 2 #BOND: 0.4
+1 2 5 #SUP: 2 #BOND: 0.4
+1 2 3 5 #SUP: 2 #BOND: 0.4
+1 3 #SUP: 3 #BOND: 0.75
+1 3 5 #SUP: 2 #BOND: 0.4
+1 5 #SUP: 2 #BOND: 0.4
+2 3 #SUP: 3 #BOND: 0.6
+2 3 5 #SUP: 3 #BOND: 0.6
+3 5 #SUP: 3 #BOND: 0.6

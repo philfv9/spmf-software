@@ -1,0 +1,5 @@
+@FILETYPE="Indirect association rules"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+(a= 1 b= 2 | mediator= 4 ) #sup(a,mediator)= 3 #sup(b,mediator)= 3 #conf(a,mediator)= 1.0 #conf(b,mediator)= 1.0
+(a= 1 b= 5 | mediator= 4 ) #sup(a,mediator)= 3 #sup(b,mediator)= 3 #conf(a,mediator)= 1.0 #conf(b,mediator)= 1.0
+(a= 2 b= 5 | mediator= 4 ) #sup(a,mediator)= 3 #sup(b,mediator)= 3 #conf(a,mediator)= 1.0 #conf(b,mediator)= 1.0

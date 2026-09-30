@@ -38,7 +38,7 @@ public class MainTestEMMA_Rules {
 		double minConfidence = 0.2;
 		int maxConsequentSize = 1;
 
-		String outputFileRules = "Output.txt";
+		String outputFileRules = "output.txt";
 
 		AlgoGenerateEpisodeRules ruleMiner = new AlgoGenerateEpisodeRules();
 		List<EpisodeRule> ruleList = ruleMiner.runAlgorithm(frequentEpisodes, minSup, minConfidence, maxConsequentSize);

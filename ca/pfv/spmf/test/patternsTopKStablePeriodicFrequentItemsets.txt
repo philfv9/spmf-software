@@ -1,0 +1,5 @@
+@FILETYPE="Top-k Stable Periodic frequent itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+5  #SUP: 6  #MAXLA: 0
+3  #SUP: 7  #MAXLA: 0
+3 5  #SUP: 7  #MAXLA: 0

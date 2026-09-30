@@ -1,0 +1,38 @@
+% Pattern output from Dataset B (e.g., customer purchases in Store B)
+% Format: pattern #SUP support #CONF confidence
+@ITEM=1=bread
+@ITEM=2=milk
+@ITEM=3=butter
+@ITEM=4=eggs
+@ITEM=5=cheese
+@ITEM=6=yogurt
+@ITEM=7=apple
+@ITEM=8=banana
+@ITEM=9=orange
+@ITEM=10=chicken
+@ITEM=11=fish
+@ITEM=12=rice
+
+bread milk #SUP 200 #CONF 0.82
+bread butter #SUP 85 #CONF 0.42
+milk butter #SUP 110 #CONF 0.55
+bread milk butter #SUP 75 #CONF 0.38
+eggs cheese #SUP 120 #CONF 0.60
+bread eggs #SUP 95 #CONF 0.48
+milk eggs #SUP 130 #CONF 0.65
+yogurt milk #SUP 90 #CONF 0.45
+apple banana #SUP 40 #CONF 0.20
+apple orange #SUP 62 #CONF 0.31
+banana orange #SUP 55 #CONF 0.28
+bread cheese #SUP 105 #CONF 0.53
+milk cheese #SUP 88 #CONF 0.44
+chicken eggs #SUP 75 #CONF 0.38
+bread milk eggs #SUP 82 #CONF 0.41
+butter eggs #SUP 48 #CONF 0.24
+yogurt banana #SUP 52 #CONF 0.26
+cheese yogurt #SUP 68 #CONF 0.34
+fish rice #SUP 95 #CONF 0.48
+chicken rice #SUP 72 #CONF 0.36
+fish eggs #SUP 58 #CONF 0.29
+bread fish #SUP 44 #CONF 0.22
+milk rice #SUP 38 #CONF 0.19

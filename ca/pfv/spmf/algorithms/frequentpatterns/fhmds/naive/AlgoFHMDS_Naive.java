@@ -709,6 +709,10 @@ public class AlgoFHMDS_Naive {
 		processedBatchCount++;
 		
 		BufferedWriter writer = new BufferedWriter(new FileWriter(path, appendToFile));
+		writer.write("@FILETYPE=\"Top-k High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		
 		if(appendToFile){
 			writer.newLine();

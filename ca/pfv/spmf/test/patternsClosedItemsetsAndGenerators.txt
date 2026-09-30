@@ -1,0 +1,54 @@
+======= List of closed itemsets and their generators ============
+ CLOSED : 
+   EMPTYSET #SUP: 5
+   GENERATOR(S) :
+    EMPTYSET
+ CLOSED : 
+   1  #SUP: 4
+   GENERATOR(S) :
+    1 
+ CLOSED : 
+   3  #SUP: 4
+   GENERATOR(S) :
+    3 
+ CLOSED : 
+   1 3  #SUP: 3
+   GENERATOR(S) :
+    1 3 
+ CLOSED : 
+   2 5  #SUP: 4
+   GENERATOR(S) :
+     2 
+     5 
+ CLOSED : 
+   1 2 5  #SUP: 3
+   GENERATOR(S) :
+     1 2 
+     1 5 
+ CLOSED : 
+   2 3 5  #SUP: 3
+   GENERATOR(S) :
+     2 3 
+     3 5 
+ CLOSED : 
+   1 2 3 5  #SUP: 2
+   GENERATOR(S) :
+     1 2 3 
+     1 3 5 
+======= List of frequent itemsets ============
+ ITEMSET : EMPTYSET #SUP: 5
+ ITEMSET : 1  #SUP: 4
+ ITEMSET : 2  #SUP: 4
+ ITEMSET : 3  #SUP: 4
+ ITEMSET : 5  #SUP: 4
+ ITEMSET : 1 2  #SUP: 3
+ ITEMSET : 1 3  #SUP: 3
+ ITEMSET : 2 3  #SUP: 3
+ ITEMSET : 1 5  #SUP: 3
+ ITEMSET : 2 5  #SUP: 4
+ ITEMSET : 3 5  #SUP: 3
+ ITEMSET : 1 2 3  #SUP: 2
+ ITEMSET : 1 2 5  #SUP: 3
+ ITEMSET : 1 3 5  #SUP: 2
+ ITEMSET : 2 3 5  #SUP: 3
+ ITEMSET : 1 2 3 5  #SUP: 2

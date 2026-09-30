@@ -43,14 +43,14 @@ import ca.pfv.spmf.tools.MemoryLogger;
  * @author Jayakrushna Sahoo
  */
 public class AlgoFHIM_and_HUCI {
-	/**  the maximum memory usage */
-	public double maxMemory = 0; 
-	/**  the time the algorithm started */
+	/** the maximum memory usage */
+	public double maxMemory = 0;
+	/** the time the algorithm started */
 	public long startTimestamp = 0;
 	/** the time the algorithm terminated */
-	public long endTimestamp = 0; 
+	public long endTimestamp = 0;
 	/** the number of HUI generated */
-	public int hui = 0; 
+	public int hui = 0;
 	/** the candidate count */
 	public int candidate = 0;
 	/** the number of closed itemsets */
@@ -67,35 +67,39 @@ public class AlgoFHIM_and_HUCI {
 	int minUtility = 0;
 	/** the input file path */
 	String input = null;
-	
+
 	/** Object to write results to file */
 	BufferedWriter writer = null;
-	
-	/** The choice of algorithm :  0 = FHIM   1  = HUCI-Miner*/
+
+	/** The choice of algorithm : 0 = FHIM 1 = HUCI-Miner */
 	int algo = 0;
 	/** The HG list */
-	private List<Itemset> HG = null; 
-	/**  The FMAP structure */
+	private List<Itemset> HG = null;
+	/** The FMAP structure */
 	Map<Integer, Map<Integer, Integer>> mapFMAP;
-	/** A map of items to their utility lists*/
+	/** A map of items to their utility lists */
 	Map<Integer, UtilityList> mapItemToUtilityList;
 	/** the LLFMAP */
 	Map<Integer, Map<Integer, Map<Integer, Integer>>> mapLLFMAP;
-	
+
 	/** if true, HUCI-miner will not output the closed itemsets */
 	boolean dontOutputClosedItemsets = false;
-	
+
 	/**
-	 * Set a boolean variable to indicate that closed itemset should not be output by HUCI-Miner or should be output
-	 * @param dontOutputClosedItemsets  true or false
+	 * Set a boolean variable to indicate that closed itemset should not be output
+	 * by HUCI-Miner or should be output
+	 * 
+	 * @param dontOutputClosedItemsets true or false
 	 */
 	public void setDontOutputClosedItemsets(boolean dontOutputClosedItemsets) {
 		this.dontOutputClosedItemsets = dontOutputClosedItemsets;
 	}
 
 	/**
-	 * Set a boolean variable to indicate that generator itemset should not be output by HUCI-Miner or should be output
-	 * @param dontOutputGeneratorItemsets  true or false
+	 * Set a boolean variable to indicate that generator itemset should not be
+	 * output by HUCI-Miner or should be output
+	 * 
+	 * @param dontOutputGeneratorItemsets true or false
 	 */
 	public void setDontOutputGeneratorItemsets(boolean dontOutputGeneratorItemsets) {
 		this.dontOutputGeneratorItemsets = dontOutputGeneratorItemsets;
@@ -172,9 +176,24 @@ public class AlgoFHIM_and_HUCI {
 		// if the user want to write to file
 		if (output != null) {
 			writer = new BufferedWriter(new FileWriter(output));
+			if (alg == 1) {
+				if (dontOutputGeneratorItemsets) {
+					writer.write("@FILETYPE=\"Closed high-utility itemsets\"");
+				} else if (dontOutputClosedItemsets) {
+					writer.write("@FILETYPE=\"Generator high-utility itemsets\"");
+				} else {
+					writer.write("@FILETYPE=\"Closed and generator high-utility itemsets\"");
+
+				}
+			} else {
+				writer.write("@FILETYPE=\"High-utility itemsets\"");
+			}
+			writer.append(System.lineSeparator());
+			writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			writer.append(System.lineSeparator());
 		}
 
-		MemoryLogger.getInstance().getInstance().reset();
+		MemoryLogger.getInstance().reset();
 		this.algo = alg;
 		Map<Integer, Integer> mapItemToTWU;
 		mapFMAP = new HashMap<>();
@@ -388,39 +407,38 @@ public class AlgoFHIM_and_HUCI {
 //			private HUClosedTable tableHUCI = null;
 
 			StringBuilder buffer = new StringBuilder();
-			
+
 			for (List<Itemset> itemsets : tableHUCI.levels) {
 				for (Itemset itemset : itemsets) {
-				
-					if(!dontOutputGeneratorItemsets && !dontOutputClosedItemsets) {
+
+					if (!dontOutputGeneratorItemsets && !dontOutputClosedItemsets) {
 						buffer.append("CLOSED: ");
 						buffer.append(System.lineSeparator());
 					}
-					
-					if(!dontOutputClosedItemsets) {
+
+					if (!dontOutputClosedItemsets) {
 						appendItemset(itemset, buffer);
 						buffer.append(System.lineSeparator());
 					}
 
 					List<Itemset> generators = tableHUCI.mapGenerators.get(itemset);
-					if(!dontOutputGeneratorItemsets  && generators != null && generators.size() >0) {
-						if(!dontOutputClosedItemsets) {
+					if (!dontOutputGeneratorItemsets && generators != null && generators.size() > 0) {
+						if (!dontOutputClosedItemsets) {
 							buffer.append("GENERATOR: ");
 							buffer.append(System.lineSeparator());
 						}
-						for(Itemset generator : generators) {
+						for (Itemset generator : generators) {
 							appendItemset(generator, buffer);
 							buffer.append(System.lineSeparator());
 							ghui++;
 						}
 					}
-					
-					
+
 				}
 			}
 			writer.write(buffer.toString());
-			//===================== END CODE ADDED BY PHILIPPE
-			
+			// ===================== END CODE ADDED BY PHILIPPE
+
 		}
 
 		// WRITE OUTPUT
@@ -433,8 +451,9 @@ public class AlgoFHIM_and_HUCI {
 
 	/**
 	 * Append an itemset to a StringBuffer for storing the final results
+	 * 
 	 * @param itemset the itemset
-	 * @param buffer the string buffer
+	 * @param buffer  the string buffer
 	 */
 	private void appendItemset(Itemset itemset, StringBuilder buffer) {
 		// for each item in the closed itemset
@@ -823,16 +842,16 @@ public class AlgoFHIM_and_HUCI {
 	public void printStats() throws IOException {
 		if (algo == 0) // FHIM
 			System.out.println("=============  FHIM ALGORITHM - STATS =============");
-		else  // HUCI-Miner
+		else // HUCI-Miner
 			System.out.println("=============  HUCI-Miner ALGORITHM - STATS =============");
 		System.out.println(" Total time ~ " + (endTimestamp - startTimestamp) + " ms");
 		System.out.println(" Memory ~ " + maxMemory + " MB");
 		System.out.println(" Candidate count : " + candidate);
 		System.out.println(" High-utility itemsets count : " + hui);
-		if (algo == 1  && !dontOutputClosedItemsets) { // NOT FHIM
+		if (algo == 1 && !dontOutputClosedItemsets) { // NOT FHIM
 			System.out.println(" Closed High-utility itemsets count : " + chui);
 		}
-		if (algo == 1  && !dontOutputGeneratorItemsets && writer != null) { // NOT FHIM
+		if (algo == 1 && !dontOutputGeneratorItemsets && writer != null) { // NOT FHIM
 			System.out.println(" Generator High-utility itemsets count : " + ghui);
 		}
 		System.out.println("===================================================");
@@ -840,6 +859,7 @@ public class AlgoFHIM_and_HUCI {
 
 	/**
 	 * Find the subsets of an itemset in a list
+	 * 
 	 * @param s the list of itemsets
 	 * @param l the itemset
 	 * @return the subset

@@ -16,19 +16,21 @@ package ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  */
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.AbstractionCreator_Qualitative;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Item;
+import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Pattern;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.PseudoSequence;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.PseudoSequenceDatabase;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.Sequence;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.SequenceDatabase;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.creators.AbstractionCreator;
-import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.items.patterns.Pattern;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.savers.Saver;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.savers.SaverIntoFile;
 import ca.pfv.spmf.algorithms.sequentialpatterns.clospan_AGP.savers.SaverIntoMemory;
@@ -79,7 +81,7 @@ public class AlgoCloSpan {
     /**
      * The abstraction creator
      */
-    private AbstractionCreator abstractionCreator;
+    private AbstractionCreator_Qualitative abstractionCreator;
     /**
      * Number of frequent patterns found by the algorithm
      */
@@ -104,7 +106,7 @@ public class AlgoCloSpan {
      * @param findClosedPatterns flag to indicate if we are interesting in only
      * finding the closed sequences
      */
-    public AlgoCloSpan(double minSupRelative, AbstractionCreator creator, boolean findClosedPatterns, boolean executePruningMethods) {
+    public AlgoCloSpan(double minSupRelative, AbstractionCreator_Qualitative creator, boolean findClosedPatterns, boolean executePruningMethods) {
         this.minSupRelative = minSupRelative;
         this.abstractionCreator = creator;
         this.findClosedPatterns = findClosedPatterns;
@@ -308,7 +310,6 @@ public class AlgoCloSpan {
      */
     public void clear() {
         if (originalDataset != null) {
-            originalDataset.clear();
             originalDataset = null;
         }
         if (saver != null) {

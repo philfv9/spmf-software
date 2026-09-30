@@ -28,11 +28,11 @@ public class MainTestTNS {
 		
 //		// This optional parameter allows to specify the maximum number of items in the 
 //		// left side (antecedent) of rules found:
-		algo.setMaxAntecedentSize(0);  // optional
+		algo.setMaxAntecedentSize(3);  // optional
 //
 //		// This optional parameter allows to specify the maximum number of items in the 
 //		// right side (consequent) of rules found:
-		algo.setMaxConsequentSize(1);  // optional
+		algo.setMaxConsequentSize(3);  // optional
 		
 		// run the algorithm
 		RedBlackTree<Rule> kRules = algo.runAlgorithm(k, database, minConf,   delta );

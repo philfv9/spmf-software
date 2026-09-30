@@ -147,6 +147,10 @@ public class AlgoMPFPS_BFS {
 
 		PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(
 				outputFile)));
+		out.write("@FILETYPE=\"Periodic frequent itemsets common to multiple sequences\"");
+		out.write(System.lineSeparator());
+		out.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		out.write(System.lineSeparator());
 
 		// --------------------------- OUTPUT -------------------------------
 

@@ -26,6 +26,8 @@ import java.util.List;
  *
  * You should have received a copy of the GNU General Public License along with
  * SPMF. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Do not remove copyright and license information.
  *
  * @author agomariz
  */
@@ -340,7 +342,7 @@ public class PseudoSequence {
         //We get its starting point with respect to the original itemset
         int beginning = getBeginningOfItemset(firstItemset, itemsetIndex);
         //We search for the item
-        List items=itemset.getItems();
+        List<Item> items=itemset.getItems();
         int i= Collections.binarySearch(items,item);
         //If the index exist, and it does not appear before the beginning
         if(i>=beginning) {

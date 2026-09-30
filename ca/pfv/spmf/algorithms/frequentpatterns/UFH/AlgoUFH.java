@@ -206,6 +206,10 @@ public class AlgoUFH {
 		MemoryLogger.getInstance().reset();
 		
 		writer = new BufferedWriter(new FileWriter(outputFile));
+		writer.write("@FILETYPE=\"High-utility itemsets\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 
 		startTimestamp = System.currentTimeMillis();
 
@@ -882,8 +886,11 @@ public class AlgoUFH {
 				}
 
 				if (newCodeSofar_UL.sumIutils >= threshold) {
-					// flag=1;
-					writeOut(pass_prefix, newCodeSofar_UL.item, 1000 + newCodeSofar_UL.sumIutils);
+					// flag=1;    
+					//  BUG FIX 2026 by Philippe :  Removed the 1000
+//					writeOut(pass_prefix, newCodeSofar_UL.item, 1000 + newCodeSofar_UL.sumIutils);
+					writeOut(pass_prefix, newCodeSofar_UL.item, newCodeSofar_UL.sumIutils);
+				    HUICount++;
 					HUICount++;
 
 				}

@@ -377,22 +377,29 @@ public class AlgoPOERMAll {
 				}
 			} else {
 				while ((line = reader.readLine()) != null) {
-//	                current_TID++;
 					// if the line is a comment, is empty or is a
 					// kind of metadata
 					if (line.isEmpty() || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
 						continue;
 					}
 
-					String[] lineSplited = line.split("\\:");
+					// FIX: Split by pipe "|" instead of colon ":"
+					String[] lineSplited = line.split("\\|");
 
-					timestamp = Integer.parseInt(lineSplited[1]);
+					// FIX: Use trim() to remove any accidental spaces before parsing
+					timestamp = Integer.parseInt(lineSplited[1].trim());
 
-					String[] array = lineSplited[0].split(" ");
+					// FIX: Use trim() here as well
+					String[] array = lineSplited[0].trim().split(" ");
 
 					List<Integer> eSet = new ArrayList<Integer>();
 					List<Integer> eSet2 = new ArrayList<Integer>();
 					for (String event : array) {
+						// FIX: Skip empty strings if there are multiple spaces
+						if (event.isEmpty()) {
+							continue;
+						}
+						
 						// Convert the item in the dataset into numbers and build a map for it.
 						num = Integer.parseInt(event);
 						Integer support = eventSet.get(num);
@@ -419,7 +426,6 @@ public class AlgoPOERMAll {
 						preTimestamp = timestamp;
 						this.maxWindowNum++;
 					}
-//					timestamp++;
 				}
 			}
 			MemoryLogger.getInstance().checkMemory();
@@ -746,9 +752,9 @@ public class AlgoPOERMAll {
 				}
 				List<Interval> conseValue = conseset.getIntervals();
 
-//				if (anitKey.equals(conseKey)) {
-//					continue;
-//				}
+				if (anitKey.equals(conseKey)) {
+					continue;
+				}
 				List<Interval> intervalList = new ArrayList<Interval>();
 				int anitIndex = 0;
 				for (Interval anitValue : anitValues) {
@@ -817,6 +823,10 @@ public class AlgoPOERMAll {
 			MemoryLogger.getInstance().checkMemory();
 			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename, false)));
 			// rankRuleBySupport();
+			bw.write("@FILETYPE=\"Frequent episode rules\"");
+			bw.append(System.lineSeparator());
+			bw.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+			bw.append(System.lineSeparator());
 
 			StringBuilder buffer = new StringBuilder();
 			for (POERRule poerrule : this.ruleAppear) {

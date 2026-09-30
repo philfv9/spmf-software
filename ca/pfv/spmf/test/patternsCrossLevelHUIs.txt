@@ -1,0 +1,9 @@
+@FILETYPE="Cross-Level High-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+8 7 #UTIL: 84.0
+8 3 6 #UTIL: 84.0
+8 6 #UTIL: 71.0
+7 #UTIL: 61.0
+7 5 #UTIL: 64.0
+5 3 6 #UTIL: 64.0
+3 6 #UTIL: 61.0

@@ -1,0 +1,5 @@
+@FILETYPE="Minimal high-utility itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+4 2 #UTIL: 30
+2 5 #UTIL: 31
+1 5 3 #UTIL: 31

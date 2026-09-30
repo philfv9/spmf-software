@@ -70,7 +70,7 @@ public class DescriptionAlgoHMG_GA extends DescriptionOfAlgorithm {
 
     @Override
     public String[] getInputFileTypes() {
-        return new String[] {"Genome sequence" };
+        return new String[] {"Genome sequences" };
     }
 
     @Override

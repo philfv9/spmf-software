@@ -57,15 +57,12 @@ public class DescriptionAlgoCalculateStatsProductTDB extends DescriptionOfAlgori
 		return new String[]{"Database of instances","Transaction database", "Transaction database with profit information"};
 	}
 
+
 	@Override
 	public String[] getOutputFileTypes() {
 		return null;
 	}
-//
-//	@Override
-//	String[] getSpecialInputFileTypes() {
-//		return null; //new String[]{"ARFF"};
-//	}
+
 	@Override
 	public AlgorithmType getAlgorithmType() {
 		return AlgorithmType.DATA_STATS_CALCULATOR;

@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import ca.pfv.spmf.algorithms.sequentialpatterns.prefixSpan_AGP.AlgoPrefixSpan_AGP;
-import ca.pfv.spmf.algorithms.sequentialpatterns.prefixSpan_AGP.items.SequenceDatabase;
-import ca.pfv.spmf.algorithms.sequentialpatterns.prefixSpan_AGP.items.creators.AbstractionCreator;
-import ca.pfv.spmf.algorithms.sequentialpatterns.prefixSpan_AGP.items.creators.AbstractionCreator_Qualitative;
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixSpan_AGP_fast.AlgoPrefixSpan_AGP;
+import ca.pfv.spmf.algorithms.sequentialpatterns.prefixSpan_AGP_fast.SequenceDatabase;
 
 /**
  * Example of how to use the algorithm GSP, saving the results in a given
@@ -31,14 +29,18 @@ public class MainTestPrefixSpan_AGP_saveToFile {
         // each pattern appears will be shown in the result
         boolean outputSequenceIdentifiers = false;
 
-        AbstractionCreator abstractionCreator = AbstractionCreator_Qualitative.getInstance();
-
-        SequenceDatabase sequenceDatabase = new SequenceDatabase(abstractionCreator);
+        SequenceDatabase sequenceDatabase = new SequenceDatabase();
 
         //sequenceDatabase.loadFile(fileToPath("salidaFormateadaCodificadaSinIDs.txt"), support);
         sequenceDatabase.loadFile(fileToPath("contextPrefixSpan.txt"), support);
 
-        AlgoPrefixSpan_AGP algorithm = new AlgoPrefixSpan_AGP(support, abstractionCreator);
+        AlgoPrefixSpan_AGP algorithm = new AlgoPrefixSpan_AGP(support);
+        
+		// This optional parameter allows to specify the minimum pattern length:
+//		algorithm.setMinimumPatternLength(1);  // optional
+
+		// This optional parameter allows to specify the maximum pattern length:
+//		algorithm.setMaximumPatternLength(2);  // optional
 
         System.out.println(sequenceDatabase.toString());
 

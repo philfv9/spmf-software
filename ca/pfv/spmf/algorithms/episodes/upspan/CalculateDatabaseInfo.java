@@ -58,6 +58,11 @@ public class CalculateDatabaseInfo {
 				{
 					break;
 				}
+				// Skip comments and metadata
+				if (line.isEmpty() || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+					continue;
+				}
+				
 				databaseSize++;
 				tokens1 = line.split(":"); // divide into 3 parts : 1.itemsets 2.transaction utility 3.utility of each item 
 				tokens2 = tokens1[0].split(" "); // divide itemsets into items

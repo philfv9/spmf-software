@@ -44,7 +44,7 @@ public class MainTestGSPAN {
 	}
 
 	public static String fileToPath(String filename) throws UnsupportedEncodingException{
-		URL url = MainTestGSPAN.class.getResource(filename);
+		URL url = MainTestFSG.class.getResource(filename);
 		 return java.net.URLDecoder.decode(url.getPath(),"UTF-8");
 	}
 }

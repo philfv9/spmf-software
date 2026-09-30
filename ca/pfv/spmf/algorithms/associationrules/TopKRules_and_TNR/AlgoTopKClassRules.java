@@ -438,6 +438,10 @@ public class AlgoTopKClassRules {
 	 */
 	public void writeResultTofile(String path) throws IOException {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(path));
+		writer.write("@FILETYPE=\"Top-k class association rules\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		
 		if (kRules.size() > 0) {
 			// sort the rules before printing

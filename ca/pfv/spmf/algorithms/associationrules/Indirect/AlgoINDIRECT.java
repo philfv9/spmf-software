@@ -113,7 +113,11 @@ public class AlgoINDIRECT {
 		// record the algorithm start time
 		startTimestamp = System.currentTimeMillis();
 		// create an object to write the output file
-		writer = new BufferedWriter(new FileWriter(output)); 
+		writer = new BufferedWriter(new FileWriter(output));
+		writer.write("@FILETYPE=\"Indirect association rules\"");
+		writer.newLine();
+		writer.write("@SOURCE=\"SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/\"");
+		writer.newLine();
 		this.minconf = minconf; // save minconf
 
 		// (1) count the tid set of each item in the database in one database pass
