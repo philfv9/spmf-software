@@ -1,0 +1,12 @@
+@FILETYPE="Uncertain transaction database"
+@SOURCE="Example database of the PPFP-growth paper (items a..e encoded as 1..5)"
+1(1.0) 2(0.9) 3(0.8) 4(1.0)
+2(0.9) 3(0.8) 4(1.0)
+1(1.0) 3(0.8) 5(0.5)
+2(0.9) 3(0.8)
+1(0.6) 3(1.0) 5(0.5)
+3(0.8)
+1(1.0) 2(0.9) 3(0.8) 4(0.9)
+4(1.0) 5(0.3)
+2(0.9) 3(0.8) 4(0.9)
+1(0.6) 3(1.0)

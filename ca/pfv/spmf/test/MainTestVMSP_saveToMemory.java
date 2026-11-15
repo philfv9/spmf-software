@@ -8,7 +8,6 @@ import java.util.TreeSet;
 
 import ca.pfv.spmf.algorithms.sequentialpatterns.spam.AlgoVMSP;
 import ca.pfv.spmf.algorithms.sequentialpatterns.spam.AlgoVMSP.PatternVMSP2;
-import ca.pfv.spmf.algorithms.sequentialpatterns.spam_oldversion.PatternVMSP;
 
 /**
  * Example of how to use the VMSP algorithm in source code.

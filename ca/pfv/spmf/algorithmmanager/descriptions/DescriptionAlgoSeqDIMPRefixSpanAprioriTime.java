@@ -9,7 +9,7 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim.AlgoFournie
 import ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim.multidimensionalpatterns.AlgoDim;
 import ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim.multidimensionalsequentialpatterns.AlgoSeqDim;
 import ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim.multidimensionalsequentialpatterns.MDSequenceDatabase;
-/* This file is copyright (c) 2008-2016 Philippe Fournier-Viger
+/* This file is copyright (c) 2008-2026 Philippe Fournier-Viger
 * 
 * This file is part of the SPMF DATA MINING SOFTWARE
 * (http://www.philippe-fournier-viger.com/spmf).
@@ -24,7 +24,9 @@ import ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim.multidimens
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
-*/
+ * 
+ * Do not remove copyright and license information
+ */
 
 /**
  * This class describes the SEQDIM algorithm parameters when applied with PrefixSpan, Apriori, and time constraints. 

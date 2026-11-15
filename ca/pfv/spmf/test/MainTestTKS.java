@@ -7,7 +7,6 @@ import java.util.PriorityQueue;
 
 import ca.pfv.spmf.algorithms.sequentialpatterns.spam.AlgoTKS;
 import ca.pfv.spmf.algorithms.sequentialpatterns.spam.AlgoTKS.PatternTKS2;
-import ca.pfv.spmf.algorithms.sequentialpatterns.spam_oldversion.PatternTKS;
 
 
 /**

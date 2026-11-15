@@ -8,7 +8,6 @@ import java.util.Map;
 
 import ca.pfv.spmf.algorithms.sequentialpatterns.spam.AlgoVGEN;
 import ca.pfv.spmf.algorithms.sequentialpatterns.spam.AlgoVGEN.GeneratorPattern;
-import ca.pfv.spmf.algorithms.sequentialpatterns.spam_oldversion.PatternVGEN;
 
 
 /**

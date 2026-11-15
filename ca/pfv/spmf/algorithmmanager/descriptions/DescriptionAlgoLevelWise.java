@@ -25,6 +25,8 @@ import ca.pfv.spmf.algorithms.frequentpatterns.levelwise.AlgoLevelWise;
 * SPMF. If not, see <http://www.gnu.org/licenses/>. 
 * 
 * @author Wu Cheng-Wei, Huang Jian-Tao, 2018
+* 
+* Do not remove copyright and license information.
 */
 
 /**

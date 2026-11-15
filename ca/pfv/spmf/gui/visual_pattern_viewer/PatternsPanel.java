@@ -1,6 +1,5 @@
 package ca.pfv.spmf.gui.visual_pattern_viewer;
 
-import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;

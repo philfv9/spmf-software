@@ -5,15 +5,14 @@ import java.io.IOException;
 import ca.pfv.spmf.algorithmmanager.AlgorithmType;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfAlgorithm;
 import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
-import ca.pfv.spmf.algorithms.frequentpatterns.HUIM_BPSO.AlgoHUIM_BPSO;
 import ca.pfv.spmf.algorithms.frequentpatterns.huim_abc.AlgoHUIM_ABC;
-/* This file is copyright (c) 2008-2016 Philippe Fournier-Viger
+/* This file is copyright (c) 2008-2026 Philippe Fournier-Viger
 * 
 * This file is part of the SPMF DATA MINING SOFTWARE
 * (http://www.philippe-fournier-viger.com/spmf).
 * 
 * SPMF is free software: you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software 
+* terms of the GNU General Public License as published by the Free Software
 * Foundation, either version 3 of the License, or (at your option) any later
 * version.
 * 
@@ -22,13 +21,15 @@ import ca.pfv.spmf.algorithms.frequentpatterns.huim_abc.AlgoHUIM_ABC;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
-*/
+ * 
+ * Do not remove copyright and license information
+ */
 
 /**
  * This class describes the HUIM-ABC algorithm parameters. 
  * It is designed to be used by the graphical and command line interface.
  * 
- * @see AlgoHUIM_BPSO
+ * @see AlgoHUIM_ABC
  * @author Philippe Fournier-Viger
  */
 

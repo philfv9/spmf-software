@@ -40,6 +40,7 @@ public class DescriptionAlgoSequenceUtilityDatabaseViewerOpenFile extends Descri
 	public void runAlgorithm(String[] parameters, String inputFile, String outputFile) throws IOException {
 
 		boolean runAsStandalone = false;
+		@SuppressWarnings("unused")
 		SequenceUtilityDatabaseViewer tool = new SequenceUtilityDatabaseViewer(runAsStandalone, inputFile);
 	}
 

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import ca.pfv.spmf.tools.MemoryLogger;
-/* This file is copyright (c) 2008-2024 Philippe Fournier-Viger
+/* This file is copyright (c) 2008-2026 Philippe Fournier-Viger
 * 
 * This file is part of the SPMF DATA MINING SOFTWARE
 * (http://www.philippe-fournier-viger.com/spmf).
@@ -30,9 +30,9 @@ import ca.pfv.spmf.tools.MemoryLogger;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
-* 
-*  Do not remove the copyright and license information.
-*/
+ * 
+ * Do not remove copyright and license information
+ */
 
 /**
  * This tool allows to fix some common problems in a transaction database file

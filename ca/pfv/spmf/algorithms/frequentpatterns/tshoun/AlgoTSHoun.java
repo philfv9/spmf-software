@@ -321,7 +321,7 @@ public class AlgoTSHoun {
 			int itemI = entryMap.getKey();
 
 			Iterator<Entry<Integer, Pair>> iter = entryMap.getValue().entrySet().iterator();
-			BitSet bitsetI = mapItemPeriod.get(itemI);
+//			BitSet bitsetI = mapItemPeriod.get(itemI);
 			while (iter.hasNext()) {
 				Entry<Integer, Pair> entryJ = iter.next();
 				int itemJ = entryJ.getKey();
@@ -336,7 +336,7 @@ public class AlgoTSHoun {
 				for(int i=0; i<estimatedUtilityIJ.length; i++) {
 					// if {i,j} appears in the i-th period
 					if(estimatedUtilityIJ[i] != null) {
-						int twuIJ =0;
+//						int twuIJ =0;
 						if(isPromisingInAtLeastOnePeriod == false) {
 							if(calculateRelativeUtility(periodUtilities.get(i), estimatedUtilityIJ[i]) >= minUtilityRatio) {
 								isPromisingInAtLeastOnePeriod = true;

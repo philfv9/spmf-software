@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/* This file is copyright (c) Cheng-Wei Wu et al.
+/* This file is copyright (c) 2008-2026 Philippe Fournier-Viger
 * 
 * This file is part of the SPMF DATA MINING SOFTWARE
 * (http://www.philippe-fournier-viger.com/spmf).
@@ -20,9 +20,9 @@ import java.util.Set;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
-* 
-* Do not remove the copyright and license information.
-*/
+ * 
+ * Do not remove copyright and license information
+ */
 
 /**
  * This class is used to calculate statistics about a transaction database with

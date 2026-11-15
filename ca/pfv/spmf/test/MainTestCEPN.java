@@ -63,6 +63,7 @@ public class MainTestCEPN {
 		algo.setUseLowerBound(true);
 
 		// found cost-effective patterns
+		@SuppressWarnings("unused")
 		SequentialPatterns patterns = algo.runAlgorithmCEPN(inputFile, outputFile, minsup, maxcost, minoccupancy, sortByUtility,
 				outputLowestTradeOff);
 

@@ -160,6 +160,7 @@ public class MainDatasetUtilityGenerator {
 			writer.newLine();
 		}
 		writer.close();
+		myInput.close();
 		
 		
 		System.out.println("item count " + items.size());

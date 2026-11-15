@@ -131,6 +131,12 @@ public abstract class PatternsReader {
 		maxMeasureValuesAdjusted.replace("WSUP", 1d);
 		minMeasureValuesAdjusted.replace("RA", 0d);
 		maxMeasureValuesAdjusted.replace("RA", 1d);
+		minMeasureValuesAdjusted.replace("UO", 0d);
+		maxMeasureValuesAdjusted.replace("UO", 1d);
+		minMeasureValuesAdjusted.replace("PROBPER", 0d);
+		maxMeasureValuesAdjusted.replace("PROBPER", 1d);
+		
+//		PROBPER
 	}
 
 	/**

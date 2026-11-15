@@ -28,6 +28,7 @@ class HashTable {
 	 * Construtor.
 	 * @param size size of the internal array for the hash table.
 	 */
+	@SuppressWarnings("unchecked")
 	public HashTable(int size) {
 		table = new ArrayList[size];
 	}

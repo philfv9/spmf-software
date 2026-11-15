@@ -53,6 +53,7 @@ public class MainTestCEPB {
 //		algo.setMaximumPatternLength(2);
 		
 		// found cost-effective patterns
+		@SuppressWarnings("unused")
 		SequentialPatterns patterns = algo.runAlgorithmCEPB(inputFile, outputFile, minsup, maxcost, minoccupancy);
 		
 		// Print statistics about the algorithm

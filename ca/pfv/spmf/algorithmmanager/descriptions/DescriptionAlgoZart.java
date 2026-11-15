@@ -28,7 +28,7 @@ import ca.pfv.spmf.input.transaction_database_list_integers.TransactionDatabase;
  * This class describes the AlgoZart algorithm parameters. 
  * It is designed to be used by the graphical and command line interface.
  * 
- * @see AprioriClose
+ * @see AlgoZart
  * @author Philippe Fournier-Viger
  */
 public class DescriptionAlgoZart extends DescriptionOfAlgorithm {

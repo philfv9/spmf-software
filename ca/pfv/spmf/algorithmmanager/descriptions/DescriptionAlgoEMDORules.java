@@ -11,7 +11,7 @@ import ca.pfv.spmf.algorithms.episodes.emdo.AlgoPEMDO;
 import ca.pfv.spmf.algorithms.episodes.emdo.Episode;
 import ca.pfv.spmf.algorithms.episodes.emdo.Occurrence;
 
-/* This file is copyright (c) 2008-2016 Philippe Fournier-Viger
+/* This file is copyright (c) 2008-2026 O. Ouarem et al.
 * 
 * This file is part of the SPMF DATA MINING SOFTWARE
 * (http://www.philippe-fournier-viger.com/spmf).
@@ -26,7 +26,9 @@ import ca.pfv.spmf.algorithms.episodes.emdo.Occurrence;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
-*/
+ * 
+ * Do not remove copyright and license information
+ */
 /**
  * This class describes the EMDO algorithm parameters for episode rules. It is
  * designed to be used by the graphical and command line interface.

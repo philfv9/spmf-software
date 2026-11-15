@@ -8,7 +8,7 @@ import ca.pfv.spmf.algorithmmanager.DescriptionOfParameter;
 import ca.pfv.spmf.algorithms.episodes.emma.AlgoEMMA;
 import ca.pfv.spmf.algorithms.episodes.general.FrequentEpisodes;
 import ca.pfv.spmf.algorithms.episodes.standardepisoderules.AlgoGenerateEpisodeRules;
-/* This file is copyright (c) 2008-2016 Philippe Fournier-Viger
+/* This file is copyright (c) 2008-2026 Yang Peng et al.
 * 
 * This file is part of the SPMF DATA MINING SOFTWARE
 * (http://www.philippe-fournier-viger.com/spmf).
@@ -23,7 +23,9 @@ import ca.pfv.spmf.algorithms.episodes.standardepisoderules.AlgoGenerateEpisodeR
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
-*/
+ * 
+ * Do not remove copyright and license information
+ */
 /**
  * This class describes the EMMA algorithm parameters. It is designed to be used
  * by the graphical and command line interface.

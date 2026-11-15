@@ -25,13 +25,15 @@ import ca.pfv.spmf.algorithms.frequentpatterns.DFIGrowth.AlgoDFIGrowth;
 * SPMF. If not, see <http://www.gnu.org/licenses/>. 
 * 
 * @author Wu Cheng-Wei, Huang Jian-Tao, 2018
+* 
+* Do not remove copyright and license information.
 */
 
 /**
  * This class describes the DFI-Growth algorithm parameters. It is designed to
  * be used by the graphical and command line interface.
  * 
- * @see DFI-Growth
+ * @see AlgoDFIGrowth
  * @author Philippe Fournier-Viger
  */
 public class DescriptionAlgoDFIGrowth extends DescriptionOfAlgorithm {

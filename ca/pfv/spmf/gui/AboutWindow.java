@@ -91,7 +91,8 @@ public class AboutWindow extends JDialog {
      * @throws Exception kept for compatibility; failures to count algorithms
      *                   are handled internally
      */
-    public AboutWindow(Window owner) throws Exception {
+    @SuppressWarnings("unused")
+	public AboutWindow(Window owner) throws Exception {
         super(owner, "About SPMF", ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -198,7 +199,8 @@ public class AboutWindow extends JDialog {
         return card(pane);
     }
 
-    private JComponent buildSystemCard() {
+    @SuppressWarnings("unused")
+	private JComponent buildSystemCard() {
         JLabel title = new JLabel("System");
         title.setFont(fontSmallBold);
         title.setForeground(TEXT_SECONDARY);
@@ -215,7 +217,8 @@ public class AboutWindow extends JDialog {
                     .setContents(new StringSelection(info), null);
             copy.setText("Copied");
             copy.setEnabled(false);
-            Timer t = new Timer(1500, ev -> {
+            @SuppressWarnings("unused")
+			Timer t = new Timer(1500, ev -> {
                 copy.setText("Copy");
                 copy.setEnabled(true);
             });
@@ -243,7 +246,8 @@ public class AboutWindow extends JDialog {
         return card(content);
     }
 
-    private JComponent buildButtons() {
+    @SuppressWarnings("unused")
+	private JComponent buildButtons() {
         JButton website = new JButton("Website");
         website.setToolTipText("Open the SPMF website in your browser");
         website.addActionListener(e -> BrowserUtil.open(this, URL_WEBSITE));

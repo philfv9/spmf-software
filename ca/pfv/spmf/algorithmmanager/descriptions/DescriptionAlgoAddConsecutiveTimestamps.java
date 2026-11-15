@@ -21,7 +21,9 @@ import ca.pfv.spmf.tools.dataset_generator.AddTimeStampsToSequenceDatabase;
 * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
-*/
+ * 
+ * Do not remove copyright and license information
+ */
 
 /**
  * This class describes the algorithm to add consecutive timestamps to a sequence database. It is designed to be used by the graphical and command line interface.

@@ -24,8 +24,9 @@ package ca.pfv.spmf.algorithmmanager.descriptions;
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see http://www.gnu.org/licenses/.
+ * 
+ * Do not remove copyright and license information.
  */
-
 import java.io.IOException;
 
 import ca.pfv.spmf.algorithmmanager.AlgorithmType;

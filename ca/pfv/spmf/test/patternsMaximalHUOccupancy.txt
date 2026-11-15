@@ -1,0 +1,6 @@
+@FILETYPE="Maximal high utility-occupancy itemsets"
+@SOURCE="SPMF SOFTWARE https://philippe-fournier-viger.com/spmf/"
+3 5 #SUP: 3 #UO: 0.8775510204081632
+1 2 4 #SUP: 3 #UO: 0.4959031067129181
+1 3 4 #SUP: 4 #UO: 0.8971535982814178
+2 3 #SUP: 3 #UO: 0.6553884711779449

@@ -1,7 +1,5 @@
 package ca.pfv.spmf.tools.textprocessing;
 
-
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;

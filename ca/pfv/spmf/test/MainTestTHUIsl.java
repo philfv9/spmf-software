@@ -1,14 +1,10 @@
 package ca.pfv.spmf.test;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.FileNotFoundException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-
-import java.io.File;
-import java.nio.file.*;
-import java.io.*;
 
 import ca.pfv.spmf.algorithms.frequentpatterns.THUIsl.AlgoTHUIsl;
 import ca.pfv.spmf.algorithms.frequentpatterns.THUIsl.PrepareData;
