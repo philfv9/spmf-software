@@ -469,7 +469,15 @@ public class AlgoSPAM {
 
 		int numSequences = sequencesSize.length;
 
-		minsup = (int) Math.ceil(minsupRel * numSequences);
+		// BUGFIX START 11-2026
+		// Math.ceil() alone is wrong: for many relative thresholds minsupRel *
+		// numSequences
+		// evaluates to just above an integer (e.g. 0.56 * 25 == 14.000000000000002), so
+		// ceil() rounds the absolute minimum support up by one and every pattern whose
+		// support equals the requested threshold is silently dropped.
+		// Subtracting a small epsilon makes the conversion exact.
+		minsup = Math.max(1, (int) Math.ceil(minsupRel * numSequences - 1e-7));
+		// BUGFIX END
 		if (minsup == 0)
 			minsup = 1;
 
