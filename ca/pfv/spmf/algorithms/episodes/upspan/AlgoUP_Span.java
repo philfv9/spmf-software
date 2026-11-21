@@ -42,6 +42,8 @@ import ca.pfv.spmf.tools.MemoryLogger;
  * 
  *         Code cleaned and adapted by Philippe Fournier-Viger (2018) for the
  *         integration in SPMF.
+ *         
+ *         2026-11-21:  Fixed some bugs in the original implementation.
  *
  */
 public class AlgoUP_Span {
@@ -79,27 +81,39 @@ public class AlgoUP_Span {
 	ArrayList<Integer> freF1 = new ArrayList<Integer>();
 	
 	/** �bMax. time duration���d�򤺤�Total Utility */
-	ArrayList<Integer> totalUtilityByTimeAndDuration = new ArrayList<Integer>();
+	//BUGFIX START
+	ArrayList<Long> totalUtilityByTimeAndDuration = new ArrayList<Long>();
+	//BUGFIX END
 	
 	/** �s�C�Ӯɶ��I��Total Utility */
-	ArrayList<Integer> totalUtilityByTime = new ArrayList<Integer>();
+	//BUGFIX START
+	ArrayList<Long> totalUtilityByTime = new ArrayList<Long>();
+	//BUGFIX END
 	
 	/** Total utility in the database */
 	long totalUtilityinAllSequence = 0;
 	
 	/** �s�C�Ӯɶ��I��Event Utility  ArrayList���ɶ����ǡAEvent����Utility�h�ϥ�map�Ӧs*/
-	ArrayList<HashMap<Integer, Integer>> eventUtilityByTime = new ArrayList<HashMap<Integer, Integer>>();
+	//BUGFIX START
+	ArrayList<HashMap<Integer, Long>> eventUtilityByTime = new ArrayList<HashMap<Integer, Long>>();
+	//BUGFIX END
 
 	/** �b�p��F1���̤jUtility(�����)  <F1,Total utility>*/
-	HashMap<Integer, Integer> F1TotalUtilitybackward = new HashMap<Integer, Integer>(); 
+	//BUGFIX START
+	HashMap<Integer, Long> F1TotalUtilitybackward = new HashMap<Integer, Long>();
+	//BUGFIX END
 	/** �b�p��F1���̤jUtility(����(�e�ᤤ)����)  <F1,Total utility>*/
-	HashMap<Integer, Integer> F1TotalUtility = new HashMap<Integer, Integer>();
+	//BUGFIX START
+	HashMap<Integer, Long> F1TotalUtility = new HashMap<Integer, Long>();
+	//BUGFIX END
 	
 	/** �b�p��F1���̤jUtility(����(�e�ᤤ)����)  <F1,Total  utility>*/
 	HashMap<Integer, HashSet<Integer>> F1TotalUtilityTime = new HashMap<Integer, HashSet<Integer>>(); 
 	
     /** event �X�{������ */
-	int[] EventCount;
+	//BUGFIX START
+	long[] EventCount;
+	//BUGFIX END
 	
 	/** event   �{�b���X��time  point */
 	HashMap<Integer, ArrayList<Integer>> eventTID = new HashMap<Integer, ArrayList<Integer>>();
@@ -109,7 +123,9 @@ public class AlgoUP_Span {
 
 	////// output���F��/////
 	ArrayList<String> FreEP = new ArrayList<String>();
-	ArrayList<Integer> EPCount = new ArrayList<Integer>();
+	//BUGFIX START
+	ArrayList<Long> EPCount = new ArrayList<Long>();
+	//BUGFIX END
 
 	long Num_FreEP = 0;
 
@@ -148,6 +164,27 @@ public class AlgoUP_Span {
 
 		// Reset logger for memory usage
 		MemoryLogger.getInstance().reset();
+
+		//BUGFIX START
+		// Reset instance state so runAlgorithm can be safely invoked multiple times
+		allCalculateCount = 0;
+		freF1 = new ArrayList<Integer>();
+		totalUtilityByTimeAndDuration = new ArrayList<Long>();
+		totalUtilityByTime = new ArrayList<Long>();
+		totalUtilityinAllSequence = 0;
+		eventUtilityByTime = new ArrayList<HashMap<Integer, Long>>();
+		F1TotalUtilitybackward = new HashMap<Integer, Long>();
+		F1TotalUtility = new HashMap<Integer, Long>();
+		F1TotalUtilityTime = new HashMap<Integer, HashSet<Integer>>();
+		eventTID = new HashMap<Integer, ArrayList<Integer>>();
+		freDB = new HashMap<Integer, ArrayList<Integer>>();
+		FreEP = new ArrayList<String>();
+		EPCount = new ArrayList<Long>();
+		Num_FreEP = 0;
+		numberOfCandidates = 0;
+		numberOfEpisodes = 0;
+		numberOfSingleEvents = 0;
+		//BUGFIX END
 
 		startTimestamp = System.currentTimeMillis();
 
@@ -209,7 +246,9 @@ public class AlgoUP_Span {
 		Thread t1 = new Thread() {
 			public void run() {
 
-				EventCount = new int[eventType + 1];// event �X�{������
+				//BUGFIX START
+				EventCount = new long[eventType + 1];
+				//BUGFIX END // event �X�{������
 
 				ReadFileToGetF1(inputFile);
 				
@@ -254,10 +293,17 @@ public class AlgoUP_Span {
 
 			String line;// ��J�ɪ��@���r
 			int LineNumber = 0;// �ĴX��
-			totalUtilityByTime.add(0, 0);
+			//BUGFIX START
+			totalUtilityByTime.add(0, 0L);
 			eventUtilityByTime.add(0, null);
-			totalUtilityByTimeAndDuration.add(0);
+			totalUtilityByTimeAndDuration.add(0L);
+			//BUGFIX END
 			while ((line = br.readLine()) != null) {
+				//BUGFIX START
+				if (line.isEmpty() || line.charAt(0) == '#' || line.charAt(0) == '%' || line.charAt(0) == '@') {
+					continue;
+				}
+				//BUGFIX END
 				LineNumber++;
 				// System.out.println(LineNumber);
 				/**
@@ -269,7 +315,9 @@ public class AlgoUP_Span {
 				String[] elementUtitle = target[2]
 						.split(" "); /** �ĤG���O����Event��Utility */
 
-				HashMap<Integer, Integer> EventUtility = new HashMap<Integer, Integer>();
+				//BUGFIX START
+				HashMap<Integer, Long> EventUtility = new HashMap<Integer, Long>();
+				//BUGFIX END
 
 				freDB.put(LineNumber, new ArrayList<Integer>());
 
@@ -277,7 +325,9 @@ public class AlgoUP_Span {
 				{
 					for (int i = 0; i < element.length; i++) {
 						int event = Integer.valueOf(element[i]);
-						int utility = Integer.valueOf(elementUtitle[i]);
+						//BUGFIX START
+						long utility = Long.valueOf(elementUtitle[i]);
+						//BUGFIX END
 						EventUtility.put(event, utility);
 						EventCount[event] += utility;// �p��F1��Utility
 
@@ -290,14 +340,19 @@ public class AlgoUP_Span {
 					}
 
 					// �O���C�@�檺total utility
-					totalUtilityByTime.add(LineNumber, Integer.valueOf(TotalUtility));
+					//BUGFIX START
+					totalUtilityByTime.add(LineNumber, Long.valueOf(TotalUtility));
+					//BUGFIX END
 					// �֥[�C�@�檺total utility
-					totalUtilityinAllSequence += Integer.valueOf(TotalUtility);
+					//BUGFIX START
+					totalUtilityinAllSequence += Long.valueOf(TotalUtility);
+					//BUGFIX END
 					// �O���C�@��U�Oevent��utility
 					eventUtilityByTime.add(LineNumber, EventUtility);
 
 					// �p��bMax. time duration���d�򤺤�Total Utility
-					totalUtilityByTimeAndDuration.add(Integer.valueOf(TotalUtility));
+					//BUGFIX START
+					totalUtilityByTimeAndDuration.add(Long.valueOf(TotalUtility));
 					if (LineNumber <= maximumTimeDuration) {
 						for (int R = 1; R <= maximumTimeDuration; R++) {
 							if ((LineNumber - R) < 1)
@@ -305,18 +360,15 @@ public class AlgoUP_Span {
 							else
 								totalUtilityByTimeAndDuration.set((LineNumber - R),
 										totalUtilityByTimeAndDuration.get(LineNumber - R)
-												+ Integer.valueOf(TotalUtility));
-							// TotalUtilityByTimeAndDuration[(LineNumber-R)] +=
-							// Integer.valueOf(TotalUtility);
+												+ Long.valueOf(TotalUtility));
 						}
 					} else {
 						for (int R = 1; R <= maximumTimeDuration; R++) {
 							totalUtilityByTimeAndDuration.set((LineNumber - R),
-									totalUtilityByTimeAndDuration.get(LineNumber - R) + Integer.valueOf(TotalUtility));
-							// TotalUtilityByTimeAndDuration[(LineNumber-R)] +=
-							// Integer.valueOf(TotalUtility);
+									totalUtilityByTimeAndDuration.get(LineNumber - R) + Long.valueOf(TotalUtility));
 						}
 					}
+					//BUGFIX END
 				}
 			}
 			fis.close();
@@ -336,12 +388,10 @@ public class AlgoUP_Span {
 								F1TotalUtilitybackward.get(Event) + totalUtilityByTimeAndDuration.get(L));// TotalUtilityByTimeAndDuration[L]
 
 					// ��o�{event�Ҳ[�\�쪺Windows���ɶ����O���_��
-					int StartRange = L - maximumTimeDuration;
-					if (StartRange < 1)
-						StartRange = 1;
-					int EndRange = L + maximumTimeDuration;
-					if (EndRange >= eventUtilityByTime.size())
-						EndRange = eventUtilityByTime.size() - 1;
+					//BUGFIX START
+					int StartRange = (int) Math.max(1L, (long) L - maximumTimeDuration);
+					int EndRange = (int) Math.min((long) eventUtilityByTime.size() - 1, (long) L + maximumTimeDuration);
+					//BUGFIX END
 
 					for (int range = StartRange; range <= EndRange; range++) {
 						if (!F1TotalUtilityTime.containsKey(Event)) {
@@ -359,9 +409,11 @@ public class AlgoUP_Span {
 
 			Set<Integer> AllEventAtTime = F1TotalUtilityTime.keySet();
 			for (Integer Event : AllEventAtTime) {
-				int Total = 0;
-				for (int i = 0; i < F1TotalUtilityTime.get(Event).size(); i++)
-					Total += totalUtilityByTimeAndDuration.get(i);// TotalUtilityByTimeAndDuration[i]
+				//BUGFIX START
+				long Total = 0;
+				for (Integer time : F1TotalUtilityTime.get(Event))
+					Total += totalUtilityByTimeAndDuration.get(time);// TotalUtilityByTimeAndDuration[time]
+				//BUGFIX END
 
 				F1TotalUtility.put(Event, Total);
 			}
@@ -376,7 +428,9 @@ public class AlgoUP_Span {
 		//// �o��F1
 		for (int i = 0; i < eventType + 1; i++) {
 			// if(EventCount[i]>=min_utility)
-			if (EventCount[i] > 0) {
+			//BUGFIX START
+			if (eventTID.containsKey(i)) {
+			//BUGFIX END
 				// System.out.println("Event:"+i+" Utility:"+EventCount[i]);
 				freF1.add(i);
 			}
@@ -416,7 +470,9 @@ public class AlgoUP_Span {
 						freDB.get(LineNumber).remove(WPurneF1.get(j));
 					}
 				}
-				int TotalUtility = totalUtilityByTime.get(LineNumber);
+				//BUGFIX START
+				long TotalUtility = totalUtilityByTime.get(LineNumber);
+				//BUGFIX END
 				// TotalUtilityByTimeAndDuration[LineNumber] = TotalUtility;
 				totalUtilityByTimeAndDuration.set(LineNumber, TotalUtility);
 				if (LineNumber <= maximumTimeDuration) {
@@ -477,8 +533,9 @@ public class AlgoUP_Span {
 			if (F1TotalUtilitybackward.get(freF1.get(i)) >= (minUtility * totalUtilityinAllSequence)) {
 				allCalculateCount++;
 
-				FreEP.add(String.valueOf(freF1.get(i)));
-				EPCount.add(EventCount[freF1.get(i)]);
+				//BUGFIX START
+				// Single events are output in saveResultToFile() when outputSingleEvents is true.
+				//BUGFIX END
 				MiningEP(String.valueOf(freF1.get(i)), EventCount[freF1.get(i)], eventTID.get(freF1.get(i)),
 						eventTID.get(freF1.get(i)), eventTID.get(freF1.get(i)), eventTID.get(freF1.get(i)));
 			}
@@ -494,8 +551,10 @@ public class AlgoUP_Span {
 	 * @param Pmos
 	 * @param Pmoe
 	 */
-	public void MiningEP(String Pepisode, int EpisodeExactUtility, ArrayList<Integer> Pos, ArrayList<Integer> Poe,
+	//BUGFIX START
+	public void MiningEP(String Pepisode, long EpisodeExactUtility, ArrayList<Integer> Pos, ArrayList<Integer> Poe,
 			ArrayList<Integer> Pmos, ArrayList<Integer> Pmoe) {
+	//BUGFIX END
 
 		numberOfCandidates++;
 //		System.out.println(Pepisode+"=="+Pos);
@@ -512,13 +571,15 @@ public class AlgoUP_Span {
 	 * @param Pmos
 	 * @param Pmoe
 	 */
-	public void MiningSimult(String Pepisode, int EpisodeExactUtility, ArrayList<Integer> Pos, ArrayList<Integer> Poe,
+	//BUGFIX START
+	public void MiningSimult(String Pepisode, long EpisodeExactUtility, ArrayList<Integer> Pos, ArrayList<Integer> Poe,
 			ArrayList<Integer> Pmos, ArrayList<Integer> Pmoe) {
 		// System.out.println(Pepisode);
-		int LocalCount[] = new int[eventType + 1];
-		int EventExactUtility[] = new int[eventType + 1];
-		Arrays.fill(LocalCount, 0);
-		Arrays.fill(EventExactUtility, 0);
+		long LocalCount[] = new long[eventType + 1];
+		long EventExactUtility[] = new long[eventType + 1];
+		Arrays.fill(LocalCount, 0L);
+		Arrays.fill(EventExactUtility, 0L);
+	//BUGFIX END
 
 		Map<Integer, ArrayList<Integer>> OS = new HashMap<Integer, ArrayList<Integer>>();
 		Map<Integer, ArrayList<Integer>> OE = new HashMap<Integer, ArrayList<Integer>>();
@@ -526,7 +587,9 @@ public class AlgoUP_Span {
 		Map<Integer, ArrayList<Integer>> MOS = new HashMap<Integer, ArrayList<Integer>>();
 		Map<Integer, ArrayList<Integer>> MOE = new HashMap<Integer, ArrayList<Integer>>();
 
-		for (int i = 1; i < eventType + 1; i++) {
+		//BUGFIX START
+		for (int i = 0; i < eventType + 1; i++) {
+		//BUGFIX END
 			MOS.put(i, new ArrayList<Integer>());
 			MOE.put(i, new ArrayList<Integer>());
 		}
@@ -541,9 +604,11 @@ public class AlgoUP_Span {
 			int timepoint = Poe.get(i);
 
 			long TC = timePoint;
-			if (ocs + maximumTimeDuration < TC) {
-				TC = ocs + maximumTimeDuration;
+			//BUGFIX START
+			if ((long) ocs + maximumTimeDuration < TC) {
+				TC = (long) ocs + maximumTimeDuration;
 			}
+			//BUGFIX END
 
 			ArrayList<Integer> EventList = freDB.get(timepoint);// �b�o�Ӯɶ��I�W���o�ͪ�SES
 
@@ -560,34 +625,39 @@ public class AlgoUP_Span {
 						OE.get(EventList.get(k)).add(oce);
 
 						///// �B�zMO
-						int ismo = IsMo(MOS.get(EventList.get(k)), MOE.get(EventList.get(k)), ocs, oce);
-						if (ismo == -1) {
-							MOS.get(EventList.get(k)).add(ocs);
-							MOE.get(EventList.get(k)).add(oce);
-							// System.out.println("i="+i+","+EventList.get(k)+","+ocs+","+oce+","+EventUtilityByTime.get(ocs));
-							// System.out.println(MOS.get(EventList.get(k))+","+MOE.get(EventList.get(k)));
-							LocalCount[EventList.get(k)] += totalUtilityByTimeAndDuration.get(ocs);
-							EventExactUtility[EventList.get(k)] += CalculateUtility(Pepisode + " " + EventList.get(k),
-									ocs, oce, 1);
-						} else if (ismo == -2) {
-
-						} else {
-							MOS.get(EventList.get(k)).remove(ismo);
-							MOE.get(EventList.get(k)).remove(ismo);
-							MOS.get(EventList.get(k)).add(ocs);
-							MOE.get(EventList.get(k)).add(oce);
-						}
+						//BUGFIX START
+						updateMoSet(MOS.get(EventList.get(k)), MOE.get(EventList.get(k)), ocs, oce);
+						//BUGFIX END
 
 					}
 				}
 
 			}
 		}
+		//BUGFIX START
+		for (int i = 0; i < freF1.size(); i++) {
+			int event = freF1.get(i);
+			ArrayList<Integer> mosList = MOS.get(event);
+			ArrayList<Integer> moeList = MOE.get(event);
+			if (!mosList.isEmpty()) {
+				String candidateEp = Pepisode + " " + event;
+				for (int m = 0; m < mosList.size(); m++) {
+					int ocs = mosList.get(m);
+					int oce = moeList.get(m);
+					LocalCount[event] += totalUtilityByTimeAndDuration.get(ocs);
+					EventExactUtility[event] += CalculateUtility(candidateEp, ocs, oce, 1);
+				}
+			}
+		}
+		//BUGFIX END
 		// System.out.println("Prefix:"+Pepisode);
 		// System.out.println("LastEvent:"+lastevent);
 
 		for (int i = 0; i < freF1.size(); i++) {
-			if (LocalCount[freF1.get(i)] >= (minUtility * totalUtilityinAllSequence)) {
+			//BUGFIX START
+			if (!MOS.get(freF1.get(i)).isEmpty()
+					&& LocalCount[freF1.get(i)] >= (minUtility * totalUtilityinAllSequence)) {
+			//BUGFIX END
 				Num_FreEP++;
 
 				String Nepisode = Pepisode.concat(" " + String.valueOf(freF1.get(i)));
@@ -616,13 +686,15 @@ public class AlgoUP_Span {
 	 * @param Pmos
 	 * @param Pmoe
 	 */
-	public void MiningSerial(String Pepisode, int EpisodeExactUtility, ArrayList<Integer> Pos, ArrayList<Integer> Poe,
+	//BUGFIX START
+	public void MiningSerial(String Pepisode, long EpisodeExactUtility, ArrayList<Integer> Pos, ArrayList<Integer> Poe,
 			ArrayList<Integer> Pmos, ArrayList<Integer> Pmoe) {
 		// System.out.println("episode="+Pepisode);
-		int LocalCount[] = new int[eventType + 1];
-		int EventExactUtility[] = new int[eventType + 1];
-		Arrays.fill(LocalCount, 0);
-		Arrays.fill(EventExactUtility, 0);
+		long LocalCount[] = new long[eventType + 1];
+		long EventExactUtility[] = new long[eventType + 1];
+		Arrays.fill(LocalCount, 0L);
+		Arrays.fill(EventExactUtility, 0L);
+	//BUGFIX END
 		
 		
 
@@ -637,91 +709,61 @@ public class AlgoUP_Span {
 			MOE.put(i, new ArrayList<Integer>());
 		}
 
-		///// �B�zOC
-		for (int i = 0; i < Pos.size(); i++) {
-			int ocs = Pos.get(i);
-			int timepoint = Poe.get(i);
-
-			long TC = timePoint;
-			if (ocs + maximumTimeDuration < TC) {
-				TC = ocs + maximumTimeDuration;
-			}
-
-			////// �q���ɶ��I��}�l���y ��X�H���ɶ��I���}�Y��mo
-			for (int j = timepoint + 1; j < TC + 1; j++) {
-				ArrayList<Integer> EventList = freDB.get(j);// �b�o�Ӯɶ��I�W���o�ͪ�SES
-				if (EventList != null) {
-					for (int k = 0; k < EventList.size(); k++) {
-						int oce = j;
-
-						if (OS.get(EventList.get(k)) == null) {
-							OS.put(EventList.get(k), new ArrayList<Integer>());
-							OE.put(EventList.get(k), new ArrayList<Integer>());
-						}
-						OS.get(EventList.get(k)).add(ocs);
-						OE.get(EventList.get(k)).add(oce);
-					}
-
-				}
-			}
-		}
-
-		/** find local item */
+		//BUGFIX START
+		/** find local item and build OC/MO from minimal occurrences of prefix */
 		for (int i = 0; i < Pmos.size(); i++) {
 			int ocs = Pmos.get(i);
 			int timepoint = Pmoe.get(i);
 
 			long TC = timePoint;
-			if (ocs + maximumTimeDuration < TC) {
-				TC = ocs + maximumTimeDuration;
+			if ((long) ocs + maximumTimeDuration < TC) {
+				TC = (long) ocs + maximumTimeDuration;
 			}
 
-			////// �q���ɶ��I��}�l���y ��X�H���ɶ��I���}�Y��mo
 			for (int j = timepoint + 1; j < TC + 1; j++) {
-				ArrayList<Integer> EventList = freDB.get(j);// �b�o�Ӯɶ��I�W���o�ͪ�SES
+				ArrayList<Integer> EventList = freDB.get(j);
 				if (EventList != null) {
 					for (int k = 0; k < EventList.size(); k++) {
-
+						int event = EventList.get(k);
 						int oce = j;
 
-						int ismo = IsMo(MOS.get(EventList.get(k)), MOE.get(EventList.get(k)), ocs, oce);
-						if (ismo == -1) {
-							MOS.get(EventList.get(k)).add(ocs);
-							MOE.get(EventList.get(k)).add(oce);
-							LocalCount[EventList.get(k)] += totalUtilityByTimeAndDuration.get(ocs);
-							EventExactUtility[EventList.get(k)] += CalculateUtility(Pepisode + "," + EventList.get(k),
-									ocs, oce, 1);
-
-						} else if (ismo == -2) {
-
-						} else {
-							MOS.get(EventList.get(k)).remove(ismo);
-							MOE.get(EventList.get(k)).remove(ismo);
-							MOS.get(EventList.get(k)).add(ocs);
-							MOE.get(EventList.get(k)).add(oce);
-							// ====  I THINK THE BUG IS THERE... 2020-3-6 but i did not find a solution yet
-							// about how to fix it.. I tried adding the code below... but no success-==============
-////							if("2".equals(Pepisode))
-////								System.out.println("2".equals(Pepisode));
-//							// I have added these lines, which were missing. I have copied from the IF(ismo == -1)
-//							MOS.get(EventList.get(k)).add(ocs);
-//							MOE.get(EventList.get(k)).add(oce);
-//							LocalCount[EventList.get(k)] = totalUtilityByTimeAndDuration.get(ocs);
-//							EventExactUtility[EventList.get(k)] = CalculateUtility(Pepisode + "," + EventList.get(k),
-//									ocs, oce, 1);
-							// ===== END BUG FIX =====================
+						if (OS.get(event) == null) {
+							OS.put(event, new ArrayList<Integer>());
+							OE.put(event, new ArrayList<Integer>());
 						}
-					}
+						OS.get(event).add(ocs);
+						OE.get(event).add(oce);
 
+						updateMoSet(MOS.get(event), MOE.get(event), ocs, oce);
+					}
 				}
 			}
-		} ////// end find local item
+		}
+
+		for (int i = 0; i < freF1.size(); i++) {
+			int event = freF1.get(i);
+			ArrayList<Integer> mosList = MOS.get(event);
+			ArrayList<Integer> moeList = MOE.get(event);
+			if (!mosList.isEmpty()) {
+				String candidateEp = Pepisode + "," + event;
+				for (int m = 0; m < mosList.size(); m++) {
+					int ocs = mosList.get(m);
+					int oce = moeList.get(m);
+					LocalCount[event] += totalUtilityByTimeAndDuration.get(ocs);
+					EventExactUtility[event] += CalculateUtility(candidateEp, ocs, oce, 1);
+				}
+			}
+		}
+		//BUGFIX END
 
 		///// get frequent episode
 		for (int i = 0; i < freF1.size(); i++) {
 			// System.out.println(i+","+FreF1.get(i)+","+LocalCount[FreF1.get(i)]);
 			// ���U��
-			if (LocalCount[freF1.get(i)] >= (minUtility * totalUtilityinAllSequence)) {
+			//BUGFIX START
+			if (!MOS.get(freF1.get(i)).isEmpty()
+					&& LocalCount[freF1.get(i)] >= (minUtility * totalUtilityinAllSequence)) {
+			//BUGFIX END
 				Num_FreEP++;
 				String Nepisode = Pepisode.concat("," + String.valueOf(freF1.get(i)));
 				FreEP.add(Nepisode);
@@ -742,11 +784,15 @@ public class AlgoUP_Span {
 	 * Calculate the utility
 	 * �p��@��episode�b�S�w�ɶ��I��utility 
 	 * */
-	public int CalculateUtility(String Pepisode, int ocs, int oce, int type) {// type=1�O�p��real
+	//BUGFIX START
+	public long CalculateUtility(String Pepisode, int ocs, int oce, int type) {
+	//BUGFIX END // type=1�O�p��real
 																				// utility,type=2�O�p��Upper
 																				// bound
 																				// utility
-		int utility = 0;
+		//BUGFIX START
+		long utility = 0;
+		//BUGFIX END
 		String[] SubEpisode = Pepisode.split(",");
 
 		// �p��real utility
@@ -755,7 +801,9 @@ public class AlgoUP_Span {
 			// System.out.print(Pepisode+",");
 			for (int i = 0; i < event.length; i++) {
 				// System.out.println("--"+event[i]+","+EventUtilityByTime.get(oce));
-				if (eventUtilityByTime.get(oce).containsKey(event[i]))
+				//BUGFIX START
+				if (eventUtilityByTime.get(oce).containsKey(Integer.valueOf(event[i])))
+				//BUGFIX END
 					utility += eventUtilityByTime.get(oce).get(Integer.valueOf(event[i]));
 			}
 
@@ -783,6 +831,9 @@ public class AlgoUP_Span {
 						{
 							for (int i = 0; i < event.length; i++)
 								utility += eventUtilityByTime.get(starttime).get(Integer.valueOf(event[i]));
+							//BUGFIX START
+							starttime++;
+							//BUGFIX END
 							break;// break while(starttime<=oce)
 						} else {
 							starttime++;
@@ -796,7 +847,9 @@ public class AlgoUP_Span {
 
 		// �p��Upper bound utility
 		if (type == 2 && SubEpisode.length < 2) {
+			//BUGFIX START
 			utility = totalUtilityByTimeAndDuration.get(ocs);
+			//BUGFIX END
 		} else if (type == 2 && SubEpisode.length >= 2) {
 			int starttime = ocs;
 			for (int j = 0; j < SubEpisode.length; j++) {
@@ -827,6 +880,9 @@ public class AlgoUP_Span {
 									utility += eventUtilityByTime.get(starttime).get(Integer.valueOf(event[i]));
 								}
 							}
+							//BUGFIX START
+							starttime++;
+							//BUGFIX END
 							break;// break while(starttime<=oce)
 						} else {
 							starttime++;
@@ -842,6 +898,33 @@ public class AlgoUP_Span {
 		// System.out.println("////"+Pepisode+"-->"+utility);
 		return utility;
 	}
+
+	//BUGFIX START
+	/**
+	 * Insert candidate occurrence [ocs, oce] into minimal occurrence lists (mos, moe),
+	 * ignoring it if equal to or containing an existing occurrence, and removing all
+	 * existing occurrences that contain [ocs, oce].
+	 */
+	private void updateMoSet(ArrayList<Integer> mos, ArrayList<Integer> moe, int ocs, int oce) {
+		for (int i = 0; i < mos.size(); i++) {
+			int nmos = mos.get(i);
+			int nmoe = moe.get(i);
+			if (ocs <= nmos && oce >= nmoe) {
+				return;
+			}
+		}
+		for (int i = mos.size() - 1; i >= 0; i--) {
+			int nmos = mos.get(i);
+			int nmoe = moe.get(i);
+			if (ocs >= nmos && oce <= nmoe) {
+				mos.remove(i);
+				moe.remove(i);
+			}
+		}
+		mos.add(ocs);
+		moe.add(oce);
+	}
+	//BUGFIX END
 
 	/** �P
 	 * �_�O�_��MO 
@@ -881,7 +964,9 @@ public class AlgoUP_Span {
 			// OUTPUT EPISODE WITH A SINGLE EVENT
 			if(outputSingleEvents){
 				for (int i = 0; i < freF1.size(); i++) {
-					int utility = EventCount[freF1.get(i)];
+					//BUGFIX START
+					long utility = EventCount[freF1.get(i)];
+					//BUGFIX END
 					if(utility >= (minUtility * totalUtilityinAllSequence)){
 						out.write(freF1.get(i) + " -1 #UTIL: " + utility);
 						out.newLine();
