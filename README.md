@@ -191,19 +191,21 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 
 | Category | Algorithms |
 |----------|-----------|
-| **Frequent Sequential Patterns** | CM-SPADE, CM-SPAM, FAST, GSP, LAPIN, PrefixSpan, SPADE, SPAM |
-| **Closed Sequential Patterns** | ClaSP, CM-ClaSP, CloFAST, CloSpan, BIDE+ |
+| **Frequent Sequential Patterns** | CM-SPADE, CM-SPAM, FAST, GSP, LAPIN, PrefixSpan, SPADE, SPAM, SNA-SPM, SUI, TreeMiner, VEPRECO, DISC-ALL |
+| **Closed Sequential Patterns** | ClaSP, CM-ClaSP, CloFAST, CloSpan, BIDE+, TriBackClo, FCloSM |
 | **Maximal Sequential Patterns** | VMSP, MaxSP |
 | **Top-k Sequential Patterns (support-based)** | TKS, TSP |
 | **Top-k Sequential Patterns (leverage/significance)** | Skopus |
-| **Generator Sequential Patterns** | VGEN, FEAT, FSGP |
+| **Generator Sequential Patterns** | VGEN, FEAT, FSGP, FGenSM |
+| **Recovering Frequent Sequential Patterns from Closed and Generator Patterns** | GFS-CR |
 | **Nonoverlapping Sequential Patterns** | NOSEP |
 | **Compressing Sequential Patterns** | GoKrimp, SeqKrimp, HMG-GA, HMG-SA |
 | **Quantile Cohesive Sequential Patterns** | QCSP |
 | **Frequent Multidimensional Sequential Patterns** | SeqDIM |
 | **Frequent Closed Multidimensional Sequential Patterns** | Songram et al. |
 | **Multidimensional Sequential Patterns (combined features)** | Fournier-Viger et al. |
-| **High-Utility Sequential Patterns** | USPAN |
+| **High-Utility Sequential Patterns** | USPAN, SUChain, HUSPULL |
+| **Closed High-Utility Sequential Patterns** | CHUSP |
 | **High-Utility Probability Sequential Patterns** | PHUSPM, UHUSPM |
 | **Cost-Efficient Sequential Patterns** | CorCEPB, CEPB, CEPN |
 | **Progressive Sequential Pattern Mining** | ProSecCo |
@@ -238,10 +240,10 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 
 | Category | Algorithms |
 |----------|-----------|
-| **Frequent Itemsets** | Apriori, AprioriTID, FP-Growth, Eclat, dEclat, Relim, H-Mine, LCMFreq, PrePost, PrePost+, FIN, DFIN, NegFIN, DIC, TM, SAM, LinearTable |
-| **Closed Frequent Itemsets** | FPClose, Charm, dCharm, DCI_Closed, LCM, AprioriClose, AprioriTID Close, NAFCP, NEclatClosed, CARPENTER, DBVMiner, NEWCHARM |
+| **Frequent Itemsets** | Apriori, AprioriTID, AprioriTID_HD, FP-Growth, Eclat, dEclat, Relim, H-Mine, LCMFreq, PrePost, PrePost+, FIN, DFIN, NegFIN, DIC, TM, SAM, LinearTable |
+| **Closed Frequent Itemsets** | FPClose, Charm, dCharm, DCI_Closed, LCM, AprioriClose, AprioriTID Close, NAFCP, NEclatClosed, CARPENTER, DBVMiner, NEWCHARM, MISAMiner_closed |
 | **Recovering Frequent Itemsets from Closed** | LevelWise, DFI-Growth, DFI-List |
-| **Maximal Frequent Itemsets** | FPMax, Charm-MFI, CARPENTER-MAX, GENMAX |
+| **Maximal Frequent Itemsets** | FPMax, Charm-MFI, CARPENTER-MAX, GENMAX, MISAMiner_max |
 | **Frequent Itemsets with Multiple Min. Supports** | MSApriori, CFPGrowth++ |
 | **Generator Itemsets** | DefMe, Talky-G, Talky-G-Diffset, Pascal, Zart |
 | **Perfectly Rare Itemsets** | AprioriInverse, AprioriTIDInverse |
@@ -250,12 +252,15 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | **Targeted & Dynamic Queries on Itemsets** | Itemset-Tree, Memory-Efficient Itemset-Tree |
 | **Recent Frequent Itemsets in Streams** | estDec, estDec+ |
 | **Frequent Closed Itemsets in Streams** | CloStream |
-| **Frequent Itemsets in Uncertain Data** | U-Apriori |
-| **Erasable Itemsets** | VME |
+| **Frequent Itemsets in Uncertain Data** | U-Apriori, UVEclat, UH-Mine |
+| **Top-k Frequent Itemsets in Uncertain Data** | TUFP |
+| **Erasable Itemsets** | VME, META, MERIT+, DMERIT+, MEI |
 | **Fuzzy Frequent Itemsets** | FFI-Miner, MFFI-Miner |
+| **Frequent Weighted Itemsets (weighted support)** | WFIM |
+| **Frequent Weighted Itemsets (normalized weighted support)** | NFWCI, NFWI, WIT-FWI, WIT-FWI-MOD, WIT-FWI-DIFF |
 | **Self-sufficient Itemsets** | OPUS-Miner |
 | **Compressing Itemsets (MDL)** | KRIMP, SLIM, GRIMP, HMP-SA, HMP-HC |
-| **Top-k Frequent Itemsets** | Apriori(top-k), FPGrowth(top-k) |
+| **Top-k Frequent Itemsets** | Apriori(top-k), FPGrowth(top-k), HTK-MINER, HTK-NEGFIN |
 
 ### Episode Mining
 
@@ -283,6 +288,8 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | Category | Algorithms |
 |----------|-----------|
 | **Frequent Periodic Patterns (single sequence)** | PFPM |
+| **Periodic Frequent Itemsets (FP-growth-based)** | PFTree |
+| **Top-k Periodic Itemsets** | MTKPP, TRCT |
 | **Stable Periodic Itemsets** | SPP-Growth |
 | **Top-k Stable Periodic Itemsets** | TSPIN |
 | **Locally Periodic Patterns** | LPP-Growth, LPPM_breadth, LPPM_depth |
@@ -293,14 +300,15 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | **Irregular (Non-periodic) High-Utility Itemsets** | PHM_irregular |
 | **Periodic Patterns in Multiple Sequences** | MPFPS_BFS, MPFPS_DFS |
 | **Rare Correlated Periodic Patterns (multiple sequences)** | MRCPPS |
+| **Probabilistic Periodic Frequent Patterns (uncertain databases)** | PFPP-growth |
 
 ### Graph Pattern Mining
 
 | Category | Algorithms |
 |----------|-----------|
-| **All Frequent Subgraphs** | gSpan |
+| **All Frequent Subgraphs** | gSpan, FSG, FSP, FFSM, FSMA |
 | **Top-k Frequent Subgraphs** | TKG |
-| **Frequent Closed Subgraphs** | cgSpan |
+| **Frequent Closed Subgraphs** | cgSpan, CFGM, CloseGraph |
 | **Sequential Patterns in Dynamic Attributed Graphs** | TSeqMiner |
 | **Association Rules in Dynamic Attributed Graphs** | AER-Miner |
 
@@ -308,7 +316,8 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 
 | Category | Algorithms |
 |----------|-----------|
-| **High-Utility Itemsets (HUI)** | EFIM, FHM, HUI-Miner, HUP-Miner, mHUIMiner, UFH, HMiner, ULB-Miner, IHUP, Two-Phase, UP-Growth, UP-Growth+, UP-Hist, d2HUP, FHIM, PUCPMiner, RMiner |
+| **High-Utility Itemsets (HUI)** | EFIM, FHM, HUI-Miner, HUP-Miner, mHUIMiner, UFH, HMiner, ULB-Miner, IHUP, Two-Phase, UP-Growth, UP-Growth+, UP-Hist, d2HUP, FHIM, PUCPMiner, RMiner, FOTH, UBP-miner, MEHUIM |
+| **High-Utility Itemsets (additional algorithms, 2024)** | UBTGEN, THUIsl |
 | **HUI with Length Constraints** | FHM+ |
 | **Correlated HUI (bond measure)** | FCHM_bond |
 | **Correlated HUI (all-confidence measure)** | FCHM_allconfidence |
@@ -322,15 +331,19 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | **On-shelf HUI (items with time periods)** | FOSHU, TS-HOUN |
 | **Incremental HUI** | EIHI, HUI-LIST-INS |
 | **Incremental Closed HUI** | IncCHUI |
-| **Closed HUI** | EFIM-Closed, CHUI-Miner, CLS-Miner, HMiner_Closed, CHUD |
-| **Maximal HUI** | CHUI-Miner(Max) |
+| **Closed HUI** | EFIM-Closed, CHUI-Miner, CLS-Miner, HMiner_Closed, CHUD, C-HUIM, MEHUIM_Closed |
+| **Maximal HUI** | CHUI-Miner(Max), MaxC-HUIM (can also output closed HUI at the same time) |
 | **Generator HUI** | HUG-Miner |
 | **Generators of HUI** | GHUI-Miner |
 | **Minimal HUI** | MinFHM |
 | **Closed HUI and Generators** | HUCI_Miner |
+| **High-Utility Occupancy Itemsets** | HUOMIL, HUOPM, OCEAN |
+| **Closed High-Utility Occupancy Itemsets** | CloFHUOIM |
+| **Maximal High-Utility Occupancy Itemsets** | MaxCloFHUOIM (can also output closed high-utility occupancy itemsets at the same time) |
 | **Skyline HUI** | SkyMine |
 | **Skyline Frequent HUI** | SFUI_UF, SFU_CE, SFUPMinerUemax, EMSFUI_D, EMSFUI_B |
 | **Top-k HUI** | TKU, TKO-Basic, THUI |
+| **Top-k HUI (positive or negative profit)** | TKN |
 | **Heuristic Top-k HUI** | TKU-CE, TKU-CE+ |
 | **Top-k HUI from Streams** | FHMDS, FHMDS-Naive |
 | **Quantitative HUI** | FHUQI-Miner, VHUQI |
@@ -339,9 +352,9 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | **HUI via Evolutionary Algorithms** | HUIM-GA, HUIM-GA-tree, HUIF-GA |
 | **HUI via Swarm Intelligence** | HUIM-ACO, HUIM-SPSO, HUIM-BPSO, HUIM-BPSO-tree, HUIF-PSO, HUIF-BA, HUIM-ABC |
 | **HUI via Other Meta-heuristics** | HUIM-AF, HUIM-HC, HUIM-SA |
-| **High Average-Utility Itemsets** | HAUI-Miner, EHAUPM, HAUIM-GMU |
+| **High Average-Utility Itemsets** | HAUI-Miner, EHAUPM, HAUIM-GMU, EMAUI, VMHAUI, dHAUIM |
 | **High Average-Utility with Multiple Thresholds** | HAUI-MMAU, MEMU |
-| **Top-k High Average-Utility Itemsets** | ETAUIM |
+| **Top-k High Average-Utility Itemsets** | ETAUIM, TKAU |
 | **Local High-Utility Itemsets** | LHUI-Miner |
 | **Peak High-Utility Itemsets** | PHUI-Miner |
 | **Locally Trending High-Utility Itemsets** | LTHUI-Miner |
@@ -361,6 +374,8 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | **Minimal Non-redundant Association Rules** | Kryszkiewicz, 1998 |
 | **Indirect Association Rules** | Indirect (Tan et al., 2000, 2006) |
 | **Hiding Sensitive Association Rules** | FHSAR (Weng et al., 2008) |
+| **Negative Association Rules (negative consequents)** | NAR-Miner (Bian et al., 2018) |
+| **Positive and Negative Association Rules (general type)** | PNAR-Eclat, PNAR-Apriori (Cornelis et al., 2006) |
 | **Top-k Association Rules** | TopKRules, ETARM, FTARM |
 | **Top-k Non-redundant Association Rules** | TNR |
 | **Top-k Class Association Rules** | TopKClassRules |
@@ -503,6 +518,7 @@ SPMF offers more than 300 algorithms and tools. A brief overview of the algorith
 | Algorithm Explorer |
 | Memory Viewer (real-time memory usage) |
 | Pattern Viewer (with frequency distributions) |
+| Pattern Viewer tools for probabilistic periodic frequent itemsets and for (closed/maximal) high utility occupancy itemsets |
 | Workflow Editor |
 | Experiment Runner (vary parameters across algorithms) |
 | SPMF Text Editor |
